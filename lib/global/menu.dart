@@ -1,5 +1,8 @@
 import 'package:caldensmartfabrica/aws/mqtt/mqtt.dart';
+import 'package:caldensmartfabrica/global/ota.dart';
+import 'package:caldensmartfabrica/global/register.dart';
 import 'package:caldensmartfabrica/global/scan.dart';
+import 'package:caldensmartfabrica/global/toolsaws.dart';
 import 'package:caldensmartfabrica/master.dart';
 import 'package:flutter/material.dart';
 
@@ -60,9 +63,9 @@ class MenuPageState extends State<MenuPage> {
             },
             children: [
               const ScanPage(),
-              // if (accessLevel >= 1) const ControlTab(),
-              // if (accessLevel >= 2) const ToolsAWS(),
-              // if (accessLevel >= 3) const Ota2Tab(),
+              if (accessLevel >= 1) const RegisterPage(),
+              if (accessLevel >= 2) const ToolsAWS(),
+              if (accessLevel >= 3) const OtaGlobalPage(),
             ],
           ),
           Positioned(
@@ -74,11 +77,11 @@ class MenuPageState extends State<MenuPage> {
               height: 75.0,
               items: [
                 const Icon(Icons.bluetooth_searching, color: color4),
-                // if (accessLevel >= 1)
-                //   const Icon(Icons.assignment, color: color4),
-                // if (accessLevel >= 2)
-                //   const Icon(Icons.webhook_outlined, color: color4),
-                // if (accessLevel >= 3) const Icon(Icons.send, color: color4),
+                if (accessLevel >= 1)
+                  const Icon(Icons.assignment, color: color4),
+                if (accessLevel >= 2)
+                  const Icon(Icons.webhook_outlined, color: color4),
+                if (accessLevel >= 3) const Icon(Icons.send, color: color4),
               ],
               color: color1,
               buttonBackgroundColor: color1,

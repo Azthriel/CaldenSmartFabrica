@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -152,6 +153,10 @@ String rollerSGTHRS = '';
 //*-Fetch data from firestore-*\\
 Map<String, dynamic> fbData = {};
 //*-Fetch data from firestore-*\\
+
+//*-Solicitudes http-*\\
+Dio dio = Dio();
+//*-Solicitudes http-*\\
 
 // // -------------------------------------------------------------------------------------------------------------\\ \\
 

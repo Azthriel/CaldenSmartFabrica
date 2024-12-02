@@ -1,0 +1,260 @@
+import 'package:caldensmartfabrica/master.dart';
+import 'package:flutter/material.dart';
+
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
+  @override
+  RegisterPageState createState() => RegisterPageState();
+}
+
+class RegisterPageState extends State<RegisterPage> {
+  final TextEditingController snController = TextEditingController();
+  final TextEditingController comController = TextEditingController();
+  final TextEditingController pcController = TextEditingController();
+  String serialNumber = '';
+  String productCode = '';
+  bool stateSell = false;
+  bool isRegister = false;
+
+  void updateGoogleSheet() async {
+    printLog('mande alguito');
+
+    setState(() {
+      isRegister = true;
+    });
+
+    String status = stateSell ? 'Si' : 'No';
+    const String url =
+        'https://script.google.com/macros/s/AKfycbyJw-peLVNGfSwb9vi9YWTbYysBR4oc2_Bz8cReB1oMOLrRrE4kK9lIb0hhRzriAHWs/exec';
+
+    final response = await dio.get(url, queryParameters: {
+      'productCode': productCode,
+      'serialNumber': serialNumber,
+      'status': status,
+      'legajo': legajoConectado,
+      'comment': comController.text,
+    });
+    if (response.statusCode == 200) {
+      printLog('Si llego');
+      comController.clear();
+      isRegister = false;
+      showToast('Equipo cargado');
+      snController.clear();
+      pcController.clear();
+      setState(() {});
+    } else {
+      printLog('Unu');
+    }
+  }
+
+  @override
+  void dispose() {
+    snController.dispose();
+    comController.dispose();
+    pcController.dispose();
+    super.dispose();
+  }
+
+//!Visual
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      backgroundColor: color4,
+      appBar: AppBar(
+        backgroundColor: color1,
+        foregroundColor: color4,
+        title: const Align(
+          alignment: Alignment.center,
+          child: Text(
+            'Registro de productos',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(bottom: 20.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              decoration: BoxDecoration(
+                color: color0,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: color3.withOpacity(0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: pcController,
+                onChanged: (value) {
+                  setState(() {
+                    productCode = '${value}_IOT';
+                  });
+                },
+                style: const TextStyle(color: color4),
+                keyboardType: TextInputType.text,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.code, color: color4),
+                  border: InputBorder.none,
+                  labelText: 'Código de producto',
+                  labelStyle: const TextStyle(color: color3),
+                  hintStyle: TextStyle(color: color3.withOpacity(0.7)),
+                ),
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.only(bottom: 20.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              decoration: BoxDecoration(
+                color: color0,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: color3.withOpacity(0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: snController,
+                onChanged: (value) {
+                  setState(() {
+                    serialNumber = value;
+                  });
+                },
+                style: const TextStyle(color: color4),
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  prefixIcon:
+                      const Icon(Icons.confirmation_number, color: color4),
+                  border: InputBorder.none,
+                  labelText: 'Número de serie',
+                  labelStyle: const TextStyle(color: color3),
+                  hintStyle: TextStyle(color: color3.withOpacity(0.7)),
+                ),
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.only(bottom: 24.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              decoration: BoxDecoration(
+                color: color0,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: color3.withOpacity(0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const SizedBox(width: 12),
+                  const Icon(Icons.shopping_cart, color: color4),
+                  const SizedBox(width: 8),
+                  const Text(
+                    '¿Listo para la venta?',
+                    style: TextStyle(
+                      color: color3,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const Spacer(),
+                  Switch(
+                    activeColor: color3,
+                    activeTrackColor: color3.withOpacity(0.3),
+                    inactiveThumbColor: color4,
+                    inactiveTrackColor: color3.withOpacity(0.2),
+                    value: stateSell,
+                    onChanged: (value) {
+                      setState(() {
+                        stateSell = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.only(bottom: 24.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              decoration: BoxDecoration(
+                color: color0,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: color3.withOpacity(0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: comController,
+                style: const TextStyle(color: color4),
+                keyboardType: TextInputType.text,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.comment, color: color4),
+                  border: InputBorder.none,
+                  labelText: 'Comentario (opcional)',
+                  labelStyle: const TextStyle(color: color3),
+                  hintStyle: TextStyle(color: color3.withOpacity(0.7)),
+                ),
+              ),
+            ),
+            isRegister
+                ? const CircularProgressIndicator()
+                : Padding(
+                    padding: const EdgeInsets.only(top: 24.0),
+                    child: Container(
+                      width: double.infinity,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: color1,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: TextButton(
+                        onPressed: () {
+                          String accion =
+                              'Se marcó el equipo como ${stateSell ? 'listo para la venta' : 'no listo para la venta'}';
+                          registerActivity(productCode, serialNumber, accion);
+                          updateGoogleSheet();
+                        },
+                        child: const Text(
+                          'Subir',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: color4,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+}
