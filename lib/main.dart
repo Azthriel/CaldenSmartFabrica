@@ -1,6 +1,9 @@
 import 'dart:io';
-
+import 'package:caldensmartfabrica/devices/calefactores.dart';
+import 'package:caldensmartfabrica/devices/detectores.dart';
+import 'package:caldensmartfabrica/devices/domotica.dart';
 import 'package:caldensmartfabrica/firebase_options.dart';
+import 'package:caldensmartfabrica/global/loading.dart';
 import 'package:caldensmartfabrica/global/login.dart';
 import 'package:caldensmartfabrica/global/menu.dart';
 import 'package:caldensmartfabrica/global/permission.dart';
@@ -9,6 +12,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'devices/patito.dart';
+import 'devices/rele.dart';
+import 'devices/roller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -83,7 +89,14 @@ class MyAppState extends State<MyApp> {
       routes: {
         '/perm': (context) => const PermissionHandler(),
         '/login': (context) => const LoginPage(),
+        '/loading': (context) => const LoadingPage(),
         '/menu': (context) => const MenuPage(),
+        '/calefactor': (context) => const CalefactoresPage(),
+        '/detector': (context) => const DetectorPage(),
+        '/rele': (context) => const RelePage(),
+        '/domotica': (context) => const DomoticaPage(),
+        '/patito': (context) => const PatitoPage(),
+        '/roller': (context) => const RollerPage(),
       },
     );
   }

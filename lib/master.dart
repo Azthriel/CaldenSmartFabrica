@@ -130,6 +130,7 @@ double distOnValue = 0.0;
 double distOffValue = 0.0;
 bool tempMap = false;
 double tempValue = 0.0;
+String actualTemp = '';
 //*-Calefactores-*\\
 
 //*- Roller -*\\
@@ -150,6 +151,14 @@ String rollerTCOOLTHRS = '';
 String rollerSGTHRS = '';
 //*- Roller -*\\
 
+//*-Domótica-*\\
+bool burneoDone = false;
+//*-Domótica-*\\
+
+//*-Relé-*\\
+String energyTimer = '';
+//*-Relé-*\\
+
 //*-Fetch data from firestore-*\\
 Map<String, dynamic> fbData = {};
 //*-Fetch data from firestore-*\\
@@ -157,6 +166,11 @@ Map<String, dynamic> fbData = {};
 //*-Solicitudes http-*\\
 Dio dio = Dio();
 //*-Solicitudes http-*\\
+
+//*-Registro temperatura ambiente enviada-*\\
+bool roomTempSended = false;
+String tempDate = '';
+//*-Registro temperatura ambiente enviada-*\\
 
 // // -------------------------------------------------------------------------------------------------------------\\ \\
 
@@ -1041,7 +1055,8 @@ void bluetoothStatus() async {
 }
 //*-Monitoreo Localizacion y Bluetooth*-\\
 
-//*-show dialog generico-*\\
+//*-Elementos genericos-*\\
+///Genera un cuadro de dialogo con los parametros que le pases
 void showAlertDialog(BuildContext context, bool dismissible, Widget? title,
     Widget? content, List<Widget>? actions) {
   showGeneralDialog(
@@ -1181,7 +1196,104 @@ void showAlertDialog(BuildContext context, bool dismissible, Widget? title,
     },
   );
 }
-//*-show dialog generico-*\\
+
+///Genera un botón generico con los parametros que le pases
+Widget buildButton({
+  required String text,
+  required VoidCallback onPressed,
+}) {
+  return ElevatedButton(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: color1,
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 6,
+      shadowColor: color3.withOpacity(0.4),
+    ),
+    onPressed: onPressed,
+    child: Text(
+      text,
+      style: const TextStyle(
+          fontSize: 18, fontWeight: FontWeight.bold, color: color4),
+    ),
+  );
+}
+
+///Genera un cuadro de texto generico con los parametros que le pases
+Widget buildTextField({
+  required TextEditingController controller,
+  required String label,
+  required String hint,
+  required bool isValid,
+  required Function(String) onChanged,
+}) {
+  return Container(
+    margin: const EdgeInsets.only(bottom: 20.0),
+    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+    decoration: BoxDecoration(
+      color: color0,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: color3.withOpacity(0.3),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: TextField(
+      controller: controller,
+      onChanged: onChanged,
+      style: const TextStyle(color: color4),
+      keyboardType: TextInputType.text,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(
+            color: color3, fontSize: 16, fontWeight: FontWeight.w500),
+        hintStyle: TextStyle(color: color3.withOpacity(0.7)),
+        suffixIcon: isValid
+            ? const Icon(Icons.check_circle, color: Colors.green, size: 28)
+            : const Icon(Icons.cancel_rounded, color: Colors.red, size: 28),
+        border: InputBorder.none,
+      ),
+    ),
+  );
+}
+
+///Genera un texto generico con los parametros que le pases
+Widget buildText({
+  required String text,
+  double fontSize = 16,
+  FontWeight fontWeight = FontWeight.normal,
+  Color color = color3,
+  TextAlign textAlign = TextAlign.center,
+}) {
+  return Container(
+    margin: const EdgeInsets.only(bottom: 20.0),
+    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+    decoration: BoxDecoration(
+      color: color0, // Usa el mismo color de fondo que los TextFields
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: color3.withOpacity(0.3),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Text(
+      text,
+      style: TextStyle(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        color: color,
+      ),
+      textAlign: textAlign,
+    ),
+  );
+}
+//*-Elementos genericos-*\\
 
 //*-Registro de actividad-*\\
 void registerActivity(
@@ -1243,6 +1355,52 @@ Future<Map<String, dynamic>> fetchDocumentData() async {
   }
 }
 //*-Fetch data from firestore-*\\
+
+//*-Registro temperatura ambiente enviada-*\\
+Future<bool> tempWasSended(String productCode, String serialNumber) async {
+  printLog('Ta bacano');
+  try {
+    String docPath = '$legajoConectado:$productCode:$serialNumber';
+    DocumentSnapshot documentSnapshot =
+        await FirebaseFirestore.instance.collection('Data').doc(docPath).get();
+    if (documentSnapshot.exists) {
+      Map<String, dynamic> data =
+          documentSnapshot.data() as Map<String, dynamic>;
+
+      printLog('TempSend: ${data['temp']}');
+      data['temp'] == true
+          ? tempDate = data['tempDate']
+          : tempDate =
+              '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}';
+      return data['temp'] ?? false;
+    } else {
+      printLog('No existe');
+      return false;
+    }
+  } catch (error) {
+    printLog('Error al realizar la consulta: $error');
+    return false;
+  }
+}
+
+void registerTemp(String productCode, String serialNumber) async {
+  try {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+
+    String date =
+        '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}';
+
+    String documentPath = '$legajoConectado:$productCode:$serialNumber';
+
+    DocumentReference docRef = db.collection('Data').doc(documentPath);
+
+    docRef.set({'temp': true, 'tempDate': date});
+  } catch (e, s) {
+    printLog('Error al registrar actividad: $e');
+    printLog(s);
+  }
+}
+//*-Registro temperatura ambiente enviada-*\\
 
 // // -------------------------------------------------------------------------------------------------------------\\ \\
 
@@ -1348,7 +1506,6 @@ class MyDevice {
 
       List<BluetoothService> services =
           await device.discoverServices(timeout: 3);
-      // printLog('Los servicios: $services');
 
       BluetoothService infoService = services.firstWhere(
           (s) => s.uuid == Guid('6a3253b4-48bc-4e97-bacd-325a1d142038'));
@@ -1366,6 +1523,7 @@ class MyDevice {
       var partes = str.split(':');
       softwareVersion = partes[2];
       hardwareVersion = partes[3];
+      factoryMode = softwareVersion.contains('_F');
       String pc = partes[0];
       printLog(
           'Product code: ${DeviceManager.getProductCode(device.platformName)}');
@@ -1381,6 +1539,10 @@ class MyDevice {
               c.uuid ==
               Guid(
                   '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //WorkingTemp:WorkingStatus:EnergyTimer:HeaterOn:NightMode
+          otaUuid = espService.characteristics.firstWhere((c) =>
+              c.uuid ==
+              Guid(
+                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
           break;
         case '027000_IOT':
           BluetoothService espService = services.firstWhere(
@@ -1390,6 +1552,10 @@ class MyDevice {
               c.uuid ==
               Guid(
                   '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //WorkingTemp:WorkingStatus:EnergyTimer:HeaterOn:NightMode
+          otaUuid = espService.characteristics.firstWhere((c) =>
+              c.uuid ==
+              Guid(
+                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
           break;
         case '041220_IOT':
           BluetoothService espService = services.firstWhere(
@@ -1399,10 +1565,29 @@ class MyDevice {
               c.uuid ==
               Guid(
                   '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //WorkingTemp:WorkingStatus:EnergyTimer:HeaterOn:NightMode
+          otaUuid = espService.characteristics.firstWhere((c) =>
+              c.uuid ==
+              Guid(
+                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
           break;
         case '015773_IOT':
           BluetoothService service = services.firstWhere(
               (s) => s.uuid == Guid('dd249079-0ce8-4d11-8aa9-53de4040aec6'));
+
+          if (factoryMode) {
+            calibrationUuid = service.characteristics.firstWhere(
+                (c) => c.uuid == Guid('0147ab2a-3987-4bb8-802b-315a664eadd6'));
+            regulationUuid = service.characteristics.firstWhere(
+                (c) => c.uuid == Guid('961d1cdd-028f-47d0-aa2a-e0095e387f55'));
+            debugUuid = service.characteristics.firstWhere(
+                (c) => c.uuid == Guid('838335a1-ff5a-4344-bfdf-38bf6730de26'));
+            BluetoothService otaService = services.firstWhere(
+                (s) => s.uuid == Guid('33e3a05a-c397-4bed-81b0-30deb11495c7'));
+            otaUuid = otaService.characteristics.firstWhere((c) =>
+                c.uuid ==
+                Guid(
+                    'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
+          }
 
           workUuid = service.characteristics.firstWhere((c) =>
               c.uuid ==
@@ -1417,6 +1602,12 @@ class MyDevice {
               (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
           ioUuid = service.characteristics.firstWhere(
               (c) => c.uuid == Guid('03b1c5d9-534a-4980-aed3-f59615205216'));
+          otaUuid = service.characteristics.firstWhere((c) =>
+              c.uuid ==
+              Guid(
+                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
+          varsUuid = service.characteristics.firstWhere(
+              (c) => c.uuid == Guid('52a2f121-a8e3-468c-a5de-45dca9a2a207'));
           break;
         case '027313_IOT':
           BluetoothService espService = services.firstWhere(
@@ -1426,6 +1617,10 @@ class MyDevice {
               c.uuid ==
               Guid(
                   '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //DistanceControl:W_Status:EnergyTimer:AwsINIT
+          otaUuid = espService.characteristics.firstWhere((c) =>
+              c.uuid ==
+              Guid(
+                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
           break;
         case '024011_IOT':
           BluetoothService espService = services.firstWhere(
@@ -2366,3 +2561,61 @@ class AnimSearchBarState extends State<AnimSearchBar>
 }
 //*-AnimSearchBar*-\\
 
+//*-ThumbSlider-*//s
+class IconThumbSlider extends SliderComponentShape {
+  final IconData iconData;
+  final double thumbRadius;
+
+  const IconThumbSlider({required this.iconData, required this.thumbRadius});
+
+  @override
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) {
+    return Size.fromRadius(thumbRadius);
+  }
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset center, {
+    required Animation<double> activationAnimation,
+    required Animation<double> enableAnimation,
+    required bool isDiscrete,
+    required TextPainter labelPainter,
+    required RenderBox parentBox,
+    required SliderThemeData sliderTheme,
+    required TextDirection textDirection,
+    required double value,
+    required double textScaleFactor,
+    required Size sizeWithOverflow,
+  }) {
+    final Canvas canvas = context.canvas;
+
+    // Draw the thumb as a circle
+    final paint = Paint()
+      ..color = sliderTheme.thumbColor!
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(center, thumbRadius, paint);
+
+    // Draw the icon on the thumb
+    TextSpan span = TextSpan(
+      style: TextStyle(
+        fontSize: thumbRadius,
+        fontFamily: iconData.fontFamily,
+        color: sliderTheme.valueIndicatorColor,
+      ),
+      text: String.fromCharCode(iconData.codePoint),
+    );
+    TextPainter tp = TextPainter(
+        text: span,
+        textAlign: TextAlign.center,
+        textDirection: TextDirection.ltr);
+    tp.layout();
+    Offset iconOffset = Offset(
+      center.dx - (tp.width / 2),
+      center.dy - (tp.height / 2),
+    );
+    tp.paint(canvas, iconOffset);
+  }
+}
+//*-ThumbSlider-*//

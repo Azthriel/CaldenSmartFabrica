@@ -51,9 +51,192 @@ class MenuPageState extends State<MenuPage> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: color3,
+      appBar: AppBar(
+        title: const Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Align(
+              alignment: Alignment.center,
+              child: Text(
+                'Calden Smart Fábrica',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: color4,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: color1,
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.account_circle,
+              color: color4,
+              size: 35,
+            ),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    backgroundColor: color1,
+                    titlePadding: const EdgeInsets.all(16),
+                    contentPadding: const EdgeInsets.all(16),
+                    title: const Text(
+                      "Información del Usuario",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                        color: color4,
+                      ),
+                    ),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Contenedor para Legajo
+                          Container(
+                            margin: const EdgeInsets.symmetric(vertical: 8.0),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: color2,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Text(
+                                  "Legajo:",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: color4,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    legajoConectado,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: color4,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Contenedor para Nombre
+                          Container(
+                            margin: const EdgeInsets.symmetric(vertical: 8.0),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: color2,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Text(
+                                  "Nombre:",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: color4,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    completeName,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: color4,
+                                    ),
+                                    softWrap: true,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Contenedor para Nivel de acceso
+                          Container(
+                            margin: const EdgeInsets.symmetric(vertical: 8.0),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: color2,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Text(
+                                  "Nivel de acceso:",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: color4,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  accessLevel.toString(),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: color4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                    actionsPadding: const EdgeInsets.only(bottom: 16, top: 8),
+                    actions: <Widget>[
+                      Center(
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: color2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: const BorderSide(color: color3, width: 1),
+                            ),
+                            elevation: 5,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                          ),
+                          onPressed: () {
+                            String cuerpo =
+                                'Solicito que se modifique el nivel de acceso en la app de fabrica para el legajo $legajoConectado\nNivel de acceso actual: $accessLevel\nNivel solicitado: ';
+                            launchEmail('ingenieria@caldensmart.com',
+                                'Solicitud cambio de nivel de acceso', cuerpo);
+                            Navigator.of(context).pop();
+                          },
+                          icon: const Icon(Icons.lock_open,
+                              size: 20, color: color4),
+                          label: const Text(
+                            "Solicitar cambio de nivel",
+                            style: TextStyle(color: color4, fontSize: 16),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
       body: Stack(
         children: [
-          // PageView que maneja las diferentes vistas
           PageView(
             controller: _pageController,
             onPageChanged: (index) {

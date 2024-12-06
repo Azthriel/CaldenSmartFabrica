@@ -15,6 +15,7 @@ class RegisterPageState extends State<RegisterPage> {
   String productCode = '';
   bool stateSell = false;
   bool isRegister = false;
+  List<String> productos = [];
 
   void updateGoogleSheet() async {
     printLog('mande alguito');
@@ -48,6 +49,13 @@ class RegisterPageState extends State<RegisterPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    List<dynamic> lista = fbData['Productos'] ?? [];
+    productos = lista.map((item) => item.toString()).toList();
+  }
+
+  @override
   void dispose() {
     snController.dispose();
     comController.dispose();
@@ -61,21 +69,25 @@ class RegisterPageState extends State<RegisterPage> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: color4,
-      appBar: AppBar(
-        backgroundColor: color1,
-        foregroundColor: color4,
-        title: const Align(
-          alignment: Alignment.center,
-          child: Text(
-            'Registro de productos',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(65),
+        child: AppBar(
+          backgroundColor: color4,
+          foregroundColor: color4,
+          title: const Align(
+            alignment: Alignment.center,
+            child: Text(
+              'Registro de productos',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
+                color: color1,
+              ),
             ),
           ),
+          elevation: 0,
         ),
-        elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -98,21 +110,37 @@ class RegisterPageState extends State<RegisterPage> {
                   ),
                 ],
               ),
-              child: TextField(
-                controller: pcController,
-                onChanged: (value) {
-                  setState(() {
-                    productCode = '${value}_IOT';
-                  });
-                },
-                style: const TextStyle(color: color4),
-                keyboardType: TextInputType.text,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.code, color: color4),
-                  border: InputBorder.none,
-                  labelText: 'Código de producto',
-                  labelStyle: const TextStyle(color: color3),
-                  hintStyle: TextStyle(color: color3.withOpacity(0.7)),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.code, color: color4),
+                    labelText: 'Código de producto',
+                    labelStyle: const TextStyle(color: color3),
+                    hintText: 'Seleccione un código',
+                    hintStyle: TextStyle(color: color3.withOpacity(0.7)),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  dropdownColor: color0,
+                  style: const TextStyle(color: color4),
+                  items:
+                      productos.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(
+                        value,
+                        style: const TextStyle(
+                          color: color4,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      productCode = value!;
+                    });
+                  },
                 ),
               ),
             ),

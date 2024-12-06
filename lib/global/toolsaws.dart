@@ -89,32 +89,36 @@ class ToolsAWSState extends State<ToolsAWS> {
     return Scaffold(
         resizeToAvoidBottomInset: false,
         backgroundColor: color4,
-        appBar: AppBar(
-          backgroundColor: color1,
-          foregroundColor: color4,
-          title: const Align(
-            alignment: Alignment.center,
-            child: Text(
-              'Customer service\nComandos a distancia',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(65),
+          child: AppBar(
+            backgroundColor: color4,
+            foregroundColor: color4,
+            title: const Align(
+              alignment: Alignment.center,
+              child: Text(
+                'Comandos a distancia',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                  color: color1,
+                ),
               ),
             ),
+            elevation: 0,
           ),
-          elevation: 0,
         ),
         body: Consumer<GlobalDataNotifier>(
           builder: (context, notifier, child) {
             String textToShow = notifier.getData();
             printLog(textToShow);
 
-            return Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 80.0),
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
                       width: 335,
@@ -123,11 +127,11 @@ class ToolsAWSState extends State<ToolsAWS> {
                       decoration: BoxDecoration(
                         color: color0,
                         borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
+                        boxShadow: const [
                           BoxShadow(
-                            color: color3.withOpacity(0.2),
+                            color: color4,
                             blurRadius: 10,
-                            offset: const Offset(0, 4),
+                            offset: Offset(0, 4),
                           ),
                         ],
                       ),
@@ -135,11 +139,10 @@ class ToolsAWSState extends State<ToolsAWS> {
                         decoration: const InputDecoration(
                           labelText: 'Ingrese el código de producto',
                           labelStyle: TextStyle(
-                            color: Color(0xfffbe4d8),
-                            fontWeight: FontWeight.w500,
+                            color: color3,
                           ),
                           hintText: 'Seleccione un código',
-                          hintStyle: TextStyle(color: Color(0xfffbe4d8)),
+                          hintStyle: TextStyle(color: color3),
                           border: InputBorder.none,
                         ),
                         dropdownColor: color0,
@@ -150,8 +153,7 @@ class ToolsAWSState extends State<ToolsAWS> {
                             child: Text(
                               value,
                               style: const TextStyle(
-                                color: Color(0xfffbe4d8),
-                                fontWeight: FontWeight.bold,
+                                color: color3,
                               ),
                             ),
                           );
@@ -172,24 +174,22 @@ class ToolsAWSState extends State<ToolsAWS> {
                         decoration: BoxDecoration(
                           color: color0,
                           borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
+                          boxShadow: const [
                             BoxShadow(
-                              color: color3.withOpacity(0.2),
+                              color: color4,
                               blurRadius: 10,
-                              offset: const Offset(0, 4),
+                              offset: Offset(0, 4),
                             ),
                           ],
                         ),
                         child: TextField(
-                          style: const TextStyle(color: Color(0xfffbe4d8)),
+                          style: const TextStyle(color: color3),
                           controller: serialNumberController,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                             labelText: 'Ingrese el número de serie',
-                            labelStyle:
-                                const TextStyle(color: Color(0xfffbe4d8)),
-                            hintStyle:
-                                const TextStyle(color: Color(0xfffbe4d8)),
+                            labelStyle: const TextStyle(color: color3),
+                            hintStyle: const TextStyle(color: color3),
                             hintText: 'Número de serie',
                             suffixIcon: IconButton(
                               onPressed: () {
@@ -204,7 +204,7 @@ class ToolsAWSState extends State<ToolsAWS> {
                               },
                               icon: const Icon(
                                 Icons.delete_forever,
-                                color: Color(0xfffbe4d8),
+                                color: color3,
                               ),
                             ),
                             border: InputBorder.none,
@@ -220,20 +220,35 @@ class ToolsAWSState extends State<ToolsAWS> {
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton(
-                        onPressed: () {
-                          String topic =
-                              'tools/$productCode/${serialNumberController.text.trim()}';
-                          subToTopicMQTT(topic);
-                          listenToTopics();
-                          final data = {"alive": true};
-                          String msg = jsonEncode(data);
-                          registerActivity(
-                              productCode,
-                              serialNumberController.text.trim(),
-                              'Se envio via mqtt: $msg');
-                          sendMessagemqtt(topic, msg);
-                        },
-                        child: const Text('Verificar conexión equipo')),
+                      onPressed: () {
+                        String topic =
+                            'tools/$productCode/${serialNumberController.text.trim()}';
+                        subToTopicMQTT(topic);
+                        listenToTopics();
+                        final data = {"alive": true};
+                        String msg = jsonEncode(data);
+                        registerActivity(
+                            productCode,
+                            serialNumberController.text.trim(),
+                            'Se envio via mqtt: $msg');
+                        sendMessagemqtt(topic, msg);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: color4,
+                        backgroundColor: color1,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 16),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 5,
+                      ),
+                      child: const Text('Verificar conexión equipo'),
+                    ),
                     const SizedBox(
                       height: 10,
                     ),
@@ -242,342 +257,560 @@ class ToolsAWSState extends State<ToolsAWS> {
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  config = true;
-                                });
-                              },
-                              child: const Text('Parametros')),
+                            onPressed: () {
+                              setState(() {
+                                config = true;
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: color4,
+                              backgroundColor: color1,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 16),
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 5,
+                            ),
+                            child: const Text('Parametros'),
+                          ),
                           ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  tools = true;
-                                });
-                              },
-                              child: const Text('Comandos')),
+                            onPressed: () {
+                              setState(() {
+                                tools = true;
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: color4,
+                              backgroundColor: color1,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 16),
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 5,
+                            ),
+                            child: const Text('Comandos'),
+                          ),
                         ],
                       ),
                     ],
                     if (config) ...[
                       if (productCode != '' &&
                           serialNumberController.text != '') ...[
-                        const Text(
-                          'Owner actual del equipo:',
-                          textAlign: TextAlign.center,
-                          style: (TextStyle(
-                              fontSize: 20.0,
-                              color: Color(0xfffbe4d8),
-                              fontWeight: FontWeight.bold)),
-                        ),
-                        Text(
-                          owner == '' ? 'No hay owner registrado' : owner,
-                          textAlign: TextAlign.center,
-                          style: (const TextStyle(
-                              fontSize: 20.0,
-                              color: Color(0xFFdfb6b2),
-                              fontWeight: FontWeight.bold)),
-                        ),
-                        if (owner != '') ...[
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              putOwner(service, productCode, serialNumberController.text, '');
-                              registerActivity(
-                                  productCode,
-                                  serialNumberController.text.trim(),
-                                  'Se elimino el owner del equipo');
-                              setState(() {
-                                owner = '';
-                              });
-                            },
-                            child: const Text(
-                              'Eliminar Owner',
+                        const SizedBox(height: 20),
+
+                        // Card para el Owner
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.9,
+                          child: Card(
+                            color: color0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ),
-                        ],
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        if (secondaryAdmins.isEmpty) ...[
-                          const Text(
-                            'No hay administradores \nsecundarios para este equipo',
-                            textAlign: TextAlign.center,
-                            style: (TextStyle(
-                                fontSize: 20.0,
-                                color: Color(0xfffbe4d8),
-                                fontWeight: FontWeight.bold)),
-                          )
-                        ] else ...[
-                          const Text(
-                            'Administradores del equipo:',
-                            textAlign: TextAlign.center,
-                            style: (TextStyle(
-                                fontSize: 20.0,
-                                color: Color(0xfffbe4d8),
-                                fontWeight: FontWeight.bold)),
-                          ),
-                          for (int i = 0; i < secondaryAdmins.length; i++) ...[
-                            const Divider(),
-                            Align(
-                              alignment: AlignmentDirectional.centerStart,
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    IconButton(
+                            elevation: 4,
+                            margin: const EdgeInsets.symmetric(
+                                vertical: 10, horizontal: 5),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Owner Actual del Equipo:',
+                                    style: TextStyle(
+                                      fontSize: 18.0,
+                                      color: color4,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    owner == ''
+                                        ? 'No hay owner registrado'
+                                        : owner,
+                                    style: const TextStyle(
+                                      fontSize: 16.0,
+                                      color: color3,
+                                    ),
+                                  ),
+                                  if (owner != '') ...[
+                                    const SizedBox(height: 10),
+                                    ElevatedButton.icon(
                                       onPressed: () {
+                                        putOwner(service, productCode,
+                                            serialNumberController.text, '');
                                         registerActivity(
                                             productCode,
                                             serialNumberController.text.trim(),
-                                            'Se elimino el admin ${secondaryAdmins[i]} del equipo');
+                                            'Se eliminó el owner del equipo');
                                         setState(() {
-                                          secondaryAdmins
-                                              .remove(secondaryAdmins[i]);
+                                          owner = '';
                                         });
-                                        putSecondaryAdmins(
-                                            service,
-                                            productCode,
-                                            serialNumberController.text.trim(),
-                                            secondaryAdmins);
                                       },
                                       icon: const Icon(Icons.delete,
-                                          color: Colors.grey),
-                                    ),
-                                    const SizedBox(
-                                      width: 5,
-                                    ),
-                                    Text(
-                                      secondaryAdmins[i],
-                                      style: (const TextStyle(
-                                          fontSize: 20.0,
-                                          color: Color(0xFFdfb6b2),
-                                          fontWeight: FontWeight.normal)),
+                                          color: color4),
+                                      label: const Text(
+                                        'Eliminar Owner',
+                                        style: TextStyle(color: color4),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: color2,
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16, vertical: 8),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        elevation: 3,
+                                      ),
                                     ),
                                   ],
-                                ),
+                                ],
                               ),
-                            )
-                          ],
-                          const Divider(),
-                        ],
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        const Text(
-                          'Vencimiento beneficio\nAdministradores secundarios extra:',
-                          textAlign: TextAlign.center,
-                          style: (TextStyle(
-                              fontSize: 20.0,
-                              color: Color(0xfffbe4d8),
-                              fontWeight: FontWeight.bold)),
-                        ),
-                        Text(
-                          secAdmDate,
-                          textAlign: TextAlign.center,
-                          style: (const TextStyle(
-                              fontSize: 20.0,
-                              color: Color(0xFFdfb6b2),
-                              fontWeight: FontWeight.bold)),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                final TextEditingController dateController =
-                                    TextEditingController();
-                                return AlertDialog(
-                                  title: const Center(
-                                    child: Text(
-                                      'Especificar nueva fecha de vencimiento:',
-                                      style: TextStyle(
-                                          color: Colors.black,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                  content: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SizedBox(
-                                        width: 300,
-                                        child: TextField(
-                                          style: const TextStyle(
-                                              color: Colors.black),
-                                          controller: dateController,
-                                          keyboardType: TextInputType.number,
-                                          decoration: const InputDecoration(
-                                            hintText: 'aaaa/mm/dd',
-                                            hintStyle:
-                                                TextStyle(color: Colors.black),
-                                          ),
-                                          onChanged: (value) {
-                                            if (value.length > 10) {
-                                              dateController.text =
-                                                  value.substring(0, 10);
-                                            } else if (value.length == 4) {
-                                              dateController.text = '$value/';
-                                            } else if (value.length == 7) {
-                                              dateController.text = '$value/';
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        navigatorKey.currentState!.pop();
-                                      },
-                                      child: const Text('Cancelar'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        registerActivity(
-                                            productCode,
-                                            serialNumberController.text,
-                                            'Se modifico el vencimiento del beneficio "administradores secundarios extras"');
-                                        putDate(
-                                            service,
-                                            productCode,
-                                            serialNumberController.text.trim(),
-                                            dateController.text.trim(),
-                                            false);
-                                        setState(() {
-                                          secAdmDate =
-                                              dateController.text.trim();
-                                        });
-                                        navigatorKey.currentState!.pop();
-                                      },
-                                      child: const Text('Enviar fecha'),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          },
-                          child: const Text(
-                            'Modificar fecha',
+                            ),
                           ),
                         ),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        const Text(
-                          'Vencimiento beneficio\nAlquiler temporario:',
-                          textAlign: TextAlign.center,
-                          style: (TextStyle(
-                              fontSize: 20.0,
-                              color: Color(0xfffbe4d8),
-                              fontWeight: FontWeight.bold)),
-                        ),
-                        Text(
-                          atDate,
-                          textAlign: TextAlign.center,
-                          style: (const TextStyle(
-                              fontSize: 20.0,
-                              color: Color(0xFFdfb6b2),
-                              fontWeight: FontWeight.bold)),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                final TextEditingController dateController =
-                                    TextEditingController();
-                                return AlertDialog(
-                                  title: const Center(
-                                    child: Text(
-                                      'Especificar nueva fecha de vencimiento:',
-                                      style: TextStyle(
-                                          color: Colors.black,
-                                          fontWeight: FontWeight.bold),
+
+                        // Card para Administradores Secundarios
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.9,
+                          child: Card(
+                            color: color0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 4,
+                            margin: const EdgeInsets.symmetric(
+                                vertical: 10, horizontal: 5),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Administradores del Equipo:',
+                                    style: TextStyle(
+                                      fontSize: 18.0,
+                                      color: color4,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  content: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SizedBox(
-                                        width: 300,
-                                        child: TextField(
-                                          style: const TextStyle(
-                                              color: Colors.black),
-                                          controller: dateController,
-                                          keyboardType: TextInputType.number,
-                                          decoration: const InputDecoration(
-                                            hintText: 'aaaa/mm/dd',
-                                            hintStyle:
-                                                TextStyle(color: Colors.black),
+                                  const SizedBox(height: 6),
+                                  secondaryAdmins.isEmpty
+                                      ? const Text(
+                                          'No hay administradores secundarios para este equipo',
+                                          style: TextStyle(
+                                            fontSize: 16.0,
+                                            color: color3,
                                           ),
-                                          onChanged: (value) {
-                                            if (value.length > 10) {
-                                              dateController.text =
-                                                  value.substring(0, 10);
-                                            } else if (value.length == 4) {
-                                              dateController.text = '$value/';
-                                            } else if (value.length == 7) {
-                                              dateController.text = '$value/';
-                                            }
+                                        )
+                                      : ListView.builder(
+                                          shrinkWrap: true,
+                                          physics:
+                                              const NeverScrollableScrollPhysics(),
+                                          itemCount: secondaryAdmins.length,
+                                          itemBuilder: (context, index) {
+                                            return ListTile(
+                                              contentPadding: EdgeInsets.zero,
+                                              leading: const Icon(
+                                                  Icons.admin_panel_settings,
+                                                  color: color3),
+                                              title: Text(
+                                                secondaryAdmins[index],
+                                                style: const TextStyle(
+                                                  fontSize: 16.0,
+                                                  color: color3,
+                                                ),
+                                              ),
+                                              trailing: IconButton(
+                                                icon: const Icon(Icons.delete,
+                                                    color: color3),
+                                                onPressed: () {
+                                                  registerActivity(
+                                                      productCode,
+                                                      serialNumberController
+                                                          .text
+                                                          .trim(),
+                                                      'Se eliminó el admin ${secondaryAdmins[index]} del equipo');
+                                                  setState(() {
+                                                    secondaryAdmins
+                                                        .removeAt(index);
+                                                  });
+                                                  putSecondaryAdmins(
+                                                      service,
+                                                      productCode,
+                                                      serialNumberController
+                                                          .text
+                                                          .trim(),
+                                                      secondaryAdmins);
+                                                },
+                                              ),
+                                            );
                                           },
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        navigatorKey.currentState!.pop();
-                                      },
-                                      child: const Text('Cancelar'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        registerActivity(
-                                            productCode,
-                                            serialNumberController.text,
-                                            'Se modifico el vencimiento del beneficio "alquiler temporario"');
-                                        putDate(
-                                            service,
-                                            productCode,
-                                            serialNumberController.text.trim(),
-                                            dateController.text.trim(),
-                                            true);
-                                        setState(() {
-                                          atDate = dateController.text.trim();
-                                        });
-                                        navigatorKey.currentState!.pop();
-                                      },
-                                      child: const Text('Enviar fecha'),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          },
-                          child: const Text(
-                            'Modificar fecha',
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                        const SizedBox(
-                          height: 20,
+
+                        // Card para Vencimiento Beneficios
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.9,
+                          child: Card(
+                            color: color0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 4,
+                            margin: const EdgeInsets.symmetric(
+                                vertical: 10, horizontal: 5),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Vencimiento Administradores Secundarios Extra
+                                  const Text(
+                                    'Vencimiento Beneficio\nAdministradores Secundarios Extra:',
+                                    style: TextStyle(
+                                      fontSize: 18.0,
+                                      color: color4,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    secAdmDate,
+                                    style: const TextStyle(
+                                      fontSize: 16.0,
+                                      color: color3,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      showDialog<void>(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          final TextEditingController
+                                              dateController =
+                                              TextEditingController();
+                                          return AlertDialog(
+                                            backgroundColor: color1,
+                                            title: const Text(
+                                              'Especificar nueva fecha de vencimiento:',
+                                              style: TextStyle(
+                                                  color: color4,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                            content: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                SizedBox(
+                                                  width: 300,
+                                                  child: TextField(
+                                                    style: const TextStyle(
+                                                        color: color4),
+                                                    controller: dateController,
+                                                    keyboardType:
+                                                        TextInputType.number,
+                                                    decoration:
+                                                        const InputDecoration(
+                                                      hintText: 'aaaa/mm/dd',
+                                                      hintStyle: TextStyle(
+                                                          color: color3),
+                                                      filled: true,
+                                                      fillColor: color2,
+                                                      border:
+                                                          OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius.all(
+                                                                Radius.circular(
+                                                                    8)),
+                                                        borderSide:
+                                                            BorderSide.none,
+                                                      ),
+                                                    ),
+                                                    onChanged: (value) {
+                                                      if (value.length > 10) {
+                                                        dateController.text =
+                                                            value.substring(
+                                                                0, 10);
+                                                        dateController
+                                                                .selection =
+                                                            TextSelection
+                                                                .fromPosition(
+                                                                    const TextPosition(
+                                                                        offset:
+                                                                            10));
+                                                      } else if (value.length ==
+                                                              4 ||
+                                                          value.length == 7) {
+                                                        dateController.text =
+                                                            '$value/';
+                                                        dateController
+                                                                .selection =
+                                                            TextSelection.fromPosition(
+                                                                TextPosition(
+                                                                    offset:
+                                                                        value.length +
+                                                                            1));
+                                                      }
+                                                    },
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  navigatorKey.currentState!
+                                                      .pop();
+                                                },
+                                                child: const Text(
+                                                  'Cancelar',
+                                                  style:
+                                                      TextStyle(color: color3),
+                                                ),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  registerActivity(
+                                                      productCode,
+                                                      serialNumberController
+                                                          .text,
+                                                      'Se modificó el vencimiento del beneficio "administradores secundarios extras"');
+                                                  putDate(
+                                                      service,
+                                                      productCode,
+                                                      serialNumberController
+                                                          .text
+                                                          .trim(),
+                                                      dateController.text
+                                                          .trim(),
+                                                      false);
+                                                  setState(() {
+                                                    secAdmDate = dateController
+                                                        .text
+                                                        .trim();
+                                                  });
+                                                  navigatorKey.currentState!
+                                                      .pop();
+                                                },
+                                                child: const Text(
+                                                  'Enviar fecha',
+                                                  style:
+                                                      TextStyle(color: color4),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    },
+                                    icon: const Icon(Icons.edit, color: color4),
+                                    label: const Text(
+                                      'Modificar Fecha',
+                                      style: TextStyle(color: color4),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: color2,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 8),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      elevation: 3,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+
+                                  // Vencimiento Alquiler Temporario
+                                  const Text(
+                                    'Vencimiento Beneficio\nAlquiler Temporario:',
+                                    style: TextStyle(
+                                      fontSize: 18.0,
+                                      color: color4,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    atDate,
+                                    style: const TextStyle(
+                                      fontSize: 16.0,
+                                      color: color3,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      showDialog<void>(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          final TextEditingController
+                                              dateController =
+                                              TextEditingController();
+                                          return AlertDialog(
+                                            backgroundColor: color1,
+                                            title: const Text(
+                                              'Especificar nueva fecha de vencimiento:',
+                                              style: TextStyle(
+                                                  color: color4,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                            content: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                SizedBox(
+                                                  width: 300,
+                                                  child: TextField(
+                                                    style: const TextStyle(
+                                                        color: color4),
+                                                    controller: dateController,
+                                                    keyboardType:
+                                                        TextInputType.number,
+                                                    decoration:
+                                                        const InputDecoration(
+                                                      hintText: 'aaaa/mm/dd',
+                                                      hintStyle: TextStyle(
+                                                          color: color3),
+                                                      filled: true,
+                                                      fillColor: color2,
+                                                      border:
+                                                          OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius.all(
+                                                                Radius.circular(
+                                                                    8)),
+                                                        borderSide:
+                                                            BorderSide.none,
+                                                      ),
+                                                    ),
+                                                    onChanged: (value) {
+                                                      if (value.length > 10) {
+                                                        dateController.text =
+                                                            value.substring(
+                                                                0, 10);
+                                                        dateController
+                                                                .selection =
+                                                            TextSelection
+                                                                .fromPosition(
+                                                                    const TextPosition(
+                                                                        offset:
+                                                                            10));
+                                                      } else if (value.length ==
+                                                              4 ||
+                                                          value.length == 7) {
+                                                        dateController.text =
+                                                            '$value/';
+                                                        dateController
+                                                                .selection =
+                                                            TextSelection.fromPosition(
+                                                                TextPosition(
+                                                                    offset:
+                                                                        value.length +
+                                                                            1));
+                                                      }
+                                                    },
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  navigatorKey.currentState!
+                                                      .pop();
+                                                },
+                                                child: const Text(
+                                                  'Cancelar',
+                                                  style:
+                                                      TextStyle(color: color3),
+                                                ),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  registerActivity(
+                                                      productCode,
+                                                      serialNumberController
+                                                          .text,
+                                                      'Se modificó el vencimiento del beneficio "alquiler temporario"');
+                                                  putDate(
+                                                      service,
+                                                      productCode,
+                                                      serialNumberController
+                                                          .text
+                                                          .trim(),
+                                                      dateController.text
+                                                          .trim(),
+                                                      true);
+                                                  setState(() {
+                                                    atDate = dateController.text
+                                                        .trim();
+                                                  });
+                                                  navigatorKey.currentState!
+                                                      .pop();
+                                                },
+                                                child: const Text(
+                                                  'Enviar fecha',
+                                                  style:
+                                                      TextStyle(color: color4),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    },
+                                    icon: const Icon(Icons.edit, color: color4),
+                                    label: const Text(
+                                      'Modificar Fecha',
+                                      style: TextStyle(color: color4),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: color2,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 8),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      elevation: 3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ] else ...[
-                        const CircularProgressIndicator(),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        const Text(
-                          'Esperando a que se\n seleccione un equipo',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: Color(0xfffbe4d8),
+                        const Center(
+                          child: Column(
+                            children: [
+                              CircularProgressIndicator(
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(color3),
+                              ),
+                              SizedBox(height: 10),
+                              Text(
+                                'Esperando a que se\n seleccione un equipo',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: color0,
+                                ),
+                              ),
+                            ],
                           ),
                         )
                       ]
@@ -586,131 +819,201 @@ class ToolsAWSState extends State<ToolsAWS> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          SizedBox(
-                            width: 115,
-                            child: DropdownButtonFormField<String>(
-                              decoration: const InputDecoration(
-                                labelText: 'Comando:',
-                                labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                                hintStyle: TextStyle(color: Color(0xfffbe4d8)),
-                                // fillColor: Color(0xfffbe4d8),
+                          Expanded(
+                            flex: 3,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12.0, vertical: 8.0),
+                              decoration: BoxDecoration(
+                                color: color0,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: color4, width: 1),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: color4.withOpacity(0.2),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
                               ),
-                              dropdownColor: const Color(0xff190019),
-                              items: <String>[
-                                '0',
-                                '2',
-                                '4',
-                                '5',
-                                '6'
-                              ].map<DropdownMenuItem<String>>((String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value,
+                              child: DropdownButtonFormField<String>(
+                                decoration: const InputDecoration(
+                                  labelText: 'Comando:',
+                                  labelStyle: TextStyle(color: color4),
+                                  hintStyle: TextStyle(color: color4),
+                                  border: InputBorder.none,
+                                ),
+                                dropdownColor: color0,
+                                items: <String>[
+                                  '0',
+                                  '2',
+                                  '4',
+                                  '5',
+                                  '6'
+                                ].map<DropdownMenuItem<String>>((String value) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Text(
+                                      value,
                                       style: const TextStyle(
-                                        color: Color(0xfffbe4d8),
-                                      )),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  commandText = value!;
-                                  contentController.clear();
-                                });
-                                printLog(contentType(commandText));
-                              },
+                                        color: color4,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    commandText = value!;
+                                    contentController.clear();
+                                  });
+                                  printLog(contentType(commandText));
+                                },
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 20),
-                          SizedBox(
-                            width: 200,
-                            child: TextField(
-                              style: const TextStyle(color: Color(0xfffbe4d8)),
-                              controller: contentController,
-                              maxLines: null,
-                              keyboardType: contentType(commandText),
-                              decoration: InputDecoration(
-                                labelText: 'Contenido:',
-                                hintText: hintAWS(commandText),
-                                labelStyle:
-                                    const TextStyle(color: Color(0xfffbe4d8)),
-                                hintStyle:
-                                    const TextStyle(color: Color(0xfffbe4d8)),
-                                suffixIcon: commandText == '6'
-                                    ? IconButton(
-                                        onPressed: () {
-                                          showDialog<void>(
-                                            context: context,
-                                            barrierDismissible: true,
-                                            builder: (BuildContext context) {
-                                              return SimpleDialog(
-                                                title: const Text(
-                                                    '¿Que vas a envíar?'),
-                                                children: <Widget>[
-                                                  SimpleDialogOption(
-                                                    onPressed: () {
-                                                      Navigator.of(context)
-                                                          .pop();
-                                                      contentController.clear();
-                                                      key = 0;
-                                                      printLog(
-                                                          'Amazon CA seleccionada');
-                                                      setState(() {});
-                                                    },
-                                                    child:
-                                                        const Text('Amazon CA'),
-                                                  ),
-                                                  SimpleDialogOption(
-                                                    onPressed: () {
-                                                      Navigator.of(context)
-                                                          .pop();
-                                                      contentController.clear();
-                                                      key = 1;
-                                                      printLog(
-                                                          'Device Cert. seleccionada');
-                                                      setState(() {});
-                                                    },
-                                                    child: const Text(
-                                                        'Device Cert.'),
-                                                  ),
-                                                  SimpleDialogOption(
-                                                    onPressed: () {
-                                                      Navigator.of(context)
-                                                          .pop();
-                                                      contentController.clear();
-                                                      key = 2;
-                                                      printLog(
-                                                          'Private key seleccionada');
-                                                      setState(() {});
-                                                    },
-                                                    child: const Text(
-                                                        'Private key'),
-                                                  ),
-                                                ],
-                                              );
-                                            },
-                                          );
-                                        },
-                                        icon: const Icon(
-                                          Icons.paste,
-                                          color: Color(0xfffbe4d8),
-                                        ),
-                                      )
-                                    : null,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 7,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12.0, vertical: 8.0),
+                              decoration: BoxDecoration(
+                                color: color0,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: color4, width: 1),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: color4.withOpacity(0.2),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
                               ),
-                              onChanged: (value) {
-                                if (commandText == '6') {
-                                  content = contentController.text.split('\n');
-                                  contentController.text = 'Cargado';
-                                }
-                              },
+                              child: TextField(
+                                style: const TextStyle(color: color4),
+                                controller: contentController,
+                                maxLines: null,
+                                keyboardType: contentType(commandText),
+                                decoration: InputDecoration(
+                                  labelText: 'Contenido:',
+                                  hintText: hintAWS(commandText),
+                                  labelStyle: const TextStyle(color: color4),
+                                  hintStyle: const TextStyle(color: color4),
+                                  border: InputBorder.none,
+                                  suffixIcon: commandText == '6'
+                                      ? IconButton(
+                                          onPressed: () {
+                                            showDialog<void>(
+                                              context: context,
+                                              barrierDismissible: true,
+                                              builder: (BuildContext context) {
+                                                return SimpleDialog(
+                                                  backgroundColor: color0,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
+                                                  ),
+                                                  title: const Center(
+                                                    child: Text(
+                                                      '¿Qué vas a enviar?',
+                                                      style: TextStyle(
+                                                        color: color4,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 20,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  children: <Widget>[
+                                                    const Divider(
+                                                        color: color4),
+                                                    SimpleDialogOption(
+                                                      onPressed: () {
+                                                        Navigator.of(context)
+                                                            .pop();
+                                                        contentController
+                                                            .clear();
+                                                        key = 0;
+                                                        printLog(
+                                                            'Amazon CA seleccionada');
+                                                        setState(() {});
+                                                      },
+                                                      child: const Text(
+                                                        'Amazon CA',
+                                                        style: TextStyle(
+                                                          color: color4,
+                                                          fontSize: 18,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    SimpleDialogOption(
+                                                      onPressed: () {
+                                                        Navigator.of(context)
+                                                            .pop();
+                                                        contentController
+                                                            .clear();
+                                                        key = 1;
+                                                        printLog(
+                                                            'Device Cert. seleccionada');
+                                                        setState(() {});
+                                                      },
+                                                      child: const Text(
+                                                        'Device Cert.',
+                                                        style: TextStyle(
+                                                          color: color4,
+                                                          fontSize: 18,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    SimpleDialogOption(
+                                                      onPressed: () {
+                                                        Navigator.of(context)
+                                                            .pop();
+                                                        contentController
+                                                            .clear();
+                                                        key = 2;
+                                                        printLog(
+                                                            'Private key seleccionada');
+                                                        setState(() {});
+                                                      },
+                                                      child: const Text(
+                                                        'Private key',
+                                                        style: TextStyle(
+                                                          color: color4,
+                                                          fontSize: 18,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                              },
+                                            );
+                                          },
+                                          icon: const Icon(
+                                            Icons.paste,
+                                            color: color4,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                                onChanged: (value) {
+                                  if (commandText == '6') {
+                                    content =
+                                        contentController.text.split('\n');
+                                    contentController.text = 'Cargado';
+                                  }
+                                },
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(
-                        height: 20,
-                      ),
-                      ElevatedButton(
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
                           onPressed: () {
                             String topic =
                                 'tools/$productCode/${serialNumberController.text.trim()}';
@@ -723,7 +1026,6 @@ class ToolsAWSState extends State<ToolsAWS> {
                                   'content': '$key#$line'
                                 });
                                 printLog(msg);
-
                                 sendMessagemqtt(topic, msg);
                               }
                               String fun = key == 0
@@ -734,7 +1036,7 @@ class ToolsAWSState extends State<ToolsAWS> {
                               registerActivity(
                                   productCode,
                                   serialNumberController.text.trim(),
-                                  'Se envio via mqtt un $fun');
+                                  'Se envió vía MQTT un $fun');
                               contentController.clear();
                             } else {
                               String msg = jsonEncode({
@@ -744,57 +1046,86 @@ class ToolsAWSState extends State<ToolsAWS> {
                               registerActivity(
                                   productCode,
                                   serialNumberController.text.trim(),
-                                  'Se envio via mqtt: $msg');
+                                  'Se envió vía MQTT: $msg');
                               sendMessagemqtt(topic, msg);
                               contentController.clear();
                             }
                           },
-                          child: const Text('Enviar comando')),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Container(
-                        width: 300,
-                        height: 300,
-                        decoration: BoxDecoration(
-                          color: const Color(0xff2b124c),
-                          borderRadius: BorderRadius.circular(20),
-                          border: const Border(
-                            bottom:
-                                BorderSide(color: Color(0xff854f6c), width: 5),
-                            right:
-                                BorderSide(color: Color(0xff854f6c), width: 5),
-                            left:
-                                BorderSide(color: Color(0xff854f6c), width: 5),
-                            top: BorderSide(color: Color(0xff854f6c), width: 5),
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: color4,
+                            backgroundColor: color2,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            textStyle: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 5,
                           ),
+                          child: const Text('Enviar comando'),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16.0),
+                        decoration: BoxDecoration(
+                          color: color0,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: color4.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
                               'Respuesta:',
                               style: TextStyle(
-                                  color: Color(0xFFdfb6b2),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 30),
-                              textAlign: TextAlign.center,
+                                color: color4,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 24,
+                              ),
+                              textAlign: TextAlign.left,
                             ),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                            Text(
-                              textToShow,
-                              style: const TextStyle(
-                                  color: Color(0xFFdfb6b2), fontSize: 30),
-                              textAlign: TextAlign.center,
+                            const SizedBox(height: 10),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12.0),
+                              decoration: BoxDecoration(
+                                color: color0,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: textToShow.isNotEmpty
+                                  ? Text(
+                                      textToShow,
+                                      style: const TextStyle(
+                                        color: Color(0xFFdfb6b2),
+                                        fontSize: 18,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    )
+                                  : const Text(
+                                      'No hubo respuesta.',
+                                      style: TextStyle(
+                                        color: color4,
+                                        fontSize: 18,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
                             ),
                           ],
                         ),
-                      )
+                      ),
                     ],
-                  ],
-                ),
-              ),
+                  ]),
             );
           },
         ));

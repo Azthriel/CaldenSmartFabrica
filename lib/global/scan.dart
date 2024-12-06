@@ -140,112 +140,141 @@ class ScanPageState extends State<ScanPage> {
     }
   }
 
-//! Visual
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: color4,
-      appBar: AppBar(
-          backgroundColor: color1,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(65),
+        child: AppBar(
+          backgroundColor: color4,
           foregroundColor: color4,
-          title: AnimSearchBar(
-            width: MediaQuery.of(context).size.width * 0.8,
-            textController: searchController,
-            onSuffixTap: () {
-              setState(() {
-                searchController.clear();
-                filteredDevices = devices;
-              });
-            },
-            onSubmitted: (value) {
-              setState(() {
-                filteredDevices = devices
-                    .where((device) => device.platformName
-                        .toLowerCase()
-                        .contains(value.toLowerCase()))
-                    .toList();
-              });
-            },
-            rtl: false,
-            autoFocus: true,
-            helpText: "",
-            suffixIcon: const Icon(
-              Icons.clear,
-              color: color3,
-            ),
-            prefixIcon: toggle == 1
-                ? const Icon(
-                    Icons.arrow_back_ios,
-                    color: color3,
-                  )
-                : const Icon(
-                    Icons.search,
-                    color: color3,
-                  ),
-            animationDurationInMilli: 400,
-            color: color0,
-            textFieldColor: color0,
-            searchIconColor: color3,
-            textFieldIconColor: color3,
-            style: const TextStyle(
-              color: color3,
-            ),
-            onTap: () {
-              setState(() {
-                toggle = 1;
-              });
-            },
-          )),
-      body: EasyRefresh(
-        controller: _controller,
-        header: const ClassicHeader(
-          dragText: 'Desliza para reescanear',
-          readyText: 'Reescaneando dispositivos...',
-          processedText: 'Reescaneo completo',
-          textStyle: TextStyle(color: color0),
-          iconTheme: IconThemeData(color: color0),
-        ),
-        onRefresh: () async {
-          await Future.delayed(const Duration(seconds: 2));
-          await FlutterBluePlus.stopScan();
-          setState(() {
-            devices.clear();
-            filteredDevices.clear();
-          });
-          scan();
-          _controller.finishRefresh();
-        },
-        child: ListView.builder(
-          itemCount: filteredDevices.length,
-          itemBuilder: (context, index) {
-            return Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-              child: ListTile(
-                tileColor: color0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                leading: const Icon(Icons.bluetooth, color: color4, size: 30),
-                title: Text(
-                  filteredDevices[index].platformName,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: color4,
-                  ),
-                ),
-                subtitle: Text(
-                  '${filteredDevices[index].remoteId}',
-                  style: const TextStyle(color: color4, fontSize: 14),
-                ),
-                trailing: const Icon(Icons.chevron_right, color: color4),
-                onTap: () => connectToDevice(filteredDevices[index]),
+          elevation: 0,
+          title: Padding(
+            padding: const EdgeInsets.only(top: 10.0),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              decoration: BoxDecoration(
+                color: color0,
+                borderRadius: BorderRadius.circular(25.0),
               ),
-            );
-          },
+              child: TextField(
+                controller: searchController,
+                style: const TextStyle(
+                  color: color3,
+                ),
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12.0),
+                  hintText: "Buscar...",
+                  hintStyle: TextStyle(
+                    color: color3.withOpacity(0.7),
+                  ),
+                  border: InputBorder.none,
+                  suffixIcon: IconButton(
+                    icon: const Icon(
+                      Icons.clear,
+                      color: color3,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        searchController.clear();
+                        filteredDevices = devices;
+                      });
+                    },
+                  ),
+                ),
+                autofocus: false,
+                onSubmitted: (value) {
+                  setState(() {
+                    filteredDevices = devices
+                        .where(
+                          (device) =>
+                              device.platformName.toLowerCase().contains(
+                                    value.toLowerCase(),
+                                  ),
+                        )
+                        .toList();
+                  });
+                },
+              ),
+            ),
+          ),
         ),
       ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Container(),
+              ),
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.7,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return EasyRefresh(
+                      controller: _controller,
+                      header: const ClassicHeader(
+                        dragText: 'Desliza para escanear',
+                        readyText: 'Escaneando dispositivos...',
+                        processedText: 'Escaneo completo',
+                        textStyle: TextStyle(color: color0),
+                        iconTheme: IconThemeData(color: color0),
+                      ),
+                      onRefresh: () async {
+                        await Future.delayed(const Duration(seconds: 2));
+                        await FlutterBluePlus.stopScan();
+                        setState(() {
+                          devices.clear();
+                          filteredDevices.clear();
+                        });
+                        scan();
+                        _controller.finishRefresh();
+                      },
+                      child: ListView.builder(
+                        itemCount: filteredDevices.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0, vertical: 10.0),
+                            child: ListTile(
+                              tileColor: color0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              leading: const Icon(Icons.bluetooth,
+                                  color: color4, size: 30),
+                              title: Text(
+                                filteredDevices[index].platformName,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: color4,
+                                ),
+                              ),
+                              subtitle: Text(
+                                '${filteredDevices[index].remoteId}',
+                                style: const TextStyle(
+                                    color: color4, fontSize: 14),
+                              ),
+                              trailing: const Icon(Icons.chevron_right,
+                                  color: color4),
+                              onTap: () =>
+                                  connectToDevice(filteredDevices[index]),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      resizeToAvoidBottomInset: true,
     );
   }
 }
