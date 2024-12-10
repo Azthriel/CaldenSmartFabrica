@@ -46,13 +46,13 @@ class LoadState extends State<LoadingPage> {
           case '020010_IOT':
             navigatorKey.currentState?.pushReplacementNamed('/domotica');
             break;
-          case '024011':
+          case '024011_IOT':
             navigatorKey.currentState?.pushReplacementNamed('/roller');
             break;
-          case '027170':
+          case '027170_IOT':
             navigatorKey.currentState?.pushReplacementNamed('/patito');
             break;
-          case '027313':
+          case '027313_IOT':
             navigatorKey.currentState?.pushReplacementNamed('/rele');
             break;
         }
@@ -182,7 +182,7 @@ class LoadState extends State<LoadingPage> {
           children: [
             // GIF cargando
             Image.asset(
-              'assets/Loading.gif',
+              EasterEggs.loading(legajoConectado),
               width: 150,
               height: 150,
               fit: BoxFit.contain,

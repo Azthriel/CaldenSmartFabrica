@@ -27,44 +27,46 @@ class ToolsPageState extends State<ToolsPage> {
     }
   }
 
-  //!Visual
+  //! Visual
   @override
   Widget build(BuildContext context) {
+    double bottomBarHeight = kBottomNavigationBarHeight;
     return SingleChildScrollView(
       child: Center(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(height: 20),
             const Text.rich(
               TextSpan(
                 text: 'Número de serie',
                 style: TextStyle(
-                    fontSize: 30.0, color: color0, fontWeight: FontWeight.bold),
+                  fontSize: 30.0,
+                  color: color1,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             Text.rich(
               TextSpan(
                 text: DeviceManager.extractSerialNumber(deviceName),
                 style: const TextStyle(
-                    fontSize: 30.0, color: color0, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 50),
-            SizedBox(
-              width: 300,
-              child: TextField(
-                keyboardType: TextInputType.number,
-                style: const TextStyle(color: color0),
-                controller: textController,
-                decoration: const InputDecoration(
-                  labelText: 'Introducir nuevo numero de serie',
-                  labelStyle: TextStyle(color: color0),
+                  fontSize: 30.0,
+                  color: color0,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
+            const SizedBox(height: 10),
+            buildTextField(
+              controller: textController,
+              label: 'Introducir nuevo numero de serie',
+              hint: 'Nuevo número de serie',
+              onSubmitted: (text) {},
+              widthFactor: 0.8,
+              keyboard: TextInputType.number,
+            ),
+            buildButton(
+              text: 'Enviar',
               onPressed: () {
                 registerActivity(
                   DeviceManager.getProductCode(deviceName),
@@ -73,87 +75,41 @@ class ToolsPageState extends State<ToolsPage> {
                 );
                 sendDataToDevice();
               },
-              style: ButtonStyle(
-                shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                  RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18.0),
-                  ),
-                ),
-              ),
-              child: const Text('Enviar'),
             ),
-            const SizedBox(height: 20),
-            const Text.rich(
-              TextSpan(
-                text: 'Código de producto:',
-                style: TextStyle(
-                    fontSize: 20.0, color: color0, fontWeight: FontWeight.bold),
-              ),
+            const SizedBox(height: 10),
+            buildText(
+              text:
+                  'Código de producto: ${DeviceManager.getProductCode(deviceName)}',
+              fontSize: 20.0,
+              fontWeight: FontWeight.bold,
+              widthFactor: 0.8,
             ),
-            Text.rich(
-              TextSpan(
-                text: DeviceManager.getProductCode(deviceName),
-                style: const TextStyle(
-                    fontSize: 20.0, color: color0, fontWeight: FontWeight.bold),
-              ),
+            buildText(
+              text: 'Versión de software del módulo IOT: $softwareVersion',
+              fontSize: 20.0,
+              fontWeight: FontWeight.bold,
+              widthFactor: 0.8,
             ),
-            const SizedBox(height: 20),
-            const Text.rich(
-              TextSpan(
-                text: 'Version de software del modulo IOT:',
-                style: TextStyle(
-                    fontSize: 20.0, color: color0, fontWeight: FontWeight.bold),
-              ),
+            buildText(
+              text: 'Versión de hardware del módulo IOT: $hardwareVersion',
+              fontSize: 20.0,
+              fontWeight: FontWeight.bold,
+              widthFactor: 0.8,
             ),
-            Text.rich(
-              TextSpan(
-                text: softwareVersion,
-                style: const TextStyle(
-                  fontSize: 20.0,
-                  color: color0,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const SizedBox(height: 15),
-            const Text.rich(
-              TextSpan(
-                text: 'Version de hardware del modulo IOT:',
-                style: TextStyle(
-                  fontSize: 20.0,
-                  color: color0,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            Text.rich(
-              TextSpan(
-                text: hardwareVersion,
-                style: (const TextStyle(
-                    fontSize: 20.0,
-                    color: color0,
-                    fontWeight: FontWeight.bold)),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
+            buildButton(
+              text: 'Borrar NVS',
               onPressed: () {
                 registerActivity(
-                    DeviceManager.getProductCode(deviceName),
-                    DeviceManager.extractSerialNumber(deviceName),
-                    'Se borró la NVS de este equipo...');
+                  DeviceManager.getProductCode(deviceName),
+                  DeviceManager.extractSerialNumber(deviceName),
+                  'Se borró la NVS de este equipo...',
+                );
                 myDevice.toolsUuid.write(
-                    '${DeviceManager.getProductCode(deviceName)}[0](1)'
-                        .codeUnits);
+                    '${DeviceManager.getProductCode(deviceName)} '.codeUnits);
               },
-              style: ButtonStyle(
-                shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                  RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18.0),
-                  ),
-                ),
-              ),
-              child: const Text('Borrar NVS'),
+            ),
+            Padding(
+              padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
             ),
           ],
         ),

@@ -39,169 +39,93 @@ class CredsTabState extends State<CredsTab> {
 
   @override
   Widget build(BuildContext context) {
+    double bottomBarHeight = kBottomNavigationBarHeight;
     return Scaffold(
-      backgroundColor: const Color(0xff190019),
+      backgroundColor: color4,
       body: Center(
         child: SingleChildScrollView(
           scrollDirection: Axis.vertical,
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: '¿Thing cargada? ',
-                      style: TextStyle(
-                        color: Color(0xfffbe4d8),
-                        fontSize: 20,
-                      ),
+              buildText(
+                text: '¿Thing cargada? ${awsInit ? 'SI' : 'NO'}',
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: awsInit ? color4 : const Color(0xffFF0000),
+              ),
+              const SizedBox(height: 10),
+              buildTextField(
+                controller: amazonCAController,
+                label: 'Ingresa Amazon CA cert',
+                hint: 'Introduce el certificado Amazon CA',
+                onSubmitted: (text) {},
+                onChanged: (value) {
+                  amazonCA = amazonCAController.text;
+                  amazonCAController.text = 'Cargado';
+                },
+              ),
+              const SizedBox(height: 10),
+              buildTextField(
+                controller: privateKeyController,
+                label: 'Ingresa la private Key',
+                hint: 'Introduce la private key',
+                onSubmitted: (text) {},
+                onChanged: (value) {
+                  privateKey = privateKeyController.text;
+                  privateKeyController.text = 'Cargado';
+                },
+              ),
+              const SizedBox(height: 10),
+              buildTextField(
+                controller: deviceCertController,
+                label: 'Ingresa device Cert',
+                hint: 'Introduce el certificado del dispositivo',
+                onSubmitted: (text) {},
+                onChanged: (value) {
+                  deviceCert = deviceCertController.text;
+                  deviceCertController.text = 'Cargado';
+                },
+              ),
+              const SizedBox(height: 10),
+              sending
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        EasterEggs.things(legajoConectado),
+                        const LinearProgressIndicator(),
+                      ],
+                    )
+                  : buildButton(
+                      text: 'Enviar certificados',
+                      onPressed: () async {
+                        printLog(amazonCA);
+                        printLog(privateKey);
+                        printLog(deviceCert);
+                        if (amazonCA != null &&
+                            privateKey != null &&
+                            deviceCert != null) {
+                          printLog('Estan todos anashe');
+                          registerActivity(
+                            DeviceManager.getProductCode(deviceName),
+                            DeviceManager.extractSerialNumber(deviceName),
+                            'Se asignó credenciales de AWS al equipo',
+                          );
+                          setState(() {
+                            sending = true;
+                          });
+                          await writeLarge(amazonCA!, 0, deviceName);
+                          await writeLarge(deviceCert!, 1, deviceName);
+                          await writeLarge(privateKey!, 2, deviceName);
+                          setState(() {
+                            sending = false;
+                          });
+                        }
+                      },
                     ),
-                    TextSpan(
-                      text: awsInit ? 'SI' : 'NO',
-                      style: TextStyle(
-                        color: awsInit
-                            ? const Color(0xff854f6c)
-                            : const Color(0xffFF0000),
-                        fontSize: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 30),
-              SizedBox(
-                width: 300,
-                child: TextField(
-                  controller: amazonCAController,
-                  keyboardType: TextInputType.multiline,
-                  maxLines: null,
-                  style: const TextStyle(color: Color(0xfffbe4d8)),
-                  decoration: InputDecoration(
-                    label: const Text('Ingresa Amazon CA cert'),
-                    labelStyle: const TextStyle(color: Color(0xfffbe4d8)),
-                    hintStyle: const TextStyle(color: Color(0xfffbe4d8)),
-                    suffixIcon: IconButton(
-                        onPressed: () {
-                          amazonCAController.clear();
-                        },
-                        icon: const Icon(Icons.delete)),
-                  ),
-                  onChanged: (value) {
-                    amazonCA = amazonCAController.text;
-                    amazonCAController.text = 'Cargado';
-                  },
-                ),
-              ),
-              const SizedBox(
-                height: 30,
-              ),
-              SizedBox(
-                width: 300,
-                child: TextField(
-                  controller: privateKeyController,
-                  keyboardType: TextInputType.multiline,
-                  maxLines: null,
-                  style: const TextStyle(color: Color(0xfffbe4d8)),
-                  decoration: InputDecoration(
-                    label: const Text('Ingresa la private Key'),
-                    labelStyle: const TextStyle(color: Color(0xfffbe4d8)),
-                    hintStyle: const TextStyle(color: Color(0xfffbe4d8)),
-                    suffixIcon: IconButton(
-                        onPressed: () {
-                          privateKeyController.clear();
-                        },
-                        icon: const Icon(Icons.delete)),
-                  ),
-                  onChanged: (value) {
-                    privateKey = privateKeyController.text;
-                    privateKeyController.text = 'Cargado';
-                  },
-                ),
-              ),
-              const SizedBox(
-                height: 30,
-              ),
-              SizedBox(
-                width: 300,
-                child: TextField(
-                  controller: deviceCertController,
-                  keyboardType: TextInputType.multiline,
-                  maxLines: null,
-                  style: const TextStyle(color: Color(0xfffbe4d8)),
-                  decoration: InputDecoration(
-                    label: const Text('Ingresa device Cert'),
-                    labelStyle: const TextStyle(color: Color(0xfffbe4d8)),
-                    hintStyle: const TextStyle(color: Color(0xfffbe4d8)),
-                    suffixIcon: IconButton(
-                        onPressed: () {
-                          deviceCertController.clear();
-                        },
-                        icon: const Icon(Icons.delete)),
-                  ),
-                  onChanged: (value) {
-                    deviceCert = deviceCertController.text;
-                    deviceCertController.text = 'Cargado';
-                  },
-                ),
-              ),
-              const SizedBox(
-                height: 30,
-              ),
-              SizedBox(
-                width: 300,
-                child: sending
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          legajoConectado == '1860'
-                              ? Image.asset('assets/Mecha.gif')
-                              : Image.asset('assets/Vaca.webp'),
-                          const LinearProgressIndicator(),
-                        ],
-                      )
-                    : ElevatedButton(
-                        onPressed: () async {
-                          printLog(amazonCA);
-                          printLog(privateKey);
-                          printLog(deviceCert);
-                          if (amazonCA != null &&
-                              privateKey != null &&
-                              deviceCert != null) {
-                            printLog('Estan todos anashe');
-                            registerActivity(
-                                DeviceManager.getProductCode(deviceName),
-                                DeviceManager.extractSerialNumber(deviceName),
-                                'Se asigno credenciales de AWS al equipo');
-                            setState(() {
-                              sending = true;
-                            });
-                            await writeLarge(amazonCA!, 0, deviceName);
-                            await writeLarge(deviceCert!, 1, deviceName);
-                            await writeLarge(privateKey!, 2, deviceName);
-                            setState(() {
-                              sending = false;
-                            });
-                          }
-                        },
-                        child: const Center(
-                          child: Column(
-                            children: [
-                              SizedBox(height: 10),
-                              Icon(
-                                Icons.perm_identity,
-                                size: 16,
-                              ),
-                              SizedBox(height: 10),
-                              Text(
-                                'Enviar certificados',
-                                textAlign: TextAlign.center,
-                              ),
-                              SizedBox(height: 10),
-                            ],
-                          ),
-                        ),
-                      ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
               ),
             ],
           ),

@@ -29,12 +29,9 @@ class CalefactoresPageState extends State<CalefactoresPage> {
   final TextEditingController distanceOffController =
       TextEditingController(text: distanceOff);
   final PageController _pageController = PageController(initialPage: 0);
-
   int _selectedIndex = 0;
-
   bool ignite = false;
   bool recording = false;
-
   List<List<dynamic>> recordedData = [];
   Timer? recordTimer;
 
@@ -68,6 +65,26 @@ class CalefactoresPageState extends State<CalefactoresPage> {
     super.initState();
     updateWifiValues(toolsValues);
     subscribeToWifiStatus();
+    printLog('Valor temp: $tempValue');
+    printLog('¿Encendido? $turnOn');
+    subscribeTrueStatus();
+  }
+
+  void subscribeTrueStatus() async {
+    printLog('Me subscribo a vars');
+    await myDevice.varsUuid.setNotifyValue(true);
+
+    final trueStatusSub =
+        myDevice.varsUuid.onValueReceived.listen((List<int> status) {
+      var parts = utf8.decode(status).split(':');
+      // printLog(parts);
+      setState(() {
+        trueStatus = parts[0] == '1';
+        actualTemp = parts[1];
+      });
+    });
+
+    myDevice.device.cancelWhenDisconnected(trueStatusSub);
   }
 
   void updateWifiValues(List<int> data) {
@@ -132,16 +149,6 @@ class CalefactoresPageState extends State<CalefactoresPage> {
     myDevice.device.cancelWhenDisconnected(wifiSub);
   }
 
-  void sendDataToDevice() async {
-    String dataToSend = textController.text;
-    String data = '${DeviceManager.getProductCode(deviceName)}[4]($dataToSend)';
-    try {
-      await myDevice.toolsUuid.write(data.codeUnits);
-    } catch (e) {
-      printLog(e);
-    }
-  }
-
   void sendTemperature(int temp) {
     String data = '${DeviceManager.getProductCode(deviceName)}[7]($temp)';
     myDevice.toolsUuid.write(data.codeUnits);
@@ -184,6 +191,8 @@ class CalefactoresPageState extends State<CalefactoresPage> {
   //! VISUAL
   @override
   Widget build(BuildContext context) {
+    double bottomBarHeight = kBottomNavigationBarHeight;
+
     final List<Widget> pages = [
       //*- Página 1 TOOLS -*\\
       const ToolsPage(),
@@ -191,10 +200,9 @@ class CalefactoresPageState extends State<CalefactoresPage> {
       //*- Página 2 PARAMS -*\\
       const ParamsTab(),
 
-      //TODO: Cambiar diseño
       //*- Página 3 CONTROL -*\\
       Scaffold(
-        backgroundColor: const Color(0xff190019),
+        backgroundColor: color4,
         body: Center(
             child: SingleChildScrollView(
           child: Column(
@@ -220,10 +228,10 @@ class CalefactoresPageState extends State<CalefactoresPage> {
               Transform.scale(
                 scale: 3.0,
                 child: Switch(
-                  activeColor: const Color(0xfffbe4d8),
-                  activeTrackColor: const Color(0xff854f6c),
-                  inactiveThumbColor: const Color(0xff854f6c),
-                  inactiveTrackColor: const Color(0xfffbe4d8),
+                  activeColor: color4,
+                  activeTrackColor: color1,
+                  inactiveThumbColor: color1,
+                  inactiveTrackColor: color4,
                   value: turnOn,
                   onChanged: (value) {
                     turnDeviceOn(value);
@@ -234,128 +242,98 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                 ),
               ),
               const SizedBox(height: 50),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: 'Temperatura de corte: ',
-                      style: TextStyle(
-                        color: Color(0xfffbe4d8),
-                        fontSize: 25,
-                      ),
-                    ),
-                    TextSpan(
-                      text: tempValue.round().toString(),
-                      style: const TextStyle(
-                        fontSize: 30,
-                        color: Color(0xfffbe4d8),
-                      ),
-                    ),
-                    const TextSpan(
-                      text: '°C',
-                      style: TextStyle(
-                        fontSize: 30,
-                        color: Color(0xfffbe4d8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
+              buildText(
+                  text:
+                      'Temperatura de corte: ${tempValue.round().toString()} °C'),
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.8,
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
                     trackHeight: 50.0,
-                    thumbColor: const Color(0xfffbe4d8),
+                    valueIndicatorColor: color4,
+                    thumbColor: color1,
+                    activeTrackColor: color0,
+                    inactiveTrackColor: color3,
                     thumbShape: IconThumbSlider(
-                        iconData: trueStatus
-                            ? DeviceManager.getProductCode(deviceName) ==
-                                    '027000'
-                                ? Icons.local_fire_department
-                                : Icons.flash_on_rounded
-                            : Icons.check,
-                        thumbRadius: 25)),
-                child: Slider(
-                  value: tempValue,
-                  onChanged: (value) {
-                    setState(() {
-                      tempValue = value;
-                    });
-                  },
-                  onChangeEnd: (value) {
-                    printLog(value);
-                    sendTemperature(value.round());
-                  },
-                  min: 10,
-                  max: 40,
+                      iconData: trueStatus
+                          ? DeviceManager.getProductCode(deviceName) ==
+                                  '027000_IOT'
+                              ? Icons.local_fire_department
+                              : Icons.flash_on_rounded
+                          : Icons.check,
+                      thumbRadius: 28,
+                    ),
+                  ),
+                  child: Slider(
+                    value: tempValue,
+                    onChanged: (value) {
+                      setState(() {
+                        tempValue = value;
+                      });
+                    },
+                    onChangeEnd: (value) {
+                      printLog(value);
+                      sendTemperature(value.round());
+                    },
+                    min: 10,
+                    max: 40,
+                  ),
                 ),
               ),
               const SizedBox(height: 30),
               SizedBox(
-                  width: 300,
-                  child: !roomTempSended
-                      ? TextField(
-                          style: const TextStyle(color: Color(0xfffbe4d8)),
-                          keyboardType: TextInputType.number,
-                          controller: roomTempController,
-                          decoration: const InputDecoration(
-                            labelText:
-                                'Introducir temperatura de la habitación',
-                            labelStyle: TextStyle(color: Color(0xfffbe4d8)),
+                width: 300,
+                child: !roomTempSended
+                    ? buildTextField(
+                        controller: roomTempController,
+                        label: 'Introducir temperatura de la habitación',
+                        hint: '',
+                        keyboard: TextInputType.number,
+                        onSubmitted: (value) {
+                          registerActivity(
+                              DeviceManager.getProductCode(deviceName),
+                              DeviceManager.extractSerialNumber(deviceName),
+                              'Se cambió la temperatura ambiente de $actualTemp°C a $value°C');
+                          sendRoomTemperature(value);
+                          registerTemp(DeviceManager.getProductCode(deviceName),
+                              DeviceManager.extractSerialNumber(deviceName));
+                          showToast('Temperatura ambiente seteada');
+                          setState(() {
+                            roomTempSended = true;
+                          });
+                        },
+                      )
+                    : buildText(
+                        text: '',
+                        textSpans: [
+                          TextSpan(
+                            text:
+                                'La temperatura ambiente ya fue seteada\npor este legajo el dia \n$tempDate',
+                            style: const TextStyle(
+                                color: color4, fontWeight: FontWeight.bold),
                           ),
-                          onSubmitted: (value) {
-                            registerActivity(
-                                DeviceManager.getProductCode(deviceName),
-                                DeviceManager.extractSerialNumber(deviceName),
-                                'Se cambio la temperatura ambiente de $actualTemp°C a $value°C');
-                            sendRoomTemperature(value);
-                            registerTemp(
-                                DeviceManager.getProductCode(deviceName),
-                                DeviceManager.extractSerialNumber(deviceName));
-                            showToast('Temperatura ambiente seteada');
-                            setState(() {
-                              roomTempSended = true;
-                            });
-                          },
-                        )
-                      : Text(
-                          'La temperatura ambiente ya fue seteada\npor este legajo el dia \n$tempDate',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Color(0xfffbe4d8),
-                            fontSize: 20,
-                          ),
-                        )),
+                        ],
+                        fontSize: 20.0,
+                        textAlign: TextAlign.center,
+                      ),
+              ),
               const SizedBox(height: 30),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: 'Temperatura actual: ',
-                      style: TextStyle(
-                        color: Color(0xfffbe4d8),
-                        fontSize: 20,
-                      ),
+              buildText(
+                text: '',
+                textSpans: [
+                  TextSpan(
+                    text: 'Temperatura actual: $actualTemp °C',
+                    style: const TextStyle(
+                      color: color4,
+                      fontWeight: FontWeight.bold,
                     ),
-                    TextSpan(
-                      text: actualTemp,
-                      style: const TextStyle(
-                        color: Color(0xFFdfb6b2),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 30,
-                      ),
-                    ),
-                    const TextSpan(
-                      text: '°C ',
-                      style: TextStyle(
-                        color: Color(0xFFdfb6b2),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 30,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
+                fontSize: 20.0,
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
-              IconButton(
+              ElevatedButton(
                 onPressed: () {
                   setState(() {
                     recording = !recording;
@@ -375,44 +353,40 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     );
                   }
                 },
-                icon: recording
-                    ? const Icon(
-                        Icons.pause,
-                        size: 35,
-                        color: Color(0xffdfb6b2),
-                      )
-                    : const Icon(
-                        Icons.play_arrow,
-                        size: 35,
-                        color: Color(0xffdfb6b2),
-                      ),
+                style: ElevatedButton.styleFrom(
+                  shape: const CircleBorder(),
+                  padding: const EdgeInsets.all(20),
+                  backgroundColor: color0,
+                ),
+                child: Icon(
+                  recording ? Icons.pause : Icons.play_arrow,
+                  size: 35,
+                  color: color4,
+                ),
               ),
+              const SizedBox(height: 10),
               if (factoryMode) ...[
-                const SizedBox(height: 10),
-                Text.rich(
-                  TextSpan(
-                    children: [
-                      const TextSpan(
-                        text: 'Mapeo de temperatura:\n',
-                        style: TextStyle(
-                          color: Color(0xfffbe4d8),
-                          fontSize: 20,
-                        ),
-                      ),
-                      TextSpan(
-                        text: tempMap ? 'REALIZADO' : 'NO REALIZADO',
-                        style: TextStyle(
-                          color: tempMap
-                              ? const Color(0xff854f6c)
-                              : const Color(0xffFF0000),
-                          fontSize: 20,
-                        ),
-                      ),
-                    ],
-                  ),
+                buildText(
+                  text: '',
+                  textSpans: [
+                    const TextSpan(
+                      text: 'Mapeo de temperatura:\n',
+                      style:
+                          TextStyle(color: color4, fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text: tempMap ? 'REALIZADO' : 'NO REALIZADO',
+                      style: TextStyle(
+                          color: tempMap ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                  fontSize: 20.0,
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton(
+                buildButton(
+                  text: 'Iniciar mapeo temperatura',
                   onPressed: () {
                     registerActivity(
                         DeviceManager.getProductCode(deviceName),
@@ -421,33 +395,27 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     startTempMap();
                     showToast('Iniciando mapeo de temperatura');
                   },
-                  style: ButtonStyle(
-                    shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                      RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18.0),
-                      ),
-                    ),
-                  ),
-                  child: const Text('Iniciar mapeo temperatura'),
                 ),
                 const SizedBox(
                   height: 10,
                 ),
-                ElevatedButton(
-                    onPressed: () {
-                      registerActivity(
-                          DeviceManager.getProductCode(deviceName),
-                          DeviceManager.extractSerialNumber(deviceName),
-                          'Se mando el ciclado de la válvula de este equipo');
-                      String data =
-                          '${DeviceManager.getProductCode(deviceName)}[13](1000#5)';
-                      myDevice.toolsUuid.write(data.codeUnits);
-                    },
-                    child: const Text('Ciclado fijo')),
+                buildButton(
+                  text: 'Ciclado fijo',
+                  onPressed: () {
+                    registerActivity(
+                        DeviceManager.getProductCode(deviceName),
+                        DeviceManager.extractSerialNumber(deviceName),
+                        'Se mando el ciclado de la válvula de este equipo');
+                    String data =
+                        '${DeviceManager.getProductCode(deviceName)}[13](1000#5)';
+                    myDevice.toolsUuid.write(data.codeUnits);
+                  },
+                ),
                 const SizedBox(
                   height: 10,
                 ),
-                ElevatedButton(
+                buildButton(
+                  text: 'Configurar ciclado',
                   onPressed: () {
                     showDialog(
                       context: context,
@@ -457,12 +425,12 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                         final TextEditingController timeController =
                             TextEditingController();
                         return AlertDialog(
+                          backgroundColor: color1,
                           title: const Center(
                             child: Text(
                               'Especificar parametros del ciclador:',
                               style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold),
+                                  color: color4, fontWeight: FontWeight.bold),
                             ),
                           ),
                           content: Column(
@@ -472,14 +440,14 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                               SizedBox(
                                 width: 300,
                                 child: TextField(
-                                  style: const TextStyle(color: Colors.black),
+                                  style: const TextStyle(color: color4),
                                   controller: cicleController,
                                   keyboardType: TextInputType.number,
                                   decoration: const InputDecoration(
                                     labelText: 'Ingrese cantidad de ciclos',
                                     hintText: 'Certificación: 1000',
-                                    labelStyle: TextStyle(color: Colors.black),
-                                    hintStyle: TextStyle(color: Colors.black),
+                                    labelStyle: TextStyle(color: color4),
+                                    hintStyle: TextStyle(color: color4),
                                   ),
                                 ),
                               ),
@@ -489,7 +457,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                               SizedBox(
                                 width: 300,
                                 child: TextField(
-                                  style: const TextStyle(color: Colors.black),
+                                  style: const TextStyle(color: color4),
                                   controller: timeController,
                                   keyboardType: TextInputType.number,
                                   decoration: const InputDecoration(
@@ -497,13 +465,13 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                                     hintText: 'Recomendado: 1000',
                                     suffixText: '(mS)',
                                     suffixStyle: TextStyle(
-                                      color: Colors.black,
+                                      color: color4,
                                     ),
                                     labelStyle: TextStyle(
-                                      color: Colors.black,
+                                      color: color4,
                                     ),
                                     hintStyle: TextStyle(
-                                      color: Colors.black,
+                                      color: color4,
                                     ),
                                   ),
                                 ),
@@ -515,7 +483,8 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                               onPressed: () {
                                 navigatorKey.currentState!.pop();
                               },
-                              child: const Text('Cancelar'),
+                              child: const Text('Cancelar',
+                                  style: TextStyle(color: color4)),
                             ),
                             TextButton(
                               onPressed: () {
@@ -530,21 +499,14 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                                 myDevice.toolsUuid.write(data.codeUnits);
                                 navigatorKey.currentState!.pop();
                               },
-                              child: const Text('Iniciar proceso'),
+                              child: const Text('Iniciar proceso',
+                                  style: TextStyle(color: color4)),
                             ),
                           ],
                         );
                       },
                     );
                   },
-                  style: ButtonStyle(
-                    shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                      RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18.0),
-                      ),
-                    ),
-                  ),
-                  child: const Text('Configurar ciclado'),
                 ),
                 if (DeviceManager.getProductCode(deviceName) == '027000') ...[
                   const SizedBox(
@@ -655,85 +617,68 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                   ),
                 ],
                 const SizedBox(
-                  height: 10,
+                  height: 20,
                 ),
-                const Text(
-                  'Distancias de control: ',
-                  style: TextStyle(
-                    color: Color(0xfffbe4d8),
-                    fontSize: 20,
-                  ),
+                buildText(
+                  text: '',
+                  textSpans: [
+                    const TextSpan(
+                      text: 'Distancias de control: ',
+                      style:
+                          TextStyle(color: color4, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                  fontSize: 20.0,
+                  textAlign: TextAlign.center,
                 ),
-                SizedBox(
-                  width: 300,
-                  child: TextField(
-                    style: const TextStyle(
-                      color: Color(0xFFdfb6b2),
-                      fontWeight: FontWeight.bold,
-                    ),
-                    keyboardType: TextInputType.number,
-                    controller: distanceOnController,
-                    decoration: const InputDecoration(
-                      labelText: 'Distancia de encendido:',
-                      labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                      suffixText: 'Metros',
-                      suffixStyle: TextStyle(color: Color(0xfffbe4d8)),
-                    ),
-                    onSubmitted: (value) {
-                      if (int.parse(value) <= 5000 &&
-                          int.parse(value) >= 3000) {
-                        registerActivity(
-                            DeviceManager.getProductCode(deviceName),
-                            DeviceManager.extractSerialNumber(deviceName),
-                            'Se modifico la distancia de encendido');
-                        putDistanceOn(
-                            service,
-                            DeviceManager.getProductCode(deviceName),
-                            DeviceManager.extractSerialNumber(deviceName),
-                            value);
-                      } else {
-                        showToast('Parametros no permitidos');
-                      }
-                    },
-                  ),
+                buildTextField(
+                  controller: distanceOnController,
+                  label: 'Distancia de encendido:',
+                  hint: '',
+                  keyboard: TextInputType.number,
+                  onSubmitted: (value) {
+                    if (int.parse(value) <= 5000 && int.parse(value) >= 3000) {
+                      registerActivity(
+                          DeviceManager.getProductCode(deviceName),
+                          DeviceManager.extractSerialNumber(deviceName),
+                          'Se modifico la distancia de encendido');
+                      putDistanceOn(
+                          service,
+                          DeviceManager.getProductCode(deviceName),
+                          DeviceManager.extractSerialNumber(deviceName),
+                          value);
+                    } else {
+                      showToast('Parametros no permitidos');
+                    }
+                  },
                 ),
                 const SizedBox(
                   height: 10,
                 ),
-                SizedBox(
-                  width: 300,
-                  child: TextField(
-                    style: const TextStyle(
-                      color: Color(0xFFdfb6b2),
-                      fontWeight: FontWeight.bold,
-                    ),
-                    keyboardType: TextInputType.number,
-                    controller: distanceOffController,
-                    decoration: const InputDecoration(
-                      labelText: 'Distancia de apagado:',
-                      labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                      suffixText: 'Metros',
-                      suffixStyle: TextStyle(color: Color(0xfffbe4d8)),
-                    ),
-                    onSubmitted: (value) {
-                      if (int.parse(value) <= 300 && int.parse(value) >= 100) {
-                        registerActivity(
-                            DeviceManager.getProductCode(deviceName),
-                            DeviceManager.extractSerialNumber(deviceName),
-                            'Se modifico la distancia de apagado');
-                        putDistanceOff(
-                            service,
-                            DeviceManager.getProductCode(deviceName),
-                            DeviceManager.extractSerialNumber(deviceName),
-                            value);
-                      } else {
-                        showToast('Parametros no permitidos');
-                      }
-                    },
-                  ),
+                buildTextField(
+                  controller: distanceOffController,
+                  label: 'Distancia de apagado:',
+                  hint: '',
+                  keyboard: TextInputType.number,
+                  onSubmitted: (value) {
+                    if (int.parse(value) <= 300 && int.parse(value) >= 100) {
+                      registerActivity(
+                          DeviceManager.getProductCode(deviceName),
+                          DeviceManager.extractSerialNumber(deviceName),
+                          'Se modifico la distancia de apagado');
+                      putDistanceOff(
+                          service,
+                          DeviceManager.getProductCode(deviceName),
+                          DeviceManager.extractSerialNumber(deviceName),
+                          value);
+                    } else {
+                      showToast('Parametros no permitidos');
+                    }
+                  },
                 ),
-                const SizedBox(
-                  height: 30,
+                const SizedBox(height: 20),
+                Padding(
+                  padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
                 ),
               ],
             ],
@@ -759,7 +704,9 @@ class CalefactoresPageState extends State<CalefactoresPage> {
               backgroundColor: color1,
               content: Row(
                 children: [
-                  Image.asset('assets/Loading.gif', width: 100, height: 100),
+                  Image.asset(EasterEggs.legajosMeme.contains(legajoConectado)
+                          ? 'assets/eg/DSC.gif'
+                          : 'assets/Loading.gif', width: 100, height: 100),
                   Container(
                     margin: const EdgeInsets.only(left: 15),
                     child: const Text(
@@ -789,12 +736,16 @@ class CalefactoresPageState extends State<CalefactoresPage> {
             children: [
               Text(
                 deviceName,
-                style: const TextStyle(color: color4),
+                style: const TextStyle(
+                  color: color4,
+                ),
               ),
             ],
           ),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new),
+            icon: const Icon(
+              Icons.arrow_back_ios_new,
+            ),
             color: color4,
             onPressed: () {
               showDialog(
@@ -805,13 +756,17 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     backgroundColor: color1,
                     content: Row(
                       children: [
-                        Image.asset('assets/Loading.gif',
+                        Image.asset(EasterEggs.legajosMeme.contains(legajoConectado)
+                          ? 'assets/eg/DSC.gif'
+                          : 'assets/Loading.gif',
                             width: 100, height: 100),
                         Container(
                           margin: const EdgeInsets.only(left: 15),
                           child: const Text(
                             "Desconectando...",
-                            style: TextStyle(color: color4),
+                            style: TextStyle(
+                              color: color4,
+                            ),
                           ),
                         ),
                       ],
@@ -831,7 +786,10 @@ class CalefactoresPageState extends State<CalefactoresPage> {
           ),
           actions: [
             IconButton(
-              icon: Icon(wifiIcon, color: color4),
+              icon: Icon(
+                wifiIcon,
+                color: color4,
+              ),
               onPressed: () {
                 wifiText(context);
               },

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -391,7 +390,7 @@ void wifiText(BuildContext context) {
             }
 
             return AlertDialog(
-              backgroundColor: const Color(0xff1f1d20),
+              backgroundColor: color1,
               title: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -401,7 +400,7 @@ void wifiText(BuildContext context) {
                         text: 'Estado de conexión: ',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Color(0xFFFFFFFF),
+                          color: color4,
                         ),
                       ),
                     ),
@@ -428,7 +427,7 @@ void wifiText(BuildContext context) {
                           text: 'Error: $errorMessage',
                           style: const TextStyle(
                             fontSize: 10,
-                            color: Color(0xFFFFFFFF),
+                            color: color4,
                           ),
                         ),
                       ),
@@ -438,7 +437,7 @@ void wifiText(BuildContext context) {
                           text: 'Sintax: $errorSintax',
                           style: const TextStyle(
                             fontSize: 10,
-                            color: Color(0xFFFFFFFF),
+                            color: color4,
                           ),
                         ),
                       ),
@@ -451,16 +450,17 @@ void wifiText(BuildContext context) {
                           TextSpan(
                             text: 'Red actual: ',
                             style: TextStyle(
-                                fontSize: 20,
-                                color: Color(0xFFFFFFFF),
-                                fontWeight: FontWeight.bold),
+                              fontSize: 20,
+                              color: color4,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                         Text(
                           nameOfWifi,
                           style: const TextStyle(
                             fontSize: 20,
-                            color: Color(0xFFFFFFFF),
+                            color: color4,
                           ),
                         ),
                       ]),
@@ -474,13 +474,16 @@ void wifiText(BuildContext context) {
                         },
                         style: const ButtonStyle(
                           foregroundColor: WidgetStatePropertyAll(
-                            Color(0xFFFFFFFF),
+                            color4,
                           ),
                         ),
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            Icon(Icons.signal_wifi_off),
+                            Icon(
+                              Icons.signal_wifi_off,
+                              color: color4,
+                            ),
                             Text('Desconectar Red Actual')
                           ],
                         ),
@@ -491,7 +494,9 @@ void wifiText(BuildContext context) {
                       _wifiNetworksList.isEmpty && _scanInProgress
                           ? const Center(
                               child: CircularProgressIndicator(
-                                  color: Colors.white))
+                                color: color4,
+                              ),
+                            )
                           : SizedBox(
                               width: double.maxFinite,
                               height: 200.0,
@@ -535,30 +540,31 @@ void wifiText(BuildContext context) {
                                                               : // No buena
                                                               Icons
                                                                   .signal_wifi_off, // Inusable
-                                              color: Colors.white,
+                                              color: color4,
                                             ),
                                             title: Text(
                                               network.ssid,
                                               style: const TextStyle(
-                                                  color: Colors.white),
+                                                color: color4,
+                                              ),
                                             ),
-                                            backgroundColor:
-                                                const Color(0xff1f1d20),
-                                            collapsedBackgroundColor:
-                                                const Color(0xff1f1d20),
-                                            textColor: Colors.white,
-                                            iconColor: Colors.white,
+                                            backgroundColor: color1,
+                                            collapsedBackgroundColor: color1,
+                                            textColor: color4,
+                                            iconColor: color4,
+                                            collapsedIconColor: color4,
                                             children: [
                                               Padding(
                                                 padding:
                                                     const EdgeInsets.symmetric(
-                                                        horizontal: 16.0,
-                                                        vertical: 8.0),
+                                                  horizontal: 16.0,
+                                                  vertical: 8.0,
+                                                ),
                                                 child: Row(
                                                   children: [
                                                     const Icon(
                                                       Icons.lock,
-                                                      color: Colors.white,
+                                                      color: color4,
                                                       size: 20,
                                                     ),
                                                     const SizedBox(width: 8.0),
@@ -566,36 +572,35 @@ void wifiText(BuildContext context) {
                                                       child: TextField(
                                                         focusNode: wifiPassNode,
                                                         style: const TextStyle(
-                                                          color:
-                                                              Color(0xFFFFFFFF),
+                                                          color: color4,
                                                         ),
                                                         decoration:
                                                             const InputDecoration(
                                                           hintText:
                                                               'Escribir contraseña',
                                                           hintStyle: TextStyle(
-                                                            color: Colors.grey,
+                                                            color: color3,
                                                           ),
                                                           enabledBorder:
                                                               UnderlineInputBorder(
                                                             borderSide:
                                                                 BorderSide(
-                                                                    color: Colors
-                                                                        .white),
+                                                              color: color4,
+                                                            ),
                                                           ),
                                                           focusedBorder:
                                                               UnderlineInputBorder(
                                                             borderSide:
                                                                 BorderSide(
-                                                                    color: Colors
-                                                                        .blue),
+                                                              color: color4,
+                                                            ),
                                                           ),
                                                           border:
                                                               UnderlineInputBorder(
                                                             borderSide:
                                                                 BorderSide(
-                                                                    color: Colors
-                                                                        .white),
+                                                              color: color4,
+                                                            ),
                                                           ),
                                                         ),
                                                         obscureText: true,
@@ -631,23 +636,31 @@ void wifiText(BuildContext context) {
                               children: [
                                 const Icon(
                                   Icons.wifi,
-                                  color: Colors.white,
+                                  color: color4,
                                 ),
-                                const SizedBox(width: 8.0),
+                                const SizedBox(
+                                  width: 8.0,
+                                ),
                                 Expanded(
                                   child: TextField(
-                                    cursorColor: Colors.white,
-                                    style: const TextStyle(color: Colors.white),
+                                    cursorColor: color4,
+                                    style: const TextStyle(
+                                      color: color4,
+                                    ),
                                     decoration: const InputDecoration(
                                       hintText: 'Agregar WiFi',
-                                      hintStyle: TextStyle(color: Colors.grey),
+                                      hintStyle: TextStyle(
+                                        color: color3,
+                                      ),
                                       enabledBorder: UnderlineInputBorder(
-                                        borderSide:
-                                            BorderSide(color: Colors.white),
+                                        borderSide: BorderSide(
+                                          color: color4,
+                                        ),
                                       ),
                                       focusedBorder: UnderlineInputBorder(
-                                        borderSide:
-                                            BorderSide(color: Colors.white),
+                                        borderSide: BorderSide(
+                                          color: color4,
+                                        ),
                                       ),
                                     ),
                                     onChanged: (value) {
@@ -662,23 +675,29 @@ void wifiText(BuildContext context) {
                               children: [
                                 const Icon(
                                   Icons.lock,
-                                  color: Colors.white,
+                                  color: color4,
                                 ),
                                 const SizedBox(width: 8.0),
                                 Expanded(
                                   child: TextField(
-                                    cursorColor: Colors.white,
-                                    style: const TextStyle(color: Colors.white),
+                                    cursorColor: color4,
+                                    style: const TextStyle(
+                                      color: color4,
+                                    ),
                                     decoration: const InputDecoration(
                                       hintText: 'Contraseña',
-                                      hintStyle: TextStyle(color: Colors.grey),
+                                      hintStyle: TextStyle(
+                                        color: color3,
+                                      ),
                                       enabledBorder: UnderlineInputBorder(
-                                        borderSide:
-                                            BorderSide(color: Colors.white),
+                                        borderSide: BorderSide(
+                                          color: color4,
+                                        ),
                                       ),
                                       focusedBorder: UnderlineInputBorder(
-                                        borderSide:
-                                            BorderSide(color: Colors.white),
+                                        borderSide: BorderSide(
+                                          color: color4,
+                                        ),
                                       ),
                                     ),
                                     obscureText: true,
@@ -703,7 +722,7 @@ void wifiText(BuildContext context) {
                     IconButton(
                       icon: const Icon(
                         Icons.qr_code,
-                        color: Color(0xFFFFFFFF),
+                        color: color4,
                       ),
                       iconSize: 30,
                       onPressed: () async {
@@ -724,7 +743,7 @@ void wifiText(BuildContext context) {
                             child: const Text(
                               'Agregar Red',
                               style: TextStyle(
-                                color: Color(0xFFFFFFFF),
+                                color: color4,
                               ),
                             ),
                             onPressed: () {
@@ -739,7 +758,7 @@ void wifiText(BuildContext context) {
                       child: const Text(
                         'Conectar',
                         style: TextStyle(
-                          color: Color(0xFFFFFFFF),
+                          color: color4,
                         ),
                       ),
                       onPressed: () {
@@ -761,13 +780,13 @@ void wifiText(BuildContext context) {
 
           Widget buildAddNetworkView() {
             return AlertDialog(
-              backgroundColor: const Color(0xff1f1d20),
+              backgroundColor: color1,
               title: Row(
                 children: [
                   IconButton(
                     icon: const Icon(
                       Icons.arrow_back,
-                      color: Color(0xFFFFFFFF),
+                      color: color4,
                     ),
                     onPressed: () {
                       setState(() {
@@ -778,7 +797,7 @@ void wifiText(BuildContext context) {
                   const Text(
                     'Agregar red\nmanualmente',
                     style: TextStyle(
-                      color: Color(0xFFFFFFFF),
+                      color: color4,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -794,21 +813,29 @@ void wifiText(BuildContext context) {
                       children: [
                         const Icon(
                           Icons.wifi,
-                          color: Colors.white,
+                          color: color4,
                         ),
                         const SizedBox(width: 8.0),
                         Expanded(
                           child: TextField(
-                            cursorColor: Colors.white,
-                            style: const TextStyle(color: Colors.white),
+                            cursorColor: color4,
+                            style: const TextStyle(
+                              color: color4,
+                            ),
                             decoration: const InputDecoration(
                               hintText: 'Agregar WiFi',
-                              hintStyle: TextStyle(color: Colors.grey),
+                              hintStyle: TextStyle(
+                                color: color3,
+                              ),
                               enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.white),
+                                borderSide: BorderSide(
+                                  color: color4,
+                                ),
                               ),
                               focusedBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.white),
+                                borderSide: BorderSide(
+                                  color: color4,
+                                ),
                               ),
                             ),
                             onChanged: (value) {
@@ -823,21 +850,29 @@ void wifiText(BuildContext context) {
                       children: [
                         const Icon(
                           Icons.lock,
-                          color: Colors.white,
+                          color: color4,
                         ),
                         const SizedBox(width: 8.0),
                         Expanded(
                           child: TextField(
-                            cursorColor: Colors.white,
-                            style: const TextStyle(color: Colors.white),
+                            cursorColor: color4,
+                            style: const TextStyle(
+                              color: color4,
+                            ),
                             decoration: const InputDecoration(
                               hintText: 'Contraseña',
-                              hintStyle: TextStyle(color: Colors.grey),
+                              hintStyle: TextStyle(
+                                color: color3,
+                              ),
                               enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.white),
+                                borderSide: BorderSide(
+                                  color: color4,
+                                ),
                               ),
                               focusedBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.white),
+                                borderSide: BorderSide(
+                                  color: color4,
+                                ),
                               ),
                             ),
                             obscureText: true,
@@ -863,12 +898,14 @@ void wifiText(BuildContext context) {
                   },
                   style: ButtonStyle(
                     backgroundColor: WidgetStateProperty.all<Color>(
-                      const Color(0xff1f1d20),
+                      color1,
                     ),
                   ),
                   child: const Text(
                     'Agregar',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: color4,
+                    ),
                   ),
                 ),
               ],
@@ -1221,40 +1258,67 @@ Widget buildButton({
 
 ///Genera un cuadro de texto generico con los parametros que le pases
 Widget buildTextField({
-  required TextEditingController controller,
+  TextEditingController? controller,
   required String label,
   required String hint,
-  required bool isValid,
-  required Function(String) onChanged,
+  required void Function(String) onSubmitted,
+  double widthFactor = 0.8,
+  TextInputType? keyboard,
+  void Function(String)? onChanged,
 }) {
-  return Container(
-    margin: const EdgeInsets.only(bottom: 20.0),
-    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-    decoration: BoxDecoration(
-      color: color0,
-      borderRadius: BorderRadius.circular(12),
-      boxShadow: [
-        BoxShadow(
-          color: color3.withOpacity(0.3),
-          blurRadius: 4,
-          offset: const Offset(0, 2),
+  return FractionallySizedBox(
+    alignment: Alignment.center,
+    widthFactor: widthFactor,
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 20.0),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16.0,
+        vertical: 12.0,
+      ),
+      decoration: BoxDecoration(
+        color: color0,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: color3.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        onSubmitted: onSubmitted,
+        onChanged: onChanged,
+        style: const TextStyle(
+          color: color4,
         ),
-      ],
-    ),
-    child: TextField(
-      controller: controller,
-      onChanged: onChanged,
-      style: const TextStyle(color: color4),
-      keyboardType: TextInputType.text,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(
-            color: color3, fontSize: 16, fontWeight: FontWeight.w500),
-        hintStyle: TextStyle(color: color3.withOpacity(0.7)),
-        suffixIcon: isValid
-            ? const Icon(Icons.check_circle, color: Colors.green, size: 28)
-            : const Icon(Icons.cancel_rounded, color: Colors.red, size: 28),
-        border: InputBorder.none,
+        keyboardType: keyboard,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(
+            color: color4,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+          hintText: hint,
+          hintStyle: const TextStyle(
+            color: color4,
+          ),
+          border: InputBorder.none,
+          enabledBorder: const UnderlineInputBorder(
+            borderSide: BorderSide(
+              color: color4,
+              width: 1.0,
+            ),
+          ),
+          focusedBorder: const UnderlineInputBorder(
+            borderSide: BorderSide(
+              color: color4,
+              width: 2.0,
+            ),
+          ),
+        ),
       ),
     ),
   );
@@ -1265,31 +1329,39 @@ Widget buildText({
   required String text,
   double fontSize = 16,
   FontWeight fontWeight = FontWeight.normal,
-  Color color = color3,
+  Color color = color4,
   TextAlign textAlign = TextAlign.center,
+  double widthFactor = 0.9,
+  List<TextSpan>? textSpans,
 }) {
-  return Container(
-    margin: const EdgeInsets.only(bottom: 20.0),
-    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-    decoration: BoxDecoration(
-      color: color0, // Usa el mismo color de fondo que los TextFields
-      borderRadius: BorderRadius.circular(12),
-      boxShadow: [
-        BoxShadow(
-          color: color3.withOpacity(0.3),
-          blurRadius: 4,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Text(
-      text,
-      style: TextStyle(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
+  return FractionallySizedBox(
+    alignment: Alignment.center,
+    widthFactor: widthFactor,
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      decoration: BoxDecoration(
+        color: color0,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(
+            color: color4,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
-      textAlign: textAlign,
+      child: Text.rich(
+        TextSpan(
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            color: color,
+          ),
+          children: textSpans ?? [TextSpan(text: text)],
+        ),
+        textAlign: textAlign,
+      ),
     ),
   );
 }
@@ -1785,12 +1857,12 @@ class QRScanPageState extends State<QRScanPage>
           right: 0,
           height: 250,
           child: Container(
-              color: Colors.black54,
+              color: color1.withOpacity(0.88),
               child: const Center(
                 child: Text(
                   'Escanea el QR',
                   style: TextStyle(
-                    color: Color(0xFFB2B5AE),
+                    color: color4,
                   ),
                 ),
               )),
@@ -1802,7 +1874,7 @@ class QRScanPageState extends State<QRScanPage>
           right: 0,
           height: 250,
           child: Container(
-            color: Colors.black54,
+            color: color1.withOpacity(0.88),
           ),
         ),
         // Izquierda
@@ -1812,7 +1884,7 @@ class QRScanPageState extends State<QRScanPage>
           left: 0,
           width: 50,
           child: Container(
-            color: Colors.black54,
+            color: color1.withOpacity(0.88),
           ),
         ),
         // Derecha
@@ -1822,7 +1894,7 @@ class QRScanPageState extends State<QRScanPage>
           right: 0,
           width: 50,
           child: Container(
-            color: Colors.black54,
+            color: color1.withOpacity(0.88),
           ),
         ),
         // Área transparente con bordes redondeados
@@ -1839,7 +1911,7 @@ class QRScanPageState extends State<QRScanPage>
                 right: 0,
                 child: Container(
                   height: 4,
-                  color: const Color(0xFF1E242B),
+                  color: color1,
                 ),
               ),
               Positioned(
@@ -1848,7 +1920,7 @@ class QRScanPageState extends State<QRScanPage>
                 right: 0,
                 child: Container(
                   height: 3,
-                  color: const Color(0xFFB2B5AE),
+                  color: color4,
                 ),
               ),
               Positioned(
@@ -1857,7 +1929,7 @@ class QRScanPageState extends State<QRScanPage>
                 right: 0,
                 child: Container(
                   height: 3,
-                  color: const Color(0xFFB2B5AE),
+                  color: color4,
                 ),
               ),
               Positioned(
@@ -1866,7 +1938,7 @@ class QRScanPageState extends State<QRScanPage>
                 left: 0,
                 child: Container(
                   width: 3,
-                  color: const Color(0xFFB2B5AE),
+                  color: color4,
                 ),
               ),
               Positioned(
@@ -1875,7 +1947,7 @@ class QRScanPageState extends State<QRScanPage>
                 right: 0,
                 child: Container(
                   width: 3,
-                  color: const Color(0xFFB2B5AE),
+                  color: color4,
                 ),
               ),
             ],
@@ -1887,7 +1959,11 @@ class QRScanPageState extends State<QRScanPage>
           right: 20,
           child: IconButton(
             icon: Icon(
-                controller.torchEnabled ? Icons.flash_on : Icons.flash_off),
+              controller.value.torchState.rawValue == 0
+                  ? Icons.flash_on
+                  : Icons.flash_off,
+              color: color4,
+            ),
             onPressed: () => controller.toggleTorch(),
           ),
         ),
@@ -2619,3 +2695,67 @@ class IconThumbSlider extends SliderComponentShape {
   }
 }
 //*-ThumbSlider-*//
+
+//*-Easter egg-*\\
+class EasterEggs {
+  static List<String> legajosMeme = [
+    '1865',
+    '1860',
+    '1799',
+    '1750',
+    '1928',
+  ];
+
+  static Widget things(String legajo) {
+    switch (legajo) {
+      case '1860':
+        return Image.asset('assets/eg/Mecha.gif');
+      case '1928':
+        return Image.asset('assets/eg/kiwi.webp');
+      case '1865':
+        return Image.asset('assets/eg/Vaca.webp');
+      case '1750':
+        return Image.asset('assets/eg/cucaracha.gif');
+      case '1799':
+        return Image.asset('assets/eg/puto.jpeg');
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  static Widget profile(String legajo) {
+    switch (legajo) {
+      case '1860':
+        return Image.asset('assets/eg/Lautaro.webp');
+      case '1928':
+        return Image.asset('assets/eg/javi.webp');
+      case '1865':
+        return Image.asset('assets/eg/Gonzalo.webp');
+      case '1750':
+        return Image.asset('assets/eg/joaco.webp');
+      case '1799':
+        return Image.asset('assets/eg/Cristian.webp');
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  static String loading(String legajo) {
+    switch (legajo) {
+      case '1860':
+        return 'assets/eg/Mecha.gif';
+      case '1928':
+        return 'assets/eg/kiwi.webp';
+      case '1865':
+        return 'assets/eg/Vaca.webp';
+      case '1750':
+        return 'assets/eg/cucaracha.gif';
+      case '1799':
+        return 'assets/eg/puto.jpeg';
+      default:
+        return 'assets/Loading.gif';
+    }
+  }
+}
+
+//*-Easter egg-*\\

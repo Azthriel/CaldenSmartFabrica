@@ -47,6 +47,7 @@ class RelePageState extends State<RelePage> {
     super.initState();
     updateWifiValues(toolsValues);
     subscribeToWifiStatus();
+    subscribeTrueStatus();
   }
 
   void updateWifiValues(List<int> data) {
@@ -111,21 +112,235 @@ class RelePageState extends State<RelePage> {
     myDevice.device.cancelWhenDisconnected(wifiSub);
   }
 
+  void subscribeTrueStatus() async {
+    printLog('Me subscribo a vars');
+    await myDevice.varsUuid.setNotifyValue(true);
+
+    final trueStatusSub =
+        myDevice.varsUuid.onValueReceived.listen((List<int> status) {
+      var parts = utf8.decode(status).split(':');
+      setState(() {
+        turnOn = parts[0] == '1';
+      });
+    });
+
+    myDevice.device.cancelWhenDisconnected(trueStatusSub);
+  }
+
+  void turnDeviceOn(bool on) {
+    int fun = on ? 1 : 0;
+    String data = '${DeviceManager.getProductCode(deviceName)}[11]($fun)';
+    myDevice.toolsUuid.write(data.codeUnits);
+  }
+
   //! VISUAL
   @override
   Widget build(BuildContext context) {
+    double bottomBarHeight = kBottomNavigationBarHeight;
+
     final List<Widget> pages = [
-      //*- Página 1 TOOLS -*\\
-      const ToolsPage(),
+      if (accessLevel > 1) ...[
+        //*- Página 1 TOOLS -*\\
+        const ToolsPage(),
 
-      //*- Página 2 PARAMS -*\\
-      const ParamsTab(),
+        //*- Página 2 PARAMS -*\\
+        const ParamsTab(),
+      ],
 
-      //TODO: Cambiar diseño
       //*- Página 3 CONTROL -*\\
+      Scaffold(
+        backgroundColor: color4,
+        body: Center(
+            child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                turnOn ? 'ENCENDIDO' : 'APAGADO',
+                style: TextStyle(
+                    color: turnOn ? Colors.green : Colors.red, fontSize: 30),
+              ),
+              const SizedBox(height: 30),
+              Transform.scale(
+                scale: 3.0,
+                child: Switch(
+                  activeColor: color4,
+                  activeTrackColor: color1,
+                  inactiveThumbColor: color1,
+                  inactiveTrackColor: color4,
+                  value: turnOn,
+                  onChanged: (value) {
+                    turnDeviceOn(value);
+                    setState(() {
+                      turnOn = value;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 50),
+              if (accessLevel > 1) ...[
+                buildButton(
+                  text: 'Ciclado fijo',
+                  onPressed: () {
+                    registerActivity(
+                        DeviceManager.getProductCode(deviceName),
+                        DeviceManager.extractSerialNumber(deviceName),
+                        'Se mando el ciclado de la válvula de este equipo');
+                    String data =
+                        '${DeviceManager.getProductCode(deviceName)}[13](1000#5)';
+                    myDevice.toolsUuid.write(data.codeUnits);
+                  },
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                buildButton(
+                  text: 'Configurar ciclado',
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        final TextEditingController cicleController =
+                            TextEditingController();
+                        final TextEditingController timeController =
+                            TextEditingController();
+                        return AlertDialog(
+                          backgroundColor: color1,
+                          title: const Center(
+                            child: Text(
+                              'Especificar parametros del ciclador:',
+                              style: TextStyle(
+                                  color: color4, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 300,
+                                child: TextField(
+                                  style: const TextStyle(color: color4),
+                                  controller: cicleController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Ingrese cantidad de ciclos',
+                                    hintText: 'Certificación: 1000',
+                                    labelStyle: TextStyle(color: color4),
+                                    hintStyle: TextStyle(color: color4),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 20,
+                              ),
+                              SizedBox(
+                                width: 300,
+                                child: TextField(
+                                  style: const TextStyle(color: color4),
+                                  controller: timeController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Ingrese duración de los ciclos',
+                                    hintText: 'Recomendado: 1000',
+                                    suffixText: '(mS)',
+                                    suffixStyle: TextStyle(
+                                      color: color4,
+                                    ),
+                                    labelStyle: TextStyle(
+                                      color: color4,
+                                    ),
+                                    hintStyle: TextStyle(
+                                      color: color4,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                navigatorKey.currentState!.pop();
+                              },
+                              child: const Text(
+                                'Cancelar',
+                                style: TextStyle(color: color4),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                int cicle = int.parse(cicleController.text) * 2;
+                                registerActivity(
+                                    DeviceManager.getProductCode(deviceName),
+                                    DeviceManager.extractSerialNumber(
+                                        deviceName),
+                                    'Se mando el ciclado de la válvula de este equipo\nMilisegundos: ${timeController.text}\nIteraciones:$cicle');
+                                String data =
+                                    '${DeviceManager.getProductCode(deviceName)}[13](${timeController.text}#$cicle)';
+                                myDevice.toolsUuid.write(data.codeUnits);
+                                navigatorKey.currentState!.pop();
+                              },
+                              child: const Text(
+                                'Iniciar proceso',
+                                style: TextStyle(color: color4),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                const Divider(),
+                buildText(
+                  text: '',
+                  textSpans: [
+                    const TextSpan(
+                      text: 'Valor del Timer:\n',
+                      style:
+                          TextStyle(color: color4, fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text: energyTimer,
+                      style: const TextStyle(
+                          color: Colors.yellow, fontWeight: FontWeight.w900),
+                    ),
+                  ],
+                  fontSize: 20.0,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                buildButton(
+                  text: 'Reiniciar',
+                  onPressed: () {
+                    registerActivity(
+                        DeviceManager.getProductCode(deviceName),
+                        DeviceManager.extractSerialNumber(deviceName),
+                        'Se reinicio el valor del timer ($energyTimer) a 0');
+                    String data =
+                        '${DeviceManager.getProductCode(deviceName)}[10](0)';
+                    myDevice.toolsUuid.write(data.codeUnits);
+                    setState(() {
+                      energyTimer = '0';
+                    });
+                  },
+                ),
+                const SizedBox(height: 20),
+              ],
+              Padding(
+                padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
+              ),
+            ],
+          ),
+        )),
+      ),
 
-      //*- Página 4 CREDENTIAL -*\\
-      const CredsTab(),
+      if (accessLevel > 1) ...[
+        //*- Página 4 CREDENTIAL -*\\
+        const CredsTab(),
+      ],
 
       //*- Página 5 OTA -*\\
       const OtaTab(),
@@ -142,7 +357,9 @@ class RelePageState extends State<RelePage> {
               backgroundColor: color1,
               content: Row(
                 children: [
-                  Image.asset('assets/Loading.gif', width: 100, height: 100),
+                  Image.asset(EasterEggs.legajosMeme.contains(legajoConectado)
+                          ? 'assets/eg/DSC.gif'
+                          : 'assets/Loading.gif', width: 100, height: 100),
                   Container(
                     margin: const EdgeInsets.only(left: 15),
                     child: const Text(
@@ -188,7 +405,9 @@ class RelePageState extends State<RelePage> {
                     backgroundColor: color1,
                     content: Row(
                       children: [
-                        Image.asset('assets/Loading.gif',
+                        Image.asset(EasterEggs.legajosMeme.contains(legajoConectado)
+                          ? 'assets/eg/DSC.gif'
+                          : 'assets/Loading.gif',
                             width: 100, height: 100),
                         Container(
                           margin: const EdgeInsets.only(left: 15),
@@ -241,12 +460,16 @@ class RelePageState extends State<RelePage> {
               child: CurvedNavigationBar(
                 index: _selectedIndex,
                 height: 75.0,
-                items: const <Widget>[
-                  Icon(Icons.settings, size: 30, color: color4),
-                  Icon(Icons.star, size: 30, color: color4),
-                  Icon(Icons.thermostat, size: 30, color: color4),
-                  Icon(Icons.person, size: 30, color: color4),
-                  Icon(Icons.send, size: 30, color: color4),
+                items: <Widget>[
+                  if (accessLevel > 1) ...[
+                    const Icon(Icons.settings, size: 30, color: color4),
+                    const Icon(Icons.star, size: 30, color: color4),
+                  ],
+                  const Icon(Icons.switch_left, size: 30, color: color4),
+                  if (accessLevel > 1) ...[
+                    const Icon(Icons.person, size: 30, color: color4),
+                  ],
+                  const Icon(Icons.send, size: 30, color: color4),
                 ],
                 color: color1,
                 buttonBackgroundColor: color1,

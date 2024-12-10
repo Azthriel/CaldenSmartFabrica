@@ -87,13 +87,21 @@ class MenuPageState extends State<MenuPage> {
                     backgroundColor: color1,
                     titlePadding: const EdgeInsets.all(16),
                     contentPadding: const EdgeInsets.all(16),
-                    title: const Text(
-                      "Información del Usuario",
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                        color: color4,
-                      ),
+                    title: Column(
+                      children: [
+                        const Text(
+                          "Información del Usuario",
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            color: color4,
+                          ),
+                        ),
+                        SizedBox(
+                          height: 100,
+                          child: EasterEggs.profile(legajoConectado),
+                        ),
+                      ],
                     ),
                     content: SingleChildScrollView(
                       child: Column(

@@ -12,175 +12,170 @@ class ParamsTab extends StatefulWidget {
 class ParamsTabState extends State<ParamsTab> {
   @override
   Widget build(BuildContext context) {
+    double bottomBarHeight = kBottomNavigationBarHeight;
     return Scaffold(
-      backgroundColor: const Color(0xff190019),
+      backgroundColor: color4,
       body: Center(
         child: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 20),
-              const Text('Estado del control por\n distancia en el equipo:',
-                  textAlign: TextAlign.center,
-                  style: (TextStyle(
-                      fontSize: 20.0,
-                      color: Color(0xfffbe4d8),
-                      fontWeight: FontWeight.bold))),
-              Text.rich(
-                TextSpan(
-                  text: distanceControlActive ? 'Activado' : 'Desactivado',
-                  style: (const TextStyle(
-                      fontSize: 20.0,
-                      color: Color(0xFFdfb6b2),
-                      fontWeight: FontWeight.normal)),
-                ),
+              buildText(
+                text: '',
+                textSpans: [
+                  const TextSpan(
+                    text: 'Estado del control por distancia en el equipo:\n',
+                    style:
+                        TextStyle(color: color4, fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(
+                    text: distanceControlActive ? 'Activado' : 'Desactivado',
+                    style: TextStyle(
+                        color:
+                            distanceControlActive ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ],
+                fontSize: 20.0,
+                textAlign: TextAlign.center,
               ),
               if (distanceControlActive) ...[
-                const SizedBox(
-                  height: 10,
-                ),
-                ElevatedButton(
+                const SizedBox(height: 10),
+                buildButton(
+                  text: 'Desactivar control por distancia',
                   onPressed: () {
                     String mailData =
-                        '${DeviceManager.getProductCode(deviceName)}[5](0)';
+                        '${DeviceManager.getProductCode(deviceName)} ';
                     myDevice.toolsUuid.write(mailData.codeUnits);
                     registerActivity(
-                        DeviceManager.getProductCode(deviceName),
-                        DeviceManager.extractSerialNumber(deviceName),
-                        'Se desactivo el control por distancia');
+                      DeviceManager.getProductCode(deviceName),
+                      DeviceManager.extractSerialNumber(deviceName),
+                      'Se desactivo el control por distancia',
+                    );
                     setState(() {
                       distanceControlActive = false;
                     });
                   },
-                  child: const Text(
-                    'Desacticar control por distancia',
-                  ),
                 ),
+                const SizedBox(height: 20),
               ],
-              const SizedBox(
-                height: 10,
-              ),
-              const Text(
-                'Owner actual del equipo:',
+              buildText(
+                text: '',
+                textSpans: [
+                  const TextSpan(
+                    text: 'Owner actual del equipo:\n',
+                    style:
+                        TextStyle(color: color4, fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(
+                    text: owner == '' ? 'No hay owner registrado' : owner,
+                    style: TextStyle(
+                        color: owner == '' ? Colors.red : Colors.green,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ],
+                fontSize: 20.0,
                 textAlign: TextAlign.center,
-                style: (TextStyle(
-                    fontSize: 20.0,
-                    color: Color(0xfffbe4d8),
-                    fontWeight: FontWeight.bold)),
-              ),
-              Text(
-                owner == '' ? 'No hay owner registrado' : owner,
-                textAlign: TextAlign.center,
-                style: (const TextStyle(
-                    fontSize: 20.0,
-                    color: Color(0xFFdfb6b2),
-                    fontWeight: FontWeight.bold)),
               ),
               if (owner != '') ...[
-                const SizedBox(
-                  height: 10,
-                ),
-                ElevatedButton(
+                const SizedBox(height: 10),
+                buildButton(
+                  text: 'Eliminar Owner',
                   onPressed: () {
                     putOwner(service, DeviceManager.getProductCode(deviceName),
                         DeviceManager.extractSerialNumber(deviceName), '');
                     registerActivity(
-                        DeviceManager.getProductCode(deviceName),
-                        DeviceManager.extractSerialNumber(deviceName),
-                        'Se elimino el owner del equipo');
+                      DeviceManager.getProductCode(deviceName),
+                      DeviceManager.extractSerialNumber(deviceName),
+                      'Se elimino el owner del equipo',
+                    );
                     setState(() {
                       owner = '';
                     });
                   },
-                  child: const Text(
-                    'Eliminar Owner',
-                  ),
                 ),
+                const SizedBox(height: 20),
               ],
-              const SizedBox(
-                height: 20,
-              ),
+              const SizedBox(height: 5),
               if (secondaryAdmins.isEmpty) ...[
-                const Text(
-                  'No hay administradores \nsecundarios para este equipo',
-                  textAlign: TextAlign.center,
-                  style: (TextStyle(
-                      fontSize: 20.0,
-                      color: Color(0xfffbe4d8),
-                      fontWeight: FontWeight.bold)),
-                )
-              ] else ...[
-                const Text(
-                  'Administradores del equipo:',
-                  textAlign: TextAlign.center,
-                  style: (TextStyle(
-                      fontSize: 20.0,
-                      color: Color(0xfffbe4d8),
-                      fontWeight: FontWeight.bold)),
+                buildText(
+                  text: 'No hay administradores \nsecundarios para este equipo',
+                  fontSize: 20.0,
+                  fontWeight: FontWeight.bold,
                 ),
-                for (int i = 0; i < secondaryAdmins.length; i++) ...[
-                  const Divider(),
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
+              ] else ...[
+                buildText(
+                  text: 'Administradores del equipo:',
+                  fontSize: 20.0,
+                  fontWeight: FontWeight.bold,
+                ),
+                if (secondaryAdmins.isNotEmpty) ...{
+                  for (int i = 0; i < secondaryAdmins.length; i++) ...[
+                    const Divider(color: color1),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           IconButton(
                             onPressed: () {
                               registerActivity(
-                                  DeviceManager.getProductCode(deviceName),
-                                  DeviceManager.extractSerialNumber(deviceName),
-                                  'Se elimino el admin ${secondaryAdmins[i]} del equipo');
+                                DeviceManager.getProductCode(deviceName),
+                                DeviceManager.extractSerialNumber(deviceName),
+                                'Se elimino el admin ${secondaryAdmins[i]} del equipo',
+                              );
                               setState(() {
-                                secondaryAdmins.remove(secondaryAdmins[i]);
+                                secondaryAdmins.removeAt(i);
                               });
                               putSecondaryAdmins(
-                                  service,
-                                  DeviceManager.getProductCode(deviceName),
-                                  DeviceManager.extractSerialNumber(deviceName),
-                                  secondaryAdmins);
+                                service,
+                                DeviceManager.getProductCode(deviceName),
+                                DeviceManager.extractSerialNumber(deviceName),
+                                secondaryAdmins,
+                              );
                             },
-                            icon: const Icon(Icons.delete, color: Colors.grey),
+                            icon: const Icon(Icons.delete, color: color1),
                           ),
                           Text(
                             secondaryAdmins[i],
-                            style: (const TextStyle(
+                            style: const TextStyle(
                                 fontSize: 20.0,
-                                color: Color(0xFFdfb6b2),
-                                fontWeight: FontWeight.normal)),
+                                color: color0,
+                                fontWeight: FontWeight.normal),
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(width: 5),
+                  ],
+                } else
+                  ...{},
+                const Divider(color: color1),
+              ],
+              const SizedBox(height: 10),
+              buildText(
+                text: '',
+                textSpans: [
+                  const TextSpan(
+                    text:
+                        'Vencimiento beneficio\nAdministradores secundarios extra:\n',
+                    style:
+                        TextStyle(color: color4, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(
-                    width: 5,
+                  TextSpan(
+                    text: secAdmDate,
+                    style: TextStyle(
+                        color: secAdmDate == 'No tiene activado este beneficio'
+                            ? Colors.red
+                            : Colors.green,
+                        fontWeight: FontWeight.bold),
                   ),
                 ],
-                const Divider(),
-              ],
-              const SizedBox(
-                height: 20,
-              ),
-              const Text(
-                'Vencimiento beneficio\nAdministradores secundarios extra:',
+                fontSize: 20.0,
                 textAlign: TextAlign.center,
-                style: (TextStyle(
-                    fontSize: 20.0,
-                    color: Color(0xfffbe4d8),
-                    fontWeight: FontWeight.bold)),
               ),
-              Text(
-                secAdmDate,
-                textAlign: TextAlign.center,
-                style: (const TextStyle(
-                    fontSize: 20.0,
-                    color: Color(0xFFdfb6b2),
-                    fontWeight: FontWeight.bold)),
-              ),
-              ElevatedButton(
+              buildButton(
+                text: 'Modificar fecha',
                 onPressed: () {
                   showDialog(
                     context: context,
@@ -188,12 +183,12 @@ class ParamsTabState extends State<ParamsTab> {
                       final TextEditingController dateController =
                           TextEditingController();
                       return AlertDialog(
+                        backgroundColor: color1,
                         title: const Center(
                           child: Text(
                             'Especificar nueva fecha de vencimiento:',
                             style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold),
+                                color: color4, fontWeight: FontWeight.bold),
                           ),
                         ),
                         content: Column(
@@ -203,12 +198,12 @@ class ParamsTabState extends State<ParamsTab> {
                             SizedBox(
                               width: 300,
                               child: TextField(
-                                style: const TextStyle(color: Colors.black),
+                                style: const TextStyle(color: color4),
                                 controller: dateController,
                                 keyboardType: TextInputType.number,
                                 decoration: const InputDecoration(
                                   hintText: 'aaaa/mm/dd',
-                                  hintStyle: TextStyle(color: Colors.black),
+                                  hintStyle: TextStyle(color: color4),
                                 ),
                                 onChanged: (value) {
                                   if (value.length > 10) {
@@ -229,105 +224,10 @@ class ParamsTabState extends State<ParamsTab> {
                             onPressed: () {
                               navigatorKey.currentState!.pop();
                             },
-                            child: const Text('Cancelar'),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              registerActivity(
-                                  DeviceManager.getProductCode(deviceName),
-                                  DeviceManager.extractSerialNumber(deviceName),
-                                  'Se modifico el vencimiento del beneficio "administradores secundarios extras"');
-                              putDate(
-                                  service,
-                                  DeviceManager.getProductCode(deviceName),
-                                  DeviceManager.extractSerialNumber(deviceName),
-                                  dateController.text.trim(),
-                                  false);
-                              setState(() {
-                                secAdmDate = dateController.text.trim();
-                              });
-                              navigatorKey.currentState!.pop();
-                            },
-                            child: const Text('Enviar fecha'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-                child: const Text(
-                  'Modificar fecha',
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              const Text(
-                'Vencimiento beneficio\nAlquiler temporario:',
-                textAlign: TextAlign.center,
-                style: (TextStyle(
-                    fontSize: 20.0,
-                    color: Color(0xfffbe4d8),
-                    fontWeight: FontWeight.bold)),
-              ),
-              Text(
-                atDate,
-                textAlign: TextAlign.center,
-                style: (const TextStyle(
-                    fontSize: 20.0,
-                    color: Color(0xFFdfb6b2),
-                    fontWeight: FontWeight.bold)),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      final TextEditingController dateController =
-                          TextEditingController();
-                      return AlertDialog(
-                        title: const Center(
-                          child: Text(
-                            'Especificar nueva fecha de vencimiento:',
-                            style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 300,
-                              child: TextField(
-                                style: const TextStyle(color: Colors.black),
-                                controller: dateController,
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  hintText: 'aaaa/mm/dd',
-                                  hintStyle: TextStyle(color: Colors.black),
-                                ),
-                                onChanged: (value) {
-                                  if (value.length > 10) {
-                                    dateController.text =
-                                        value.substring(0, 10);
-                                  } else if (value.length == 4) {
-                                    dateController.text = '$value/';
-                                  } else if (value.length == 7) {
-                                    dateController.text = '$value/';
-                                  }
-                                },
-                              ),
+                            child: const Text(
+                              'Cancelar',
+                              style: TextStyle(color: color4),
                             ),
-                          ],
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              navigatorKey.currentState!.pop();
-                            },
-                            child: const Text('Cancelar'),
                           ),
                           TextButton(
                             onPressed: () {
@@ -346,19 +246,120 @@ class ParamsTabState extends State<ParamsTab> {
                               });
                               navigatorKey.currentState!.pop();
                             },
-                            child: const Text('Enviar fecha'),
+                            child: const Text(
+                              'Enviar fecha',
+                              style: TextStyle(color: color4),
+                            ),
                           ),
                         ],
                       );
                     },
                   );
                 },
-                child: const Text(
-                  'Modificar fecha',
-                ),
               ),
-              const SizedBox(
-                height: 20,
+              const SizedBox(height: 10),
+              buildText(
+                text: '',
+                textSpans: [
+                  const TextSpan(
+                    text: 'Vencimiento beneficio\nAlquiler temporario:\n',
+                    style:
+                        TextStyle(color: color4, fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(
+                    text: atDate,
+                    style: TextStyle(
+                        color: secAdmDate == 'No tiene activado este beneficio'
+                            ? Colors.yellow
+                            : Colors.red,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ],
+                fontSize: 20.0,
+                textAlign: TextAlign.center,
+              ),
+              buildButton(
+                text: 'Modificar fecha',
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      final TextEditingController dateController =
+                          TextEditingController();
+                      return AlertDialog(
+                        backgroundColor: color1,
+                        title: const Center(
+                          child: Text(
+                            'Especificar nueva fecha de vencimiento:',
+                            style: TextStyle(
+                                color: color4, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 300,
+                              child: TextField(
+                                style: const TextStyle(color: color4),
+                                controller: dateController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  hintText: 'aaaa/mm/dd',
+                                  hintStyle: TextStyle(color: color4),
+                                ),
+                                onChanged: (value) {
+                                  if (value.length > 10) {
+                                    dateController.text =
+                                        value.substring(0, 10);
+                                  } else if (value.length == 4) {
+                                    dateController.text = '$value/';
+                                  } else if (value.length == 7) {
+                                    dateController.text = '$value/';
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              navigatorKey.currentState!.pop();
+                            },
+                            child: const Text('Cancelar',
+                                style: TextStyle(color: color4)),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              registerActivity(
+                                  DeviceManager.getProductCode(deviceName),
+                                  DeviceManager.extractSerialNumber(deviceName),
+                                  'Se modifico el vencimiento del beneficio "alquiler temporario"');
+                              putDate(
+                                  service,
+                                  DeviceManager.getProductCode(deviceName),
+                                  DeviceManager.extractSerialNumber(deviceName),
+                                  dateController.text.trim(),
+                                  true);
+                              setState(() {
+                                atDate = dateController.text.trim();
+                              });
+                              navigatorKey.currentState!.pop();
+                            },
+                            child: const Text('Enviar fecha',
+                                style: TextStyle(color: color4)),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
               ),
             ],
           ),

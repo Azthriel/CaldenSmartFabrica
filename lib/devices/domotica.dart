@@ -7,6 +7,11 @@ import 'package:caldensmartfabrica/devices/globales/tools.dart';
 import 'package:flutter/material.dart';
 import '../master.dart';
 
+List<String> tipo = [];
+List<String> estado = [];
+List<bool> alertIO = [];
+List<String> common = [];
+
 class DomoticaPage extends StatefulWidget {
   const DomoticaPage({super.key});
 
@@ -17,6 +22,10 @@ class DomoticaPage extends StatefulWidget {
 class DomoticaPageState extends State<DomoticaPage> {
   TextEditingController textController = TextEditingController();
   final PageController _pageController = PageController(initialPage: 0);
+  bool testingIN = false;
+  bool testingOUT = false;
+  List<bool> stateIN = List<bool>.filled(4, false, growable: false);
+  List<bool> stateOUT = List<bool>.filled(4, false, growable: false);
 
   int _selectedIndex = 0;
 
@@ -47,6 +56,8 @@ class DomoticaPageState extends State<DomoticaPage> {
     super.initState();
     updateWifiValues(toolsValues);
     subscribeToWifiStatus();
+    subToIO();
+    processValues(ioValues);
   }
 
   void updateWifiValues(List<int> data) {
@@ -111,23 +122,490 @@ class DomoticaPageState extends State<DomoticaPage> {
     myDevice.device.cancelWhenDisconnected(wifiSub);
   }
 
+  void processValues(List<int> values) {
+    ioValues = values;
+    var parts = utf8.decode(values).split('/');
+    printLog(parts);
+    tipo.clear();
+    estado.clear();
+    common.clear();
+    alertIO.clear();
+
+    for (int i = 0; i < parts.length; i++) {
+      var equipo = parts[i].split(':');
+      tipo.add(equipo[0] == '0' ? 'Salida' : 'Entrada');
+      estado.add(equipo[1]);
+      common.add(equipo[2]);
+      alertIO.add(estado[i] != common[i]);
+
+      printLog(
+          'En la posición $i el modo es ${tipo[i]} y su estado es ${estado[i]}');
+      printLog('Su posición es ${common[i]}');
+      printLog('¿Esta en alerta?: ${alertIO[i]}');
+    }
+
+    setState(() {});
+  }
+
+  void subToIO() async {
+    if (!alreadySubIO) {
+      await myDevice.ioUuid.setNotifyValue(true);
+      printLog('Subscrito a IO');
+      alreadySubIO = true;
+    }
+
+    var ioSub = myDevice.ioUuid.onValueReceived.listen((event) {
+      printLog('Cambio en IO');
+      processValues(event);
+    });
+
+    myDevice.device.cancelWhenDisconnected(ioSub);
+  }
+
+  void mandarBurneo() async {
+    printLog('mande a la google sheet');
+
+    const String url =
+        'https://script.google.com/macros/s/AKfycbyESEF-o_iBAotpLi7gszSfelJVLlJbrgSVSiMYWYaHfC8io5fJ2tlAKkGpH7iJYK3p0Q/exec';
+
+    final response = await dio.get(url, queryParameters: {
+      'productCode': DeviceManager.getProductCode(deviceName),
+      'serialNumber': DeviceManager.extractSerialNumber(deviceName),
+      'Legajo': legajoConectado,
+      'in0': stateIN[0],
+      'in1': stateIN[1],
+      'in2': stateIN[2],
+      'in3': stateIN[3],
+      'out0': stateOUT[0],
+      'out1': stateOUT[1],
+      'out2': stateOUT[2],
+      'out3': stateOUT[3],
+      'date': DateTime.now().toIso8601String()
+    });
+    if (response.statusCode == 200) {
+      printLog('Anashe');
+    } else {
+      printLog('!=200 ${response.statusCode}');
+    }
+  }
+
   //! VISUAL
   @override
   Widget build(BuildContext context) {
+    var parts = utf8.decode(ioValues).split('/');
+    double width = MediaQuery.of(context).size.width;
+    double bottomBarHeight = kBottomNavigationBarHeight;
+
     final List<Widget> pages = [
-      //*- Página 1 TOOLS -*\\
-      const ToolsPage(),
+      if (accessLevel > 1) ...[
+        //*- Página 1 TOOLS -*\\
+        const ToolsPage(),
 
-      //*- Página 2 PARAMS -*\\
-      const ParamsTab(),
+        //*- Página 2 PARAMS -*\\
+        const ParamsTab(),
+      ],
 
-      //TODO: Cambiar diseño
-      //*- Página 3 CONTROL -*\\
+      //*- Página 3 SET -*\\
+      Scaffold(
+        backgroundColor: color4,
+        body: ListView.builder(
+          itemCount: parts.length,
+          itemBuilder: (context, int index) {
+            bool entrada = tipo[index] == 'Entrada';
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(
+                  height: 10,
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: color0,
+                    borderRadius: BorderRadius.circular(20),
+                    border: const Border(
+                      bottom: BorderSide(color: color1, width: 5),
+                      right: BorderSide(color: color1, width: 5),
+                      left: BorderSide(color: color1, width: 5),
+                      top: BorderSide(color: color1, width: 5),
+                    ),
+                  ),
+                  width: width - 50,
+                  height: entrada ? 275 : 250,
+                  child: Column(
+                    children: [
+                      Text(
+                        tipo[index],
+                        style: const TextStyle(
+                            color: color4,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 50),
+                        textAlign: TextAlign.start,
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      entrada
+                          ? alertIO[index]
+                              ? const Icon(
+                                  Icons.new_releases,
+                                  color: Color(0xffcb3234),
+                                  size: 50,
+                                )
+                              : const Icon(
+                                  Icons.new_releases,
+                                  color: color4,
+                                  size: 50,
+                                )
+                          : Switch(
+                              activeColor: color4,
+                              activeTrackColor: color1,
+                              inactiveThumbColor: color1,
+                              inactiveTrackColor: color4,
+                              value: estado[index] == '1',
+                              onChanged: (value) async {
+                                String fun = '$index#${value ? '1' : '0'}';
+                                await myDevice.ioUuid.write(fun.codeUnits);
+                              },
+                            ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      entrada
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                const SizedBox(
+                                  width: 30,
+                                ),
+                                const Text(
+                                  'Estado común:',
+                                  style: TextStyle(
+                                      color: Color(0xfffbe4d8), fontSize: 15),
+                                ),
+                                const Spacer(),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10),
+                                  child: ChoiceChip(
+                                    label: const Text('0'),
+                                    selected: common[index] == '0',
+                                    shape: const OvalBorder(),
+                                    pressElevation: 5,
+                                    showCheckmark: false,
+                                    selectedColor: const Color(0xfffbe4d8),
+                                    onSelected: (value) {
+                                      common[index] = '0';
+                                      String data =
+                                          '${DeviceManager.getProductCode(deviceName)}[14]($index#${common[index]})';
+                                      printLog(data);
+                                      myDevice.toolsUuid.write(data.codeUnits);
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(
+                                  width: 10,
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10),
+                                  child: ChoiceChip(
+                                    label: const Text('1'),
+                                    labelStyle: const TextStyle(color: color1),
+                                    selected: common[index] == '1',
+                                    shape: const OvalBorder(),
+                                    pressElevation: 5,
+                                    showCheckmark: false,
+                                    selectedColor: color4,
+                                    onSelected: (value) {
+                                      common[index] = '1';
+                                      String data =
+                                          '${DeviceManager.getProductCode(deviceName)}[14]($index#${common[index]})';
+                                      printLog(data);
+                                      myDevice.toolsUuid.write(data.codeUnits);
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(
+                                  width: 10,
+                                ),
+                              ],
+                            )
+                          : const SizedBox(
+                              height: 10,
+                            ),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          const SizedBox(
+                            width: 30,
+                          ),
+                          const Text(
+                            '¿Cambiar de modo?',
+                            style: TextStyle(color: color4, fontSize: 15),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (BuildContext dialogContext) {
+                                  return AlertDialog(
+                                    backgroundColor: color0,
+                                    content: Text(
+                                      '¿Cambiar de ${tipo[index]} a ${entrada ? 'Salida' : 'Entrada'}?',
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        color: color4,
+                                      ),
+                                    ),
+                                    actions: <Widget>[
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(dialogContext).pop(),
+                                        child: const Text(
+                                          'Cancelar',
+                                          style: TextStyle(color: color4),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          String fun =
+                                              '${DeviceManager.getProductCode(deviceName)}[13]($index#${entrada ? '0' : '1'})';
+                                          printLog(fun);
+                                          myDevice.toolsUuid
+                                              .write(fun.codeUnits);
+                                          Navigator.of(dialogContext).pop();
+                                        },
+                                        child: const Text(
+                                          'Cambiar',
+                                          style: TextStyle(color: color4),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                            icon: const Icon(
+                              Icons.change_circle_outlined,
+                              color: color4,
+                              size: 30,
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                if (index == parts.length - 1)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: bottomBarHeight + 30),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
 
-      //*- Página 4 CREDENTIAL -*\\
-      const CredsTab(),
+      if (accessLevel > 1) ...[
+        //*- Página 4 CONTROL -*\\
+        Scaffold(
+          backgroundColor: color4,
+          body: Center(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.vertical,
+              child: Column(
+                children: [
+                  buildText(
+                    text: '',
+                    textSpans: [
+                      const TextSpan(
+                        text: '¿Burneo realizado?\n',
+                        style: TextStyle(
+                            color: color4, fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(
+                        text: burneoDone ? 'SI' : 'NO',
+                        style: TextStyle(
+                          color: burneoDone ? color4 : const Color(0xffFF0000),
+                        ),
+                      ),
+                    ],
+                    fontSize: 20.0,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 30),
+                  buildButton(
+                    text: 'Probar entradas',
+                    onPressed: () {
+                      registerActivity(
+                          DeviceManager.getProductCode(deviceName),
+                          DeviceManager.extractSerialNumber(deviceName),
+                          'Se envio el testeo de entradas');
+                      for (int index = 0; index < 4; index++) {
+                        String fun =
+                            '${DeviceManager.getProductCode(deviceName)}[13]($index#1)';
+                        myDevice.toolsUuid.write(fun.codeUnits);
+                      }
+                      printLog('Ya se cambiaron todos los pines a entrada');
+                      setState(() {
+                        testingIN = true;
+                      });
+                    },
+                  ),
+                  if (testingIN) ...[
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    for (int i = 0; i < 4; i++) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Funcionamiento Entrada$i: ',
+                              style: const TextStyle(
+                                  fontSize: 15.0,
+                                  color: color0,
+                                  fontWeight: FontWeight.normal)),
+                          Switch(
+                            activeColor: color4,
+                            activeTrackColor: color1,
+                            inactiveThumbColor: color1,
+                            inactiveTrackColor: color4,
+                            trackOutlineColor:
+                                const WidgetStatePropertyAll(color1),
+                            thumbIcon: WidgetStateProperty.resolveWith<Icon?>(
+                              (Set<WidgetState> states) {
+                                if (states.contains(WidgetState.selected)) {
+                                  return const Icon(Icons.check, color: color1);
+                                } else {
+                                  return const Icon(Icons.close, color: color4);
+                                }
+                              },
+                            ),
+                            value: stateIN[i],
+                            onChanged: (value) {
+                              setState(() {
+                                stateIN[i] = value;
+                              });
+                              printLog(stateIN);
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  buildButton(
+                    text: 'Probar salidas',
+                    onPressed: () {
+                      if (testingIN) {
+                        registerActivity(
+                            DeviceManager.getProductCode(deviceName),
+                            DeviceManager.extractSerialNumber(deviceName),
+                            'Se envio el testeo de salidas');
+                        for (int index = 0; index < 4; index++) {
+                          String fun =
+                              '${DeviceManager.getProductCode(deviceName)}[13]($index#0)';
+                          myDevice.toolsUuid.write(fun.codeUnits);
+                        }
+                        printLog('Ya se cambiaron todos los pines a salida');
+                        String fun1 =
+                            '${DeviceManager.getProductCode(deviceName)}[15](0)';
+                        myDevice.toolsUuid.write(fun1.codeUnits);
+                        setState(() {
+                          testingOUT = true;
+                        });
+                      } else {
+                        showToast('Primero probar entradas');
+                      }
+                    },
+                  ),
+                  if (testingOUT) ...[
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    for (int i = 0; i < 4; i++) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Funcionamiento Salida$i: ',
+                              style: const TextStyle(
+                                  fontSize: 15.0,
+                                  color: color0,
+                                  fontWeight: FontWeight.normal)),
+                          Switch(
+                            activeColor: color4,
+                            activeTrackColor: color1,
+                            inactiveThumbColor: color1,
+                            inactiveTrackColor: color4,
+                            trackOutlineColor:
+                                const WidgetStatePropertyAll(color1),
+                            thumbIcon: WidgetStateProperty.resolveWith<Icon?>(
+                              (Set<WidgetState> states) {
+                                // ignore: deprecated_member_use
+                                if (states.contains(MaterialState.selected)) {
+                                  return const Icon(Icons.check, color: color1);
+                                } else {
+                                  return const Icon(Icons.close, color: color4);
+                                }
+                              },
+                            ),
+                            value: stateIN[i],
+                            onChanged: (value) {
+                              setState(() {
+                                stateOUT[i] = value;
+                              });
+                              printLog(stateOUT);
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  buildButton(
+                    text: 'Enviar burneo',
+                    onPressed: () {
+                      if (testingIN && testingOUT) {
+                        registerActivity(
+                            DeviceManager.getProductCode(deviceName),
+                            DeviceManager.extractSerialNumber(deviceName),
+                            'Se envio el burneo');
+                        printLog('Se envío burneo');
+                        mandarBurneo();
+                        String fun2 =
+                            '${DeviceManager.getProductCode(deviceName)}[15](1)';
+                        myDevice.toolsUuid.write(fun2.codeUnits);
+                      } else {
+                        showToast('Primero probar entradas y salidas');
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
 
-      //*- Página 5 OTA -*\\
+        //*- Página 5 CREDENTIAL -*\\
+        const CredsTab(),
+      ],
+
+      //*- Página 6 OTA -*\\
       const OtaTab(),
     ];
 
@@ -142,7 +620,9 @@ class DomoticaPageState extends State<DomoticaPage> {
               backgroundColor: color1,
               content: Row(
                 children: [
-                  Image.asset('assets/Loading.gif', width: 100, height: 100),
+                  Image.asset(EasterEggs.legajosMeme.contains(legajoConectado)
+                          ? 'assets/eg/DSC.gif'
+                          : 'assets/Loading.gif', width: 100, height: 100),
                   Container(
                     margin: const EdgeInsets.only(left: 15),
                     child: const Text(
@@ -188,7 +668,9 @@ class DomoticaPageState extends State<DomoticaPage> {
                     backgroundColor: color1,
                     content: Row(
                       children: [
-                        Image.asset('assets/Loading.gif',
+                        Image.asset(EasterEggs.legajosMeme.contains(legajoConectado)
+                          ? 'assets/eg/DSC.gif'
+                          : 'assets/Loading.gif',
                             width: 100, height: 100),
                         Container(
                           margin: const EdgeInsets.only(left: 15),
@@ -241,12 +723,21 @@ class DomoticaPageState extends State<DomoticaPage> {
               child: CurvedNavigationBar(
                 index: _selectedIndex,
                 height: 75.0,
-                items: const <Widget>[
-                  Icon(Icons.settings, size: 30, color: color4),
-                  Icon(Icons.star, size: 30, color: color4),
-                  Icon(Icons.thermostat, size: 30, color: color4),
-                  Icon(Icons.person, size: 30, color: color4),
-                  Icon(Icons.send, size: 30, color: color4),
+                items: <Widget>[
+                  if (accessLevel > 1) ...[
+                    const Icon(Icons.settings, size: 30, color: color4),
+                    const Icon(Icons.star, size: 30, color: color4),
+                    const Icon(Icons.settings_accessibility,
+                        size: 30, color: color4),
+                    const Icon(Icons.pending_actions_rounded,
+                        size: 30, color: color4),
+                    const Icon(Icons.person, size: 30, color: color4),
+                    const Icon(Icons.send, size: 30, color: color4),
+                  ] else ...[
+                    const Icon(Icons.settings_accessibility,
+                        size: 30, color: color4),
+                    const Icon(Icons.send, size: 30, color: color4),
+                  ],
                 ],
                 color: color1,
                 buttonBackgroundColor: color1,

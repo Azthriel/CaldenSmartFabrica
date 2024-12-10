@@ -41,14 +41,14 @@ class OtaTabState extends State<OtaTab> {
     if (factory) {
       if (otaSVController.text.contains('_F')) {
         url =
-            'https://github.com/barberop/sime-domotica/raw/main/${DeviceManager.getProductCode(deviceName)}_IOT/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
+            'https://github.com/barberop/sime-domotica/raw/refs/heads/main/${DeviceManager.getProductCode(deviceName)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
       } else {
         url =
-            'https://github.com/barberop/sime-domotica/raw/main/${DeviceManager.getProductCode(deviceName)}_IOT/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}_F.bin';
+            'https://github.com/barberop/sime-domotica/raw/refs/heads/main/${DeviceManager.getProductCode(deviceName)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}_F.bin';
       }
     } else {
       url =
-          'https://github.com/barberop/sime-domotica/raw/main/${DeviceManager.getProductCode(deviceName)}_IOT/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
+          'https://github.com/barberop/sime-domotica/raw/refs/heads/main/${DeviceManager.getProductCode(deviceName)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
     }
 
     printLog(url);
@@ -212,20 +212,10 @@ class OtaTabState extends State<OtaTab> {
 
   @override
   Widget build(BuildContext context) {
+    double bottomBarHeight = kBottomNavigationBarHeight;
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      backgroundColor: const Color(0xff190019),
-      appBar: AppBar(
-        title: const Align(
-            alignment: Alignment.center,
-            child: Text(
-              'El dispositio debe estar conectado a internet\npara poder realizar la OTA',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18),
-            )),
-        backgroundColor: Colors.transparent,
-        foregroundColor: const Color(0xfffbe4d8),
-      ),
+      backgroundColor: color4,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -238,37 +228,34 @@ class OtaTabState extends State<OtaTab> {
                   width: 300,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
-                    color: const Color(0xff854f6c),
+                    color: color0,
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: LinearProgressIndicator(
                       value: progressValue,
                       backgroundColor: Colors.transparent,
+                      color: color1
                     ),
                   ),
                 ),
                 Text(
                   'Progreso descarga OTA: ${(progressValue * 100).toInt()}%',
                   style: const TextStyle(
-                    color: Color(0xfffbe4d8),
+                    color: color4,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 40),
-            SizedBox(
-                width: 300,
-                child: TextField(
-                  keyboardType: TextInputType.text,
-                  style: const TextStyle(color: Color(0xfffbe4d8)),
-                  controller: otaSVController,
-                  decoration: const InputDecoration(
-                    labelText: 'Introducir última versión de Software',
-                    labelStyle: TextStyle(color: Color(0xfffbe4d8)),
-                  ),
-                )),
+            buildTextField(
+              controller: otaSVController,
+              label: 'Introducir última versión de Software',
+              hint: '',
+              onSubmitted: (value) {},
+              widthFactor: 0.9,
+            ),
             const SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -276,6 +263,15 @@ class OtaTabState extends State<OtaTab> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: color1,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 40, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        elevation: 6,
+                        shadowColor: color3.withOpacity(0.4),
+                      ),
                       onPressed: () {
                         registerActivity(
                             DeviceManager.getProductCode(deviceName),
@@ -283,13 +279,6 @@ class OtaTabState extends State<OtaTab> {
                             'Se envio OTA Wifi a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTAWifi(false);
                       },
-                      style: ButtonStyle(
-                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18.0),
-                          ),
-                        ),
-                      ),
                       child: const Center(
                         child: Column(
                           children: [
@@ -297,15 +286,16 @@ class OtaTabState extends State<OtaTab> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.build, size: 16),
+                                Icon(Icons.build, size: 16, color: color4),
                                 SizedBox(width: 20),
-                                Icon(Icons.wifi, size: 16),
+                                Icon(Icons.wifi, size: 16, color: color4),
                               ],
                             ),
                             SizedBox(height: 10),
                             Text(
                               'Mandar OTA Work (WiFi)',
                               textAlign: TextAlign.center,
+                              style: TextStyle(color: color4),
                             ),
                             SizedBox(height: 10),
                           ],
@@ -316,6 +306,15 @@ class OtaTabState extends State<OtaTab> {
                   const SizedBox(width: 20),
                   Expanded(
                     child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: color1,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 40, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        elevation: 6,
+                        shadowColor: color3.withOpacity(0.4),
+                      ),
                       onPressed: () {
                         registerActivity(
                             DeviceManager.getProductCode(deviceName),
@@ -323,13 +322,6 @@ class OtaTabState extends State<OtaTab> {
                             'Se envio OTA Wifi a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTAWifi(true);
                       },
-                      style: ButtonStyle(
-                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18.0),
-                          ),
-                        ),
-                      ),
                       child: const Center(
                         // Added to center elements
                         child: Column(
@@ -338,14 +330,16 @@ class OtaTabState extends State<OtaTab> {
                             Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.factory_outlined, size: 15),
+                                  Icon(Icons.factory_outlined,
+                                      size: 15, color: color4),
                                   SizedBox(width: 20),
-                                  Icon(Icons.wifi, size: 15),
+                                  Icon(Icons.wifi, size: 15, color: color4),
                                 ]),
                             SizedBox(height: 10),
                             Text(
                               'Mandar OTA fábrica (WiFi)',
                               textAlign: TextAlign.center,
+                              style: TextStyle(color: color4),
                             ),
                             SizedBox(height: 10),
                           ],
@@ -363,6 +357,15 @@ class OtaTabState extends State<OtaTab> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: color1,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 40, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        elevation: 6,
+                        shadowColor: color3.withOpacity(0.4),
+                      ),
                       onPressed: () {
                         registerActivity(
                             DeviceManager.getProductCode(deviceName),
@@ -370,13 +373,6 @@ class OtaTabState extends State<OtaTab> {
                             'Se envio OTA ble a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTABLE(false);
                       },
-                      style: ButtonStyle(
-                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18.0),
-                          ),
-                        ),
-                      ),
                       child: const Center(
                         // Added to center elements
                         child: Column(
@@ -385,15 +381,21 @@ class OtaTabState extends State<OtaTab> {
                             Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.build, size: 16),
+                                  Icon(
+                                    Icons.build,
+                                    size: 16,
+                                    color: color4,
+                                  ),
                                   SizedBox(width: 20),
-                                  Icon(Icons.bluetooth, size: 16),
+                                  Icon(Icons.bluetooth,
+                                      size: 16, color: color4),
                                   SizedBox(height: 10),
                                 ]),
                             SizedBox(height: 10),
                             Text(
                               'Mandar OTA Work (BLE)',
                               textAlign: TextAlign.center,
+                              style: TextStyle(color: color4),
                             ),
                             SizedBox(height: 10),
                           ],
@@ -404,6 +406,15 @@ class OtaTabState extends State<OtaTab> {
                   const SizedBox(width: 20),
                   Expanded(
                     child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: color1,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 40, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        elevation: 6,
+                        shadowColor: color3.withOpacity(0.4),
+                      ),
                       onPressed: () {
                         registerActivity(
                             DeviceManager.getProductCode(deviceName),
@@ -411,13 +422,6 @@ class OtaTabState extends State<OtaTab> {
                             'Se envio OTA ble a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
                         sendOTABLE(true);
                       },
-                      style: ButtonStyle(
-                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18.0),
-                          ),
-                        ),
-                      ),
                       child: const Center(
                         // Added to center elements
                         child: Column(
@@ -426,20 +430,27 @@ class OtaTabState extends State<OtaTab> {
                             Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.factory_outlined, size: 15),
+                                  Icon(Icons.factory_outlined,
+                                      size: 15, color: color4),
                                   SizedBox(width: 20),
-                                  Icon(Icons.bluetooth, size: 15),
+                                  Icon(Icons.bluetooth,
+                                      size: 15, color: color4),
                                 ]),
                             SizedBox(height: 10),
                             Text(
                               'Mandar OTA fábrica (BLE)',
                               textAlign: TextAlign.center,
+                              style: TextStyle(color: color4),
                             ),
                             SizedBox(height: 10),
                           ],
                         ),
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
                   ),
                 ],
               ),
