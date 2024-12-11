@@ -15,25 +15,18 @@ class DetectorPage extends StatefulWidget {
 }
 
 class DetectorPageState extends State<DetectorPage> {
-  TextEditingController textController = TextEditingController();
   final PageController _pageController = PageController(initialPage: 0);
+  int _selectedIndex = 0;
+
+  //*-Calibracion-*\\
   final TextEditingController _setVccInputController = TextEditingController();
   final TextEditingController _setVrmsInputController = TextEditingController();
   final TextEditingController _setVrms02InputController =
       TextEditingController();
-  List<String> valores = [];
-  final ScrollController _scrollController = ScrollController();
-  late List<int> value;
-  bool regulationDone = false;
-  List<String> debug = [];
-  List<int> lastValue = [];
-  int regIniIns = 0;
-
   Color _vrmsColor = color0;
   Color _vccColor = color0;
   Color rsColor = color0;
   Color rrcoColor = color0;
-
   List<int> _calValues = List<int>.filled(11, 0);
   int _vrms = 0;
   int _vcc = 0;
@@ -50,9 +43,20 @@ class DetectorPageState extends State<DetectorPage> {
   bool rsOver35k = false;
   int ppmCO = 0;
   int ppmCH4 = 0;
+  //*-Calibracion-*\\
+  //*-Regulacion-*\\
+  List<String> valoresReg = [];
+  final ScrollController _scrollController = ScrollController();
+  bool regulationDone = false;
+  //*-Regulacion-*\\
+  //*-Debug-*\\
+  List<String> debug = [];
+  List<int> lastValue = [];
+  int regIniIns = 0;
+  //*-Debug-*\\
+  //*-Light-*\\
   double _sliderValue = 100.0;
-
-  int _selectedIndex = 0;
+  //*-Light-*\\
 
   void _onItemTapped(int index) {
     if ((index - _selectedIndex).abs() > 1) {
@@ -72,7 +76,6 @@ class DetectorPageState extends State<DetectorPage> {
   @override
   void dispose() {
     _pageController.dispose();
-    textController.dispose();
     _setVrms02InputController.dispose();
     _setVrmsInputController.dispose();
     _setVccInputController.dispose();
@@ -85,17 +88,18 @@ class DetectorPageState extends State<DetectorPage> {
     super.initState();
     updateWifiValues(toolsValues);
     subscribeToWifiStatus();
-    _calValues = calibrationValues;
-    ppmCO = workValues[5] + workValues[6] << 8;
-    ppmCH4 = workValues[7] + workValues[8] << 8;
-    updateValuesCalibracion(_calValues);
-    _subscribeToCalCharacteristic();
-    _subscribeToWorkCharacteristic();
-    value = regulationValues;
-    _readValues();
-    _subscribeValue();
-    updateDebugValues(debugValues);
-    _subscribeDebug();
+    if (factoryMode) {
+      _calValues = calibrationValues;
+      ppmCO = workValues[5] + workValues[6] << 8;
+      ppmCH4 = workValues[7] + workValues[8] << 8;
+      updateValuesCalibracion(_calValues);
+      _subscribeToCalCharacteristic();
+      _subscribeToWorkCharacteristic();
+      _readValues();
+      _subscribeValue();
+      updateDebugValues(debugValues);
+      _subscribeDebug();
+    }
   }
 
   void updateWifiValues(List<int> data) {
@@ -349,22 +353,22 @@ class DetectorPageState extends State<DetectorPage> {
     setState(() {
       for (int i = 0; i < 10; i += 2) {
         printLog('i = $i');
-        int datas = value[i] + (value[i + 1] << 8);
-        valores.add(datas.toString());
+        int datas = regulationValues[i] + (regulationValues[i + 1] << 8);
+        valoresReg.add(datas.toString());
       }
       for (int j = 10; j < 15; j++) {
         printLog('j = $j');
-        valores.add(value[j].toString());
+        valoresReg.add(regulationValues[j].toString());
       }
       for (int k = 15; k < 29; k += 2) {
         printLog('k = $k');
-        int dataj = value[k] + (value[k + 1] << 8);
-        valores.add(dataj.toString());
+        int dataj = regulationValues[k] + (regulationValues[k + 1] << 8);
+        valoresReg.add(dataj.toString());
       }
 
-      if (value[29] == 0) {
+      if (regulationValues[29] == 0) {
         regulationDone = false;
-      } else if (value[29] == 1) {
+      } else if (regulationValues[29] == 1) {
         regulationDone = true;
       }
     });
@@ -385,24 +389,24 @@ class DetectorPageState extends State<DetectorPage> {
   }
 
   void updateValuesRegulation(List<int> data) {
-    valores.clear();
+    valoresReg.clear();
     printLog('Entro: $data');
     setState(() {
       for (int i = 0; i < 10; i += 2) {
-        int datas = value[i] + (value[i + 1] << 8);
-        valores.add(datas.toString());
+        int datas = data[i] + (data[i + 1] << 8);
+        valoresReg.add(datas.toString());
       }
       for (int j = 10; j < 15; j++) {
-        valores.add(value[j].toString());
+        valoresReg.add(data[j].toString());
       }
       for (int k = 15; k < 29; k += 2) {
-        int dataj = value[k] + (value[k + 1] << 8);
-        valores.add(dataj.toString());
+        int dataj = data[k] + (data[k + 1] << 8);
+        valoresReg.add(dataj.toString());
       }
 
-      if (value[29] == 0) {
+      if (data[29] == 0) {
         regulationDone = false;
-      } else if (value[29] == 1) {
+      } else if (data[29] == 1) {
         regulationDone = true;
       }
     });
@@ -543,483 +547,485 @@ class DetectorPageState extends State<DetectorPage> {
         //*- Página 1 TOOLS -*\\
         const ToolsPage(),
 
-        //*- Página 2 CALIBRACION -*\\
-        Scaffold(
-          backgroundColor: color4,
-          body: ListView(
-            padding: const EdgeInsets.all(8.0),
-            children: [
-              Text('Valores de calibracion: $_calValues',
-                  textScaler: const TextScaler.linear(1.2),
-                  style: const TextStyle(color: color0)),
-              const SizedBox(height: 40),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: '(C21) VCC:                          ',
-                      style: TextStyle(
-                        fontSize: 22.0,
-                        color: color0,
-                      ),
-                    ),
-                    TextSpan(
-                      text: '$_vcc',
-                      style: TextStyle(
-                        fontSize: 24.0,
-                        color: _vccColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    TextSpan(
-                      text: ' mV',
-                      style: TextStyle(
-                        fontSize: 22.0,
-                        color: _vccColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                    disabledActiveTrackColor: _vccColor,
-                    disabledInactiveTrackColor: color3,
-                    trackHeight: 12,
-                    thumbShape: SliderComponentShape.noThumb),
-                child: Slider(
-                  value: _vcc.toDouble(),
-                  min: 0,
-                  max: 8000,
-                  onChanged: null,
-                  onChangeStart: null,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: '(C21) VRMS:                          ',
-                      style: TextStyle(
-                        fontSize: 22.0,
-                        color: color0,
-                      ),
-                    ),
-                    TextSpan(
-                      text: '$_vrms',
-                      style: TextStyle(
-                        fontSize: 24.0,
-                        color: _vrmsColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    TextSpan(
-                      text: ' mV',
-                      style: TextStyle(
-                        fontSize: 22.0,
-                        color: _vrmsColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                    disabledActiveTrackColor: _vrmsColor,
-                    disabledInactiveTrackColor: color3,
-                    trackHeight: 12,
-                    thumbShape: SliderComponentShape.noThumb),
-                child: Slider(
-                  value: _vrms.toDouble(),
-                  min: 0,
-                  max: 2000,
-                  onChanged: null,
-                  onChangeStart: null,
-                ),
-              ),
-              const SizedBox(height: 50),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: '(C20) VCC Offset:                  ',
-                      style: TextStyle(fontSize: 22.0, color: color0),
-                    ),
-                    TextSpan(
-                      text: '$_vccOffset ',
-                      style: const TextStyle(
-                          fontSize: 22.0,
-                          color: color0,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    const TextSpan(
-                      text: 'ADCU',
-                      style: TextStyle(
-                        fontSize: 16.0,
-                        color: color0,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              FractionallySizedBox(
-                widthFactor: 0.550,
-                alignment: Alignment.bottomLeft,
-                child: TextField(
-                  style: const TextStyle(color: color0),
-                  keyboardType: TextInputType.number,
-                  controller: _setVccInputController,
-                  decoration: const InputDecoration(
-                    contentPadding: EdgeInsets.all(10.0),
-                    prefixText: '(0 - 255)  ',
-                    prefixStyle: TextStyle(
-                      color: color0,
-                    ),
-                    hintText: 'Modificar VCC',
-                    hintStyle: TextStyle(
-                      color: color0,
-                    ),
-                  ),
-                  onSubmitted: (value) {
-                    if (int.parse(value) <= 255 && int.parse(value) >= 0) {
-                      _setVcc(value);
-                    } else {
-                      showToast('Valor ingresado invalido');
-                    }
-                    _setVccInputController.clear();
-                  },
-                ),
-              ),
-              const SizedBox(height: 40),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: '(C21) VRMS Offset:            ',
-                      style: TextStyle(fontSize: 22.0, color: color0),
-                    ),
-                    TextSpan(
-                      text: '$_vrmsOffset ',
-                      style: const TextStyle(
-                          fontSize: 22.0,
-                          color: color0,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    const TextSpan(
-                      text: 'ADCU',
-                      style: TextStyle(
-                        fontSize: 16.0,
-                        color: color0,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              FractionallySizedBox(
-                widthFactor: 0.550,
-                alignment: Alignment.bottomLeft,
-                child: TextField(
-                  style: const TextStyle(
-                    color: color0,
-                  ),
-                  keyboardType: TextInputType.number,
-                  controller: _setVrmsInputController,
-                  decoration: const InputDecoration(
-                    contentPadding: EdgeInsets.all(10.0),
-                    prefixText: '(0 - 255)  ',
-                    prefixStyle: TextStyle(
-                      color: color0,
-                    ),
-                    hintText: 'Modificar VRMS',
-                    hintStyle: TextStyle(
-                      color: color0,
-                    ),
-                  ),
-                  onSubmitted: (value) {
-                    if (int.parse(value) <= 255 && int.parse(value) >= 0) {
-                      _setVrms(value);
-                    } else {
-                      showToast('Valor ingresado invalido');
-                    }
-                    _setVrmsInputController.clear();
-                  },
-                ),
-              ),
-              const SizedBox(height: 40),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: '(C97) VRMS02 Offset:            ',
-                      style: TextStyle(fontSize: 22.0, color: color0),
-                    ),
-                    TextSpan(
-                      text: '$_vrms02Offset ',
-                      style: const TextStyle(
-                          fontSize: 22.0,
-                          color: color0,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    const TextSpan(
-                      text: 'ADCU',
-                      style: TextStyle(
-                        fontSize: 16.0,
-                        color: color0,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              FractionallySizedBox(
-                widthFactor: 0.550,
-                alignment: Alignment.bottomLeft,
-                child: TextField(
-                  style: const TextStyle(
-                    color: color0,
-                  ),
-                  keyboardType: TextInputType.number,
-                  controller: _setVrms02InputController,
-                  decoration: const InputDecoration(
-                    contentPadding: EdgeInsets.all(10.0),
-                    prefixText: '(0 - 255)  ',
-                    prefixStyle: TextStyle(
-                      color: color0,
-                    ),
-                    hintText: 'Modificar VRMS',
-                    hintStyle: TextStyle(
-                      color: color0,
-                    ),
-                  ),
-                  onSubmitted: (value) {
-                    if (int.parse(value) <= 255 && int.parse(value) >= 0) {
-                      _setVrms02(value);
-                    } else {
-                      showToast('Valor ingresado invalido');
-                    }
-                    _setVrms02InputController.clear();
-                  },
-                ),
-              ),
-              const SizedBox(height: 70),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: 'Resistencia del sensor en GAS: ',
-                      style: TextStyle(
-                        fontSize: 16.0,
-                        color: color0,
-                      ),
-                    ),
-                    TextSpan(
-                      text: rs,
-                      style: TextStyle(
-                        fontSize: 24.0,
-                        color: rsColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  disabledActiveTrackColor: rsColor,
-                  disabledInactiveTrackColor: color3,
-                  trackHeight: 12,
-                  thumbShape: SliderComponentShape.noThumb,
-                ),
-                child: Slider(
-                  value: rsValue.toDouble(),
-                  min: 0,
-                  max: 35000,
-                  onChanged: null,
-                  onChangeStart: null,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: 'Resistencia de sensor en monoxido: ',
-                      style: TextStyle(
-                        fontSize: 16.0,
-                        color: color0,
-                      ),
-                    ),
-                    TextSpan(
-                      text: rrco,
-                      style: TextStyle(
-                        fontSize: 24.0,
-                        color: rrcoColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  disabledActiveTrackColor: rrcoColor,
-                  disabledInactiveTrackColor: color3,
-                  trackHeight: 12,
-                  thumbShape: SliderComponentShape.noThumb,
-                ),
-                child: Slider(
-                  value: rrcoValue.toDouble(),
-                  min: 0,
-                  max: 100000,
-                  onChanged: null,
-                  onChangeStart: null,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: 'Temperatura del micro: ',
-                      style: TextStyle(
-                        fontSize: 22.0,
-                        color: color0,
-                      ),
-                    ),
-                    TextSpan(
-                      text: tempMicro.toString(),
-                      style: const TextStyle(
-                        fontSize: 24.0,
-                        color: color0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const TextSpan(
-                      text: '°C',
-                      style: TextStyle(
-                        fontSize: 24.0,
-                        color: color0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: 'PPM CO: ',
-                      style: TextStyle(
-                        fontSize: 22.0,
-                        color: color0,
-                      ),
-                    ),
-                    TextSpan(
-                      text: '$ppmCO',
-                      style: const TextStyle(
-                        fontSize: 24.0,
-                        color: color0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: 'PPM CH4: ',
-                      style: TextStyle(
-                        fontSize: 22.0,
-                        color: color0,
-                      ),
-                    ),
-                    TextSpan(
-                      text: '$ppmCH4',
-                      style: const TextStyle(
-                        fontSize: 24.0,
-                        color: color0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Padding(
-                padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
-              ),
-            ],
-          ),
-        ),
-
-        //*- Página 3 REGULATION -*\\
-        Scaffold(
-          backgroundColor: color4,
-          body: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 20),
-              buildText(
-                text: '',
-                textSpans: [
-                  const TextSpan(
-                    text: 'Regulación completada:\n',
-                    style:
-                        TextStyle(color: color4, fontWeight: FontWeight.bold),
-                  ),
+        if (factoryMode) ...[
+          //*- Página 2 CALIBRACION -*\\
+          Scaffold(
+            backgroundColor: color4,
+            body: ListView(
+              padding: const EdgeInsets.all(8.0),
+              children: [
+                Text('Valores de calibracion: $_calValues',
+                    textScaler: const TextScaler.linear(1.2),
+                    style: const TextStyle(color: color0)),
+                const SizedBox(height: 40),
+                Text.rich(
                   TextSpan(
-                    text: regulationDone ? 'SI' : 'NO',
-                    style: TextStyle(
-                        color: regulationDone ? Colors.green : Colors.red,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ],
-                fontSize: 20.0,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              Expanded(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  itemCount: valores.length,
-                  itemBuilder: (context, index) {
-                    return Column(
-                      children: [
-                        buildText(
-                          text: textToShow(index),
-                          fontSize: 20,
+                    children: [
+                      const TextSpan(
+                        text: '(C21) VCC:                          ',
+                        style: TextStyle(
+                          fontSize: 22.0,
+                          color: color0,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '$_vcc',
+                        style: TextStyle(
+                          fontSize: 24.0,
+                          color: _vccColor,
                           fontWeight: FontWeight.bold,
-                          textAlign: TextAlign.left,
-                          widthFactor: 0.8,
                         ),
-                        buildText(
-                          text: valores[index],
-                          fontSize: 30,
-                          fontWeight: FontWeight.normal,
-                          color: const Color.fromARGB(255, 247, 230, 82),
-                          textAlign: TextAlign.center,
-                          widthFactor: 0.8,
+                      ),
+                      TextSpan(
+                        text: ' mV',
+                        style: TextStyle(
+                          fontSize: 22.0,
+                          color: _vccColor,
+                          fontWeight: FontWeight.bold,
                         ),
-                        if (index == valores.length - 1)
-                          Padding(
-                            padding:
-                                EdgeInsets.only(bottom: bottomBarHeight + 20),
-                          ),
-                      ],
-                    );
-                  },
+                      ),
+                    ],
+                  ),
                 ),
-              )
-            ],
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                      disabledActiveTrackColor: _vccColor,
+                      disabledInactiveTrackColor: color3,
+                      trackHeight: 12,
+                      thumbShape: SliderComponentShape.noThumb),
+                  child: Slider(
+                    value: _vcc.toDouble(),
+                    min: 0,
+                    max: 8000,
+                    onChanged: null,
+                    onChangeStart: null,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: '(C21) VRMS:                          ',
+                        style: TextStyle(
+                          fontSize: 22.0,
+                          color: color0,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '$_vrms',
+                        style: TextStyle(
+                          fontSize: 24.0,
+                          color: _vrmsColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextSpan(
+                        text: ' mV',
+                        style: TextStyle(
+                          fontSize: 22.0,
+                          color: _vrmsColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                      disabledActiveTrackColor: _vrmsColor,
+                      disabledInactiveTrackColor: color3,
+                      trackHeight: 12,
+                      thumbShape: SliderComponentShape.noThumb),
+                  child: Slider(
+                    value: _vrms.toDouble(),
+                    min: 0,
+                    max: 2000,
+                    onChanged: null,
+                    onChangeStart: null,
+                  ),
+                ),
+                const SizedBox(height: 50),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: '(C20) VCC Offset:                  ',
+                        style: TextStyle(fontSize: 22.0, color: color0),
+                      ),
+                      TextSpan(
+                        text: '$_vccOffset ',
+                        style: const TextStyle(
+                            fontSize: 22.0,
+                            color: color0,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      const TextSpan(
+                        text: 'ADCU',
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          color: color0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                FractionallySizedBox(
+                  widthFactor: 0.550,
+                  alignment: Alignment.bottomLeft,
+                  child: TextField(
+                    style: const TextStyle(color: color0),
+                    keyboardType: TextInputType.number,
+                    controller: _setVccInputController,
+                    decoration: const InputDecoration(
+                      contentPadding: EdgeInsets.all(10.0),
+                      prefixText: '(0 - 255)  ',
+                      prefixStyle: TextStyle(
+                        color: color0,
+                      ),
+                      hintText: 'Modificar VCC',
+                      hintStyle: TextStyle(
+                        color: color0,
+                      ),
+                    ),
+                    onSubmitted: (value) {
+                      if (int.parse(value) <= 255 && int.parse(value) >= 0) {
+                        _setVcc(value);
+                      } else {
+                        showToast('Valor ingresado invalido');
+                      }
+                      _setVccInputController.clear();
+                    },
+                  ),
+                ),
+                const SizedBox(height: 40),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: '(C21) VRMS Offset:            ',
+                        style: TextStyle(fontSize: 22.0, color: color0),
+                      ),
+                      TextSpan(
+                        text: '$_vrmsOffset ',
+                        style: const TextStyle(
+                            fontSize: 22.0,
+                            color: color0,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      const TextSpan(
+                        text: 'ADCU',
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          color: color0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                FractionallySizedBox(
+                  widthFactor: 0.550,
+                  alignment: Alignment.bottomLeft,
+                  child: TextField(
+                    style: const TextStyle(
+                      color: color0,
+                    ),
+                    keyboardType: TextInputType.number,
+                    controller: _setVrmsInputController,
+                    decoration: const InputDecoration(
+                      contentPadding: EdgeInsets.all(10.0),
+                      prefixText: '(0 - 255)  ',
+                      prefixStyle: TextStyle(
+                        color: color0,
+                      ),
+                      hintText: 'Modificar VRMS',
+                      hintStyle: TextStyle(
+                        color: color0,
+                      ),
+                    ),
+                    onSubmitted: (value) {
+                      if (int.parse(value) <= 255 && int.parse(value) >= 0) {
+                        _setVrms(value);
+                      } else {
+                        showToast('Valor ingresado invalido');
+                      }
+                      _setVrmsInputController.clear();
+                    },
+                  ),
+                ),
+                const SizedBox(height: 40),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: '(C97) VRMS02 Offset:            ',
+                        style: TextStyle(fontSize: 22.0, color: color0),
+                      ),
+                      TextSpan(
+                        text: '$_vrms02Offset ',
+                        style: const TextStyle(
+                            fontSize: 22.0,
+                            color: color0,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      const TextSpan(
+                        text: 'ADCU',
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          color: color0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                FractionallySizedBox(
+                  widthFactor: 0.550,
+                  alignment: Alignment.bottomLeft,
+                  child: TextField(
+                    style: const TextStyle(
+                      color: color0,
+                    ),
+                    keyboardType: TextInputType.number,
+                    controller: _setVrms02InputController,
+                    decoration: const InputDecoration(
+                      contentPadding: EdgeInsets.all(10.0),
+                      prefixText: '(0 - 255)  ',
+                      prefixStyle: TextStyle(
+                        color: color0,
+                      ),
+                      hintText: 'Modificar VRMS',
+                      hintStyle: TextStyle(
+                        color: color0,
+                      ),
+                    ),
+                    onSubmitted: (value) {
+                      if (int.parse(value) <= 255 && int.parse(value) >= 0) {
+                        _setVrms02(value);
+                      } else {
+                        showToast('Valor ingresado invalido');
+                      }
+                      _setVrms02InputController.clear();
+                    },
+                  ),
+                ),
+                const SizedBox(height: 70),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: 'Resistencia del sensor en GAS: ',
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          color: color0,
+                        ),
+                      ),
+                      TextSpan(
+                        text: rs,
+                        style: TextStyle(
+                          fontSize: 24.0,
+                          color: rsColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    disabledActiveTrackColor: rsColor,
+                    disabledInactiveTrackColor: color3,
+                    trackHeight: 12,
+                    thumbShape: SliderComponentShape.noThumb,
+                  ),
+                  child: Slider(
+                    value: rsValue.toDouble(),
+                    min: 0,
+                    max: 35000,
+                    onChanged: null,
+                    onChangeStart: null,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: 'Resistencia de sensor en monoxido: ',
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          color: color0,
+                        ),
+                      ),
+                      TextSpan(
+                        text: rrco,
+                        style: TextStyle(
+                          fontSize: 24.0,
+                          color: rrcoColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    disabledActiveTrackColor: rrcoColor,
+                    disabledInactiveTrackColor: color3,
+                    trackHeight: 12,
+                    thumbShape: SliderComponentShape.noThumb,
+                  ),
+                  child: Slider(
+                    value: rrcoValue.toDouble(),
+                    min: 0,
+                    max: 100000,
+                    onChanged: null,
+                    onChangeStart: null,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: 'Temperatura del micro: ',
+                        style: TextStyle(
+                          fontSize: 22.0,
+                          color: color0,
+                        ),
+                      ),
+                      TextSpan(
+                        text: tempMicro.toString(),
+                        style: const TextStyle(
+                          fontSize: 24.0,
+                          color: color0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const TextSpan(
+                        text: '°C',
+                        style: TextStyle(
+                          fontSize: 24.0,
+                          color: color0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: 'PPM CO: ',
+                        style: TextStyle(
+                          fontSize: 22.0,
+                          color: color0,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '$ppmCO',
+                        style: const TextStyle(
+                          fontSize: 24.0,
+                          color: color0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: 'PPM CH4: ',
+                        style: TextStyle(
+                          fontSize: 22.0,
+                          color: color0,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '$ppmCH4',
+                        style: const TextStyle(
+                          fontSize: 24.0,
+                          color: color0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Padding(
+                  padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
+                ),
+              ],
+            ),
           ),
-        ),
+
+          //*- Página 3 REGULATION -*\\
+          Scaffold(
+            backgroundColor: color4,
+            body: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 20),
+                buildText(
+                  text: '',
+                  textSpans: [
+                    const TextSpan(
+                      text: 'Regulación completada:\n',
+                      style:
+                          TextStyle(color: color4, fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text: regulationDone ? 'SI' : 'NO',
+                      style: TextStyle(
+                          color: regulationDone ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                  fontSize: 20.0,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    itemCount: valoresReg.length,
+                    itemBuilder: (context, index) {
+                      return Column(
+                        children: [
+                          buildText(
+                            text: textToShow(index),
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.left,
+                            widthFactor: 0.8,
+                          ),
+                          buildText(
+                            text: valoresReg[index],
+                            fontSize: 30,
+                            fontWeight: FontWeight.normal,
+                            color: const Color.fromARGB(255, 247, 230, 82),
+                            textAlign: TextAlign.center,
+                            widthFactor: 0.8,
+                          ),
+                          if (index == valoresReg.length - 1)
+                            Padding(
+                              padding:
+                                  EdgeInsets.only(bottom: bottomBarHeight + 20),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
       ],
 
       //*- Página 4 LIGHT -*\\
@@ -1081,100 +1087,102 @@ class DetectorPageState extends State<DetectorPage> {
       ),
 
       if (accessLevel > 1) ...[
-        //*- Página 5 DEBUG -*\\
-        Scaffold(
-          backgroundColor: color4,
-          body: Column(
-            children: [
-              const Text('Valores del PIC ADC',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      color: color1,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 30)),
-              const SizedBox(
-                height: 20,
-              ),
-              Expanded(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  itemCount: debug.length + 1,
-                  itemBuilder: (context, index) {
-                    return index == 0
-                        ? ListBody(
-                            children: [
-                              Row(
-                                children: [
-                                  const Text('RegIniIns: ',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          color: color1,
-                                          fontWeight: FontWeight.normal,
-                                          fontSize: 20)),
-                                  Text(regIniIns.toString(),
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                          color: color1,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 20)),
-                                ],
-                              ),
-                              SliderTheme(
-                                data: SliderTheme.of(context).copyWith(
-                                    disabledActiveTrackColor: color0,
-                                    disabledInactiveTrackColor: color3,
-                                    trackHeight: 12,
-                                    thumbShape: SliderComponentShape.noThumb),
-                                child: Slider(
-                                  value: regIniIns.toDouble(),
-                                  min: 0,
-                                  max: pow(2, 32).toDouble(),
-                                  onChanged: null,
-                                  onChangeStart: null,
-                                ),
-                              ),
-                            ],
-                          )
-                        : ListBody(
-                            children: [
-                              Row(
-                                children: [
-                                  Text(_textToShow(index - 1),
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                          color: color1,
-                                          fontWeight: FontWeight.normal,
-                                          fontSize: 20)),
-                                  Text(debug[index - 1],
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                          color: color1,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 20)),
-                                ],
-                              ),
-                              SliderTheme(
-                                data: SliderTheme.of(context).copyWith(
-                                    disabledActiveTrackColor: color0,
-                                    disabledInactiveTrackColor: color3,
-                                    trackHeight: 12,
-                                    thumbShape: SliderComponentShape.noThumb),
-                                child: Slider(
-                                  value: double.parse(debug[index - 1]),
-                                  min: 0,
-                                  max: 1024,
-                                  onChanged: null,
-                                  onChangeStart: null,
-                                ),
-                              ),
-                            ],
-                          );
-                  },
+        if (factoryMode) ...[
+          //*- Página 5 DEBUG -*\\
+          Scaffold(
+            backgroundColor: color4,
+            body: Column(
+              children: [
+                const Text('Valores del PIC ADC',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: color1,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 30)),
+                const SizedBox(
+                  height: 20,
                 ),
-              ),
-            ],
+                Expanded(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    itemCount: debug.length + 1,
+                    itemBuilder: (context, index) {
+                      return index == 0
+                          ? ListBody(
+                              children: [
+                                Row(
+                                  children: [
+                                    const Text('RegIniIns: ',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                            color: color1,
+                                            fontWeight: FontWeight.normal,
+                                            fontSize: 20)),
+                                    Text(regIniIns.toString(),
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                            color: color1,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 20)),
+                                  ],
+                                ),
+                                SliderTheme(
+                                  data: SliderTheme.of(context).copyWith(
+                                      disabledActiveTrackColor: color0,
+                                      disabledInactiveTrackColor: color3,
+                                      trackHeight: 12,
+                                      thumbShape: SliderComponentShape.noThumb),
+                                  child: Slider(
+                                    value: regIniIns.toDouble(),
+                                    min: 0,
+                                    max: pow(2, 32).toDouble(),
+                                    onChanged: null,
+                                    onChangeStart: null,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : ListBody(
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(_textToShow(index - 1),
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                            color: color1,
+                                            fontWeight: FontWeight.normal,
+                                            fontSize: 20)),
+                                    Text(debug[index - 1],
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                            color: color1,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 20)),
+                                  ],
+                                ),
+                                SliderTheme(
+                                  data: SliderTheme.of(context).copyWith(
+                                      disabledActiveTrackColor: color0,
+                                      disabledInactiveTrackColor: color3,
+                                      trackHeight: 12,
+                                      thumbShape: SliderComponentShape.noThumb),
+                                  child: Slider(
+                                    value: double.parse(debug[index - 1]),
+                                    min: 0,
+                                    max: 1024,
+                                    onChanged: null,
+                                    onChangeStart: null,
+                                  ),
+                                ),
+                              ],
+                            );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
 
         //*- Página 6 CREDENTIALS -*\\
         const CredsTab(),
@@ -1306,12 +1314,17 @@ class DetectorPageState extends State<DetectorPage> {
                 items: <Widget>[
                   if (accessLevel > 1) ...[
                     const Icon(Icons.settings, size: 30, color: color4),
-                    const Icon(Icons.numbers, size: 30, color: color4),
-                    const Icon(Icons.tune, size: 30, color: color4),
+                    if (factoryMode) ...[
+                      const Icon(Icons.numbers, size: 30, color: color4),
+                      const Icon(Icons.tune, size: 30, color: color4),
+                    ],
                   ],
                   const Icon(Icons.lightbulb_sharp, size: 30, color: color4),
                   if (accessLevel > 1) ...[
-                    const Icon(Icons.catching_pokemon, size: 30, color: color4),
+                    if (factoryMode) ...[
+                      const Icon(Icons.catching_pokemon,
+                          size: 30, color: color4),
+                    ],
                     const Icon(Icons.person, size: 30, color: color4),
                   ],
                   const Icon(Icons.send, size: 30, color: color4),

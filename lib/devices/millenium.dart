@@ -13,14 +13,14 @@ import '../aws/dynamo/dynamo.dart';
 import '../aws/dynamo/dynamo_certificates.dart';
 import '../master.dart';
 
-class CalefactoresPage extends StatefulWidget {
-  const CalefactoresPage({super.key});
+class MilleniumPage extends StatefulWidget {
+  const MilleniumPage({super.key});
 
   @override
-  CalefactoresPageState createState() => CalefactoresPageState();
+  MilleniumPageState createState() => MilleniumPageState();
 }
 
-class CalefactoresPageState extends State<CalefactoresPage> {
+class MilleniumPageState extends State<MilleniumPage> {
   TextEditingController textController = TextEditingController();
 
   final TextEditingController roomTempController = TextEditingController();
@@ -71,13 +71,12 @@ class CalefactoresPageState extends State<CalefactoresPage> {
   }
 
   void subscribeTrueStatus() async {
-    printLog('Me subscribo a vars');
+    printLog('Me subscribo a vars', "rojo");
     await myDevice.varsUuid.setNotifyValue(true);
 
     final trueStatusSub =
         myDevice.varsUuid.onValueReceived.listen((List<int> status) {
       var parts = utf8.decode(status).split(':');
-      // printLog(parts);
       setState(() {
         trueStatus = parts[0] == '1';
         actualTemp = parts[1];
@@ -151,6 +150,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
 
   void sendTemperature(int temp) {
     String data = '${DeviceManager.getProductCode(deviceName)}[7]($temp)';
+    printLog(data);
     myDevice.toolsUuid.write(data.codeUnits);
   }
 
@@ -210,6 +210,12 @@ class CalefactoresPageState extends State<CalefactoresPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              SizedBox(
+                height: 200,
+                child: Image.asset(
+                  'assets/extras/millenium.png',
+                ),
+              ),
               Text.rich(
                 TextSpan(
                   text: turnOn
@@ -257,12 +263,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     activeTrackColor: color0,
                     inactiveTrackColor: color3,
                     thumbShape: IconThumbSlider(
-                      iconData: trueStatus
-                          ? DeviceManager.getProductCode(deviceName) ==
-                                  '027000_IOT'
-                              ? Icons.local_fire_department
-                              : Icons.flash_on_rounded
-                          : Icons.check,
+                      iconData: trueStatus ? Icons.water_drop : Icons.check,
                       thumbRadius: 28,
                     ),
                   ),
@@ -398,226 +399,6 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     showToast('Iniciando mapeo de temperatura');
                   },
                 ),
-                const SizedBox(
-                  height: 10,
-                ),
-                buildButton(
-                  text: 'Ciclado fijo',
-                  onPressed: () {
-                    registerActivity(
-                        DeviceManager.getProductCode(deviceName),
-                        DeviceManager.extractSerialNumber(deviceName),
-                        'Se mando el ciclado de la válvula de este equipo');
-                    String data =
-                        '${DeviceManager.getProductCode(deviceName)}[13](1000#5)';
-                    myDevice.toolsUuid.write(data.codeUnits);
-                  },
-                ),
-                const SizedBox(
-                  height: 10,
-                ),
-                buildButton(
-                  text: 'Configurar ciclado',
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        final TextEditingController cicleController =
-                            TextEditingController();
-                        final TextEditingController timeController =
-                            TextEditingController();
-                        return AlertDialog(
-                          backgroundColor: color1,
-                          title: const Center(
-                            child: Text(
-                              'Especificar parametros del ciclador:',
-                              style: TextStyle(
-                                  color: color4, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 300,
-                                child: TextField(
-                                  style: const TextStyle(color: color4),
-                                  controller: cicleController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Ingrese cantidad de ciclos',
-                                    hintText: 'Certificación: 1000',
-                                    labelStyle: TextStyle(color: color4),
-                                    hintStyle: TextStyle(color: color4),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(
-                                height: 20,
-                              ),
-                              SizedBox(
-                                width: 300,
-                                child: TextField(
-                                  style: const TextStyle(color: color4),
-                                  controller: timeController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Ingrese duración de los ciclos',
-                                    hintText: 'Recomendado: 1000',
-                                    suffixText: '(mS)',
-                                    suffixStyle: TextStyle(
-                                      color: color4,
-                                    ),
-                                    labelStyle: TextStyle(
-                                      color: color4,
-                                    ),
-                                    hintStyle: TextStyle(
-                                      color: color4,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                navigatorKey.currentState!.pop();
-                              },
-                              child: const Text('Cancelar',
-                                  style: TextStyle(color: color4)),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                int cicle = int.parse(cicleController.text) * 2;
-                                registerActivity(
-                                    DeviceManager.getProductCode(deviceName),
-                                    DeviceManager.extractSerialNumber(
-                                        deviceName),
-                                    'Se mando el ciclado de la válvula de este equipo\nMilisegundos: ${timeController.text}\nIteraciones:$cicle');
-                                String data =
-                                    '${DeviceManager.getProductCode(deviceName)}[13](${timeController.text}#$cicle)';
-                                myDevice.toolsUuid.write(data.codeUnits);
-                                navigatorKey.currentState!.pop();
-                              },
-                              child: const Text('Iniciar proceso',
-                                  style: TextStyle(color: color4)),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                ),
-                if (DeviceManager.getProductCode(deviceName) == '027000') ...[
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          final TextEditingController timeController =
-                              TextEditingController();
-                          return AlertDialog(
-                            title: const Center(
-                              child: Text(
-                                'Especificar parametros de la apertura temporizada:',
-                                style: TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: 300,
-                                  child: TextField(
-                                    style: const TextStyle(color: Colors.black),
-                                    controller: timeController,
-                                    keyboardType: TextInputType.number,
-                                    decoration: const InputDecoration(
-                                      labelText:
-                                          'Ingrese cantidad de milisegundos',
-                                      labelStyle:
-                                          TextStyle(color: Colors.black),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  navigatorKey.currentState!.pop();
-                                },
-                                child: const Text('Cancelar'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  registerActivity(
-                                      DeviceManager.getProductCode(deviceName),
-                                      DeviceManager.extractSerialNumber(
-                                          deviceName),
-                                      'Se mando el temporizado de apertura');
-                                  String data =
-                                      '${DeviceManager.getProductCode(deviceName)}[14](${timeController.text.trim()})';
-                                  myDevice.toolsUuid.write(data.codeUnits);
-                                  navigatorKey.currentState!.pop();
-                                },
-                                child: const Text('Iniciar proceso'),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                    style: ButtonStyle(
-                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18.0),
-                        ),
-                      ),
-                    ),
-                    child: const Text(
-                      'Configurar Apertura\nTemporizada',
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  GestureDetector(
-                    onLongPressStart: (LongPressStartDetails a) async {
-                      setState(() {
-                        ignite = true;
-                      });
-                      while (ignite) {
-                        await Future.delayed(const Duration(milliseconds: 500));
-                        if (!ignite) break;
-                        String data = '027000_IOT[15](1)';
-                        myDevice.toolsUuid.write(data.codeUnits);
-                        printLog(data);
-                      }
-                    },
-                    onLongPressEnd: (LongPressEndDetails a) {
-                      setState(() {
-                        ignite = false;
-                      });
-                      String data = '027000_IOT[15](0)';
-                      myDevice.toolsUuid.write(data.codeUnits);
-                      printLog(data);
-                    },
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      child: const Text('Chispero'),
-                    ),
-                  ),
-                ],
                 const SizedBox(
                   height: 20,
                 ),

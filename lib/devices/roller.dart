@@ -1123,6 +1123,95 @@ class RollerPageState extends State<RollerPage> {
                 const SizedBox(
                   height: 10,
                 ),
+                buildButton(
+                  text: 'Configurar ciclado',
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        final TextEditingController cicleController =
+                            TextEditingController();
+                        return AlertDialog(
+                          backgroundColor: color0,
+                          title: const Center(
+                            child: Text(
+                              'Especificar parametros del ciclador:',
+                              style: TextStyle(
+                                color: color4,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 300,
+                                child: TextField(
+                                  style: const TextStyle(
+                                    color: color4,
+                                  ),
+                                  controller: cicleController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(
+                                    labelText:
+                                        'Ingrese cantidad de iteraciones',
+                                    labelStyle: TextStyle(
+                                      color: color4,
+                                    ),
+                                    hintStyle: TextStyle(
+                                      color: color4,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                navigatorKey.currentState!.pop();
+                              },
+                              child: const Text(
+                                'Cancelar',
+                                style: TextStyle(
+                                  color: color4,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                registerActivity(
+                                    DeviceManager.getProductCode(deviceName),
+                                    DeviceManager.extractSerialNumber(
+                                        deviceName),
+                                    'Se mando el ciclado de este equipo');
+                                String data =
+                                    '${DeviceManager.getProductCode(deviceName)}[13](${int.parse(cicleController.text)})';
+                                myDevice.toolsUuid.write(data.codeUnits);
+                                navigatorKey.currentState!.pop();
+                              },
+                              child: const Text(
+                                'Iniciar proceso',
+                                style: TextStyle(
+                                  color: color4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                const Divider(),
+                const SizedBox(
+                  height: 10,
+                ),
                 Padding(
                   padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
                 ),
@@ -1152,9 +1241,12 @@ class RollerPageState extends State<RollerPage> {
               backgroundColor: color1,
               content: Row(
                 children: [
-                  Image.asset(EasterEggs.legajosMeme.contains(legajoConectado)
+                  Image.asset(
+                      EasterEggs.legajosMeme.contains(legajoConectado)
                           ? 'assets/eg/DSC.gif'
-                          : 'assets/Loading.gif', width: 100, height: 100),
+                          : 'assets/Loading.gif',
+                      width: 100,
+                      height: 100),
                   Container(
                     margin: const EdgeInsets.only(left: 15),
                     child: const Text(
@@ -1200,10 +1292,12 @@ class RollerPageState extends State<RollerPage> {
                     backgroundColor: color1,
                     content: Row(
                       children: [
-                        Image.asset(EasterEggs.legajosMeme.contains(legajoConectado)
-                          ? 'assets/eg/DSC.gif'
-                          : 'assets/Loading.gif',
-                            width: 100, height: 100),
+                        Image.asset(
+                            EasterEggs.legajosMeme.contains(legajoConectado)
+                                ? 'assets/eg/DSC.gif'
+                                : 'assets/Loading.gif',
+                            width: 100,
+                            height: 100),
                         Container(
                           margin: const EdgeInsets.only(left: 15),
                           child: const Text(

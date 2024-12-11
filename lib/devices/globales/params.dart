@@ -167,7 +167,7 @@ class ParamsTabState extends State<ParamsTab> {
                     style: TextStyle(
                         color: secAdmDate == 'No tiene activado este beneficio'
                             ? Colors.red
-                            : Colors.green,
+                            : Colors.yellow,
                         fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -270,8 +270,8 @@ class ParamsTabState extends State<ParamsTab> {
                     text: atDate,
                     style: TextStyle(
                         color: secAdmDate == 'No tiene activado este beneficio'
-                            ? Colors.yellow
-                            : Colors.red,
+                            ? Colors.red
+                            : Colors.yellow,
                         fontWeight: FontWeight.bold),
                   ),
                 ],

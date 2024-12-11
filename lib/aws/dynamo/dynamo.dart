@@ -3,6 +3,7 @@ import 'package:caldensmartfabrica/master.dart';
 
 Future<void> queryItems(DynamoDB service, String pc, String sn) async {
   try {
+    printLog("Buscando Item");
     final response = await service.query(
       tableName: 'sime-domotica',
       keyConditionExpression: 'product_code = :pk AND device_id = :sk',
@@ -15,6 +16,7 @@ Future<void> queryItems(DynamoDB service, String pc, String sn) async {
     if (response.items != null) {
       printLog('Items encontrados');
       for (var item in response.items!) {
+        printLog(item);
         owner = item['owner']?.s ?? '';
         distanceOn = item['distanceOn']?.n ?? '3000';
         distanceOff = item['distanceOff']?.n ?? '100';

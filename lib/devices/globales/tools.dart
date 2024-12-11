@@ -104,8 +104,9 @@ class ToolsPageState extends State<ToolsPage> {
                   DeviceManager.extractSerialNumber(deviceName),
                   'Se borró la NVS de este equipo...',
                 );
-                myDevice.toolsUuid.write(
-                    '${DeviceManager.getProductCode(deviceName)} '.codeUnits);
+                String data =
+                    '${DeviceManager.getProductCode(deviceName)}[0](1)';
+                myDevice.toolsUuid.write(data.codeUnits);
               },
             ),
             Padding(

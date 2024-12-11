@@ -17,7 +17,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '24112800';
+String appVersionNumber = '1.0.1';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -1603,7 +1603,7 @@ class MyDevice {
           'Serial number: ${DeviceManager.extractSerialNumber(device.platformName)}');
 
       switch (pc) {
-        case '022000_IOT':
+        case '022000_IOT' || '027000_IOT' || '041220_IOT' || '050217_IOT':
           BluetoothService espService = services.firstWhere(
               (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
 
@@ -1616,32 +1616,7 @@ class MyDevice {
               Guid(
                   'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
           break;
-        case '027000_IOT':
-          BluetoothService espService = services.firstWhere(
-              (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
 
-          varsUuid = espService.characteristics.firstWhere((c) =>
-              c.uuid ==
-              Guid(
-                  '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //WorkingTemp:WorkingStatus:EnergyTimer:HeaterOn:NightMode
-          otaUuid = espService.characteristics.firstWhere((c) =>
-              c.uuid ==
-              Guid(
-                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
-          break;
-        case '041220_IOT':
-          BluetoothService espService = services.firstWhere(
-              (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
-
-          varsUuid = espService.characteristics.firstWhere((c) =>
-              c.uuid ==
-              Guid(
-                  '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //WorkingTemp:WorkingStatus:EnergyTimer:HeaterOn:NightMode
-          otaUuid = espService.characteristics.firstWhere((c) =>
-              c.uuid ==
-              Guid(
-                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
-          break;
         case '015773_IOT':
           BluetoothService service = services.firstWhere(
               (s) => s.uuid == Guid('dd249079-0ce8-4d11-8aa9-53de4040aec6'));

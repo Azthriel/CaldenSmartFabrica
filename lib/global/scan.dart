@@ -219,6 +219,8 @@ class ScanPageState extends State<ScanPage> {
                         dragText: 'Desliza para escanear',
                         readyText: 'Escaneando dispositivos...',
                         processedText: 'Escaneo completo',
+                        processingText: 'Escaneando dispositivos...',
+                        messageText: 'Último escaneo a las %T',
                         textStyle: TextStyle(color: color0),
                         iconTheme: IconThemeData(color: color0),
                       ),
