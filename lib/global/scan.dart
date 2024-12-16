@@ -76,58 +76,62 @@ class ScanPageState extends State<ScanPage> {
       printLog('Teoricamente estoy conectado');
 
       MyDevice myDevice = MyDevice();
-      device.connectionState.listen((BluetoothConnectionState state) {
-        printLog('Estado de conexión: $state');
+      var conenctionSub = device.connectionState.listen(
+        (BluetoothConnectionState state) {
+          printLog('Estado de conexión: $state');
 
-        switch (state) {
-          case BluetoothConnectionState.disconnected:
-            {
-              showToast('Dispositivo desconectado');
-              calibrationValues.clear();
-              regulationValues.clear();
-              toolsValues.clear();
-              nameOfWifi = '';
-              connectionFlag = false;
-              alreadySubCal = false;
-              alreadySubReg = false;
-              alreadySubOta = false;
-              alreadySubDebug = false;
-              alreadySubWork = false;
-              alreadySubIO = false;
-              printLog(
-                  'Razon: ${myDevice.device.disconnectReason?.description}');
-              registerActivity(
-                  DeviceManager.getProductCode(device.platformName),
-                  DeviceManager.extractSerialNumber(device.platformName),
-                  'Se desconecto del equipo ${device.platformName}');
-              navigatorKey.currentState?.pushReplacementNamed('/menu');
-              break;
-            }
-          case BluetoothConnectionState.connected:
-            {
-              if (!connectionFlag) {
-                connectionFlag = true;
-                FlutterBluePlus.stopScan();
-                myDevice.setup(device).then((valor) {
-                  printLog('RETORNASHE $valor');
-                  if (valor) {
-                    navigatorKey.currentState?.pushReplacementNamed('/loading');
-                  } else {
-                    connectionFlag = false;
-                    printLog('Fallo en el setup');
-                    showToast('Error en el dispositivo, intente nuevamente');
-                    myDevice.device.disconnect();
-                  }
-                });
-              } else {
-                printLog('Las chistosadas se apoderan del mundo');
+          switch (state) {
+            case BluetoothConnectionState.disconnected:
+              {
+                showToast('Dispositivo desconectado');
+                calibrationValues.clear();
+                regulationValues.clear();
+                toolsValues.clear();
+                nameOfWifi = '';
+                connectionFlag = false;
+                alreadySubCal = false;
+                alreadySubReg = false;
+                alreadySubOta = false;
+                alreadySubDebug = false;
+                alreadySubWork = false;
+                alreadySubIO = false;
+                printLog(
+                    'Razon: ${myDevice.device.disconnectReason?.description}');
+                registerActivity(
+                    DeviceManager.getProductCode(device.platformName),
+                    DeviceManager.extractSerialNumber(device.platformName),
+                    'Se desconecto del equipo ${device.platformName}');
+                navigatorKey.currentState?.pushReplacementNamed('/menu');
+                break;
               }
+            case BluetoothConnectionState.connected:
+              {
+                if (!connectionFlag) {
+                  connectionFlag = true;
+                  FlutterBluePlus.stopScan();
+                  myDevice.setup(device).then((valor) {
+                    printLog('RETORNASHE $valor');
+                    if (valor) {
+                      navigatorKey.currentState
+                          ?.pushReplacementNamed('/loading');
+                    } else {
+                      connectionFlag = false;
+                      printLog('Fallo en el setup');
+                      showToast('Error en el dispositivo, intente nuevamente');
+                      myDevice.device.disconnect();
+                    }
+                  });
+                } else {
+                  printLog('Las chistosadas se apoderan del mundo');
+                }
+                break;
+              }
+            default:
               break;
-            }
-          default:
-            break;
-        }
-      });
+          }
+        },
+      );
+      device.cancelWhenDisconnected(conenctionSub, delayed: true);
     } catch (e, stackTrace) {
       if (e is FlutterBluePlusException && e.code == 133) {
         printLog('Error específico de Android con código 133: $e');
@@ -218,6 +222,7 @@ class ScanPageState extends State<ScanPage> {
                       header: const ClassicHeader(
                         dragText: 'Desliza para escanear',
                         readyText: 'Escaneando dispositivos...',
+                        armedText: 'Listo para escanear',
                         processedText: 'Escaneo completo',
                         processingText: 'Escaneando dispositivos...',
                         messageText: 'Último escaneo a las %T',

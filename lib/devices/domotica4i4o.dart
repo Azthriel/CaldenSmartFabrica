@@ -7,19 +7,19 @@ import 'package:caldensmartfabrica/devices/globales/tools.dart';
 import 'package:flutter/material.dart';
 import '../master.dart';
 
-class DomoticaPage extends StatefulWidget {
-  const DomoticaPage({super.key});
+class Domotica4i4oPage extends StatefulWidget {
+  const Domotica4i4oPage({super.key});
 
   @override
-  DomoticaPageState createState() => DomoticaPageState();
+  Domotica4i4oPageState createState() => Domotica4i4oPageState();
 }
 
-class DomoticaPageState extends State<DomoticaPage> {
+class Domotica4i4oPageState extends State<Domotica4i4oPage> {
   TextEditingController textController = TextEditingController();
   final PageController _pageController = PageController(initialPage: 0);
   bool testingIN = false;
   bool testingOUT = false;
-  List<bool> stateIN = List<bool>.filled(4, false, growable: false);
+  List<bool> stateIN = List<bool>.filled(8, false, growable: false);
   List<bool> stateOUT = List<bool>.filled(4, false, growable: false);
 
   int _selectedIndex = 0;
@@ -120,25 +120,28 @@ class DomoticaPageState extends State<DomoticaPage> {
   void processValues(List<int> values) {
     ioValues = values;
     var parts = utf8.decode(values).split('/');
-    printLog(parts);
+    printLog('Valores: $parts', "Amarillo");
     tipo.clear();
     estado.clear();
     common.clear();
     alertIO.clear();
 
-    for (int i = 0; i < parts.length; i++) {
-      var equipo = parts[i].split(':');
-      tipo.add(equipo[0] == '0' ? 'Salida' : 'Entrada');
-      estado.add(equipo[1]);
-      common.add(equipo[2]);
-      alertIO.add(estado[i] != common[i]);
-
-      printLog(
-          'En la posición $i el modo es ${tipo[i]} y su estado es ${estado[i]}');
-      printLog('Su posición es ${common[i]}');
-      printLog('¿Esta en alerta?: ${alertIO[i]}');
+    for (int i = 0; i < 4; i++) {
+      tipo.add('Salida');
+      estado.add(parts[i]);
+      common.add('0');
+      alertIO.add(false);
     }
 
+    for (int j = 4; j < 8; j++) {
+      var equipo = parts[j].split(':');
+      tipo.add('Entrada');
+      estado.add(equipo[0]);
+      common.add(equipo[1]);
+      alertIO.add(estado[j] != common[j]);
+
+      printLog('¿La entrada $j esta en alerta?: ${alertIO[j]}');
+    }
     setState(() {});
   }
 
@@ -187,7 +190,6 @@ class DomoticaPageState extends State<DomoticaPage> {
   //! VISUAL
   @override
   Widget build(BuildContext context) {
-    var parts = utf8.decode(ioValues).split('/');
     double width = MediaQuery.of(context).size.width;
     double bottomBarHeight = kBottomNavigationBarHeight;
 
@@ -203,215 +205,193 @@ class DomoticaPageState extends State<DomoticaPage> {
       //*- Página 3 SET -*\\
       Scaffold(
         backgroundColor: color4,
-        body: ListView.builder(
-          itemCount: parts.length,
-          itemBuilder: (context, int index) {
-            bool entrada = tipo[index] == 'Entrada';
-            return Column(
+        body: Center(
+          child: SingleChildScrollView(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(
-                  height: 10,
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: color0,
-                    borderRadius: BorderRadius.circular(20),
-                    border: const Border(
-                      bottom: BorderSide(color: color1, width: 5),
-                      right: BorderSide(color: color1, width: 5),
-                      left: BorderSide(color: color1, width: 5),
-                      top: BorderSide(color: color1, width: 5),
-                    ),
+                for (int i = 0; i < 4; i++) ...{
+                  const SizedBox(
+                    height: 10,
                   ),
-                  width: width - 50,
-                  height: entrada ? 275 : 250,
-                  child: Column(
-                    children: [
-                      Text(
-                        tipo[index],
-                        style: const TextStyle(
+                  Container(
+                    decoration: BoxDecoration(
+                      color: color0,
+                      borderRadius: BorderRadius.circular(20),
+                      border: const Border(
+                        bottom: BorderSide(color: color1, width: 5),
+                        right: BorderSide(color: color1, width: 5),
+                        left: BorderSide(color: color1, width: 5),
+                        top: BorderSide(color: color1, width: 5),
+                      ),
+                    ),
+                    width: width - 50,
+                    height: 250,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          tipo[i],
+                          style: const TextStyle(
                             color: color4,
                             fontWeight: FontWeight.bold,
-                            fontSize: 50),
-                        textAlign: TextAlign.start,
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      entrada
-                          ? alertIO[index]
-                              ? const Icon(
-                                  Icons.new_releases,
-                                  color: Color(0xffcb3234),
-                                  size: 50,
-                                )
-                              : const Icon(
-                                  Icons.new_releases,
-                                  color: color4,
-                                  size: 50,
-                                )
-                          : Switch(
-                              activeColor: color4,
-                              activeTrackColor: color1,
-                              inactiveThumbColor: color1,
-                              inactiveTrackColor: color4,
-                              value: estado[index] == '1',
-                              onChanged: (value) async {
-                                String fun = '$index#${value ? '1' : '0'}';
-                                await myDevice.ioUuid.write(fun.codeUnits);
-                              },
-                            ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      entrada
-                          ? Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                const SizedBox(
-                                  width: 30,
-                                ),
-                                const Text(
-                                  'Estado común:',
-                                  style: TextStyle(
-                                      color: Color(0xfffbe4d8), fontSize: 15),
-                                ),
-                                const Spacer(),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10),
-                                  child: ChoiceChip(
-                                    label: const Text('0'),
-                                    selected: common[index] == '0',
-                                    shape: const OvalBorder(),
-                                    pressElevation: 5,
-                                    showCheckmark: false,
-                                    selectedColor: const Color(0xfffbe4d8),
-                                    onSelected: (value) {
-                                      common[index] = '0';
-                                      String data =
-                                          '${DeviceManager.getProductCode(deviceName)}[14]($index#${common[index]})';
-                                      printLog(data);
-                                      myDevice.toolsUuid.write(data.codeUnits);
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(
-                                  width: 10,
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10),
-                                  child: ChoiceChip(
-                                    label: const Text('1'),
-                                    labelStyle: const TextStyle(color: color1),
-                                    selected: common[index] == '1',
-                                    shape: const OvalBorder(),
-                                    pressElevation: 5,
-                                    showCheckmark: false,
-                                    selectedColor: color4,
-                                    onSelected: (value) {
-                                      common[index] = '1';
-                                      String data =
-                                          '${DeviceManager.getProductCode(deviceName)}[14]($index#${common[index]})';
-                                      printLog(data);
-                                      myDevice.toolsUuid.write(data.codeUnits);
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(
-                                  width: 10,
-                                ),
-                              ],
-                            )
-                          : const SizedBox(
-                              height: 10,
-                            ),
-                      const SizedBox(
-                        height: 5,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const SizedBox(
-                            width: 30,
+                            fontSize: 50,
                           ),
-                          const Text(
-                            '¿Cambiar de modo?',
-                            style: TextStyle(color: color4, fontSize: 15),
-                          ),
-                          const Spacer(),
-                          IconButton(
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (BuildContext dialogContext) {
-                                  return AlertDialog(
-                                    backgroundColor: color0,
-                                    content: Text(
-                                      '¿Cambiar de ${tipo[index]} a ${entrada ? 'Salida' : 'Entrada'}?',
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        color: color4,
-                                      ),
-                                    ),
-                                    actions: <Widget>[
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(dialogContext).pop(),
-                                        child: const Text(
-                                          'Cancelar',
-                                          style: TextStyle(color: color4),
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          String fun =
-                                              '${DeviceManager.getProductCode(deviceName)}[13]($index#${entrada ? '0' : '1'})';
-                                          printLog(fun);
-                                          myDevice.toolsUuid
-                                              .write(fun.codeUnits);
-                                          Navigator.of(dialogContext).pop();
-                                        },
-                                        child: const Text(
-                                          'Cambiar',
-                                          style: TextStyle(color: color4),
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
+                          textAlign: TextAlign.start,
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Transform.scale(
+                          scale: 2.0,
+                          child: Switch(
+                            activeColor: color4,
+                            activeTrackColor: color1,
+                            inactiveThumbColor: color1,
+                            inactiveTrackColor: color4,
+                            value: estado[i] == '1',
+                            onChanged: (value) async {
+                              String fun = '$i#${value ? '1' : '0'}';
+                              await myDevice.ioUuid.write(fun.codeUnits);
                             },
-                            icon: const Icon(
-                              Icons.change_circle_outlined,
-                              color: color4,
-                              size: 30,
-                            ),
                           ),
-                          const SizedBox(
-                            width: 10,
-                          ),
-                        ],
-                      ),
-                    ],
+                        ),
+                        Padding(
+                          padding:
+                              EdgeInsets.only(bottom: bottomBarHeight + 20),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                },
+                for (int j = 4; j < 8; j++) ...{
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: color0,
+                      borderRadius: BorderRadius.circular(20),
+                      border: const Border(
+                        bottom: BorderSide(color: color1, width: 5),
+                        right: BorderSide(color: color1, width: 5),
+                        left: BorderSide(color: color1, width: 5),
+                        top: BorderSide(color: color1, width: 5),
+                      ),
+                    ),
+                    width: width - 50,
+                    height: 275,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          tipo[j],
+                          style: const TextStyle(
+                            color: color4,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 50,
+                          ),
+                          textAlign: TextAlign.start,
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        alertIO[j]
+                            ? const Icon(
+                                Icons.new_releases,
+                                color: Color(0xffcb3234),
+                                size: 50,
+                              )
+                            : const Icon(
+                                Icons.new_releases,
+                                color: color4,
+                                size: 50,
+                              ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            const SizedBox(
+                              width: 30,
+                            ),
+                            const Text(
+                              'Estado común:',
+                              style: TextStyle(
+                                color: color4,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const Spacer(),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              child: ChoiceChip(
+                                label: const Text('0'),
+                                selected: common[j] == '0',
+                                shape: const OvalBorder(),
+                                pressElevation: 5,
+                                showCheckmark: false,
+                                selectedColor: color2,
+                                onSelected: (value) {
+                                  setState(() {
+                                    common[j] = '0';
+                                  });
+                                  String data =
+                                      '${DeviceManager.getProductCode(deviceName)}[14]($j#${common[j]})';
+                                  printLog(data);
+                                  myDevice.toolsUuid.write(data.codeUnits);
+                                },
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 10,
+                            ),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              child: ChoiceChip(
+                                label: const Text('1'),
+                                labelStyle: const TextStyle(
+                                  color: color1,
+                                ),
+                                selected: common[j] == '1',
+                                shape: const OvalBorder(),
+                                pressElevation: 5,
+                                showCheckmark: false,
+                                selectedColor: color2,
+                                onSelected: (value) {
+                                  setState(() {
+                                    common[j] = '1';
+                                  });
+                                  String data =
+                                      '${DeviceManager.getProductCode(deviceName)}[14]($j#${common[j]})';
+                                  printLog(data);
+                                  myDevice.toolsUuid.write(data.codeUnits);
+                                },
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 10,
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
+                },
                 const SizedBox(
                   height: 10,
                 ),
-                if (index == parts.length - 1)
-                  Padding(
-                    padding: EdgeInsets.only(bottom: bottomBarHeight + 30),
-                  ),
+                Padding(
+                  padding: EdgeInsets.only(bottom: bottomBarHeight + 30),
+                ),
               ],
-            );
-          },
+            ),
+          ),
         ),
       ),
-
       if (accessLevel > 1) ...[
         //*- Página 4 CONTROL -*\\
         Scaffold(
@@ -450,12 +430,6 @@ class DomoticaPageState extends State<DomoticaPage> {
                           DeviceManager.getProductCode(deviceName),
                           DeviceManager.extractSerialNumber(deviceName),
                           'Se envio el testeo de entradas');
-                      for (int index = 0; index < 4; index++) {
-                        String fun =
-                            '${DeviceManager.getProductCode(deviceName)}[13]($index#1)';
-                        myDevice.toolsUuid.write(fun.codeUnits);
-                      }
-                      printLog('Ya se cambiaron todos los pines a entrada');
                       setState(() {
                         testingIN = true;
                       });
@@ -465,15 +439,18 @@ class DomoticaPageState extends State<DomoticaPage> {
                     const SizedBox(
                       height: 10,
                     ),
-                    for (int i = 0; i < 4; i++) ...[
+                    for (int i = 4; i < 8; i++) ...[
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('Funcionamiento Entrada $i: ',
-                              style: const TextStyle(
-                                  fontSize: 15.0,
-                                  color: color0,
-                                  fontWeight: FontWeight.normal)),
+                          Text(
+                            'Funcionamiento Entrada $i: ',
+                            style: const TextStyle(
+                              fontSize: 15.0,
+                              color: color0,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
                           Switch(
                             activeColor: color4,
                             activeTrackColor: color1,
@@ -500,6 +477,9 @@ class DomoticaPageState extends State<DomoticaPage> {
                           ),
                         ],
                       ),
+                      const SizedBox(
+                        height: 10,
+                      ),
                     ],
                   ],
                   const SizedBox(
@@ -510,17 +490,13 @@ class DomoticaPageState extends State<DomoticaPage> {
                     onPressed: () {
                       if (testingIN) {
                         registerActivity(
-                            DeviceManager.getProductCode(deviceName),
-                            DeviceManager.extractSerialNumber(deviceName),
-                            'Se envio el testeo de salidas');
-                        for (int index = 0; index < 4; index++) {
-                          String fun =
-                              '${DeviceManager.getProductCode(deviceName)}[13]($index#0)';
-                          myDevice.toolsUuid.write(fun.codeUnits);
-                        }
-                        printLog('Ya se cambiaron todos los pines a salida');
+                          DeviceManager.getProductCode(deviceName),
+                          DeviceManager.extractSerialNumber(deviceName),
+                          'Se envio el testeo de salidas',
+                        );
                         String fun1 =
                             '${DeviceManager.getProductCode(deviceName)}[15](0)';
+                        printLog(fun1);
                         myDevice.toolsUuid.write(fun1.codeUnits);
                         setState(() {
                           testingOUT = true;
@@ -541,9 +517,10 @@ class DomoticaPageState extends State<DomoticaPage> {
                           Text(
                             'Funcionamiento Salida $i: ',
                             style: const TextStyle(
-                                fontSize: 15.0,
-                                color: color0,
-                                fontWeight: FontWeight.normal),
+                              fontSize: 15.0,
+                              color: color0,
+                              fontWeight: FontWeight.normal,
+                            ),
                           ),
                           Switch(
                             activeColor: color4,
@@ -570,6 +547,9 @@ class DomoticaPageState extends State<DomoticaPage> {
                             },
                           ),
                         ],
+                      ),
+                      const SizedBox(
+                        height: 10,
                       ),
                     ],
                   ],
@@ -713,6 +693,7 @@ class DomoticaPageState extends State<DomoticaPage> {
         backgroundColor: color4,
         resizeToAvoidBottomInset: false,
         body: Stack(
+          alignment: AlignmentDirectional.center,
           children: [
             PageView(
               controller: _pageController,

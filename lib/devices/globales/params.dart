@@ -46,7 +46,7 @@ class ParamsTabState extends State<ParamsTab> {
                   text: 'Desactivar control por distancia',
                   onPressed: () {
                     String mailData =
-                        '${DeviceManager.getProductCode(deviceName)} ';
+                        '${DeviceManager.getProductCode(deviceName)}[5](0)';
                     myDevice.toolsUuid.write(mailData.codeUnits);
                     registerActivity(
                       DeviceManager.getProductCode(deviceName),

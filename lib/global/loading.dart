@@ -44,7 +44,13 @@ class LoadState extends State<LoadingPage> {
             navigatorKey.currentState?.pushReplacementNamed('/detector');
             break;
           case '020010_IOT':
-            navigatorKey.currentState?.pushReplacementNamed('/domotica');
+            hardwareVersion == '240422A'
+                ? navigatorKey.currentState?.pushReplacementNamed('/domotica')
+                : navigatorKey.currentState
+                    ?.pushReplacementNamed('/domotica4i4o');
+            break;
+          case '020020_IOT':
+            navigatorKey.currentState?.pushReplacementNamed('/modulo');
             break;
           case '024011_IOT':
             navigatorKey.currentState?.pushReplacementNamed('/roller');
@@ -129,8 +135,19 @@ class LoadState extends State<LoadingPage> {
           varsValues = await myDevice.varsUuid.read();
           printLog('Valores VARS: $varsValues || ${utf8.decode(varsValues)}');
           var parts2 = utf8.decode(varsValues).split(':');
-          awsInit = parts2[0] == '1';
-          burneoDone = parts2[5] == '1';
+          distanceControlActive = parts2[0] == '1';
+          awsInit = parts2[1] == '1';
+          burneoDone = parts2[2] == '1';
+          break;
+        case '020020_IOT':
+          ioValues = await myDevice.ioUuid.read();
+          printLog('Valores IO: $ioValues || ${utf8.decode(ioValues)}');
+          varsValues = await myDevice.varsUuid.read();
+          printLog('Valores VARS: $varsValues || ${utf8.decode(varsValues)}');
+          var parts2 = utf8.decode(varsValues).split(':');
+          distanceControlActive = parts2[0] == '1';
+          awsInit = parts2[1] == '1';
+          burneoDone = parts2[2] == '1';
           break;
         case '027313_IOT':
           varsValues = await myDevice.varsUuid.read();

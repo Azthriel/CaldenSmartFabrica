@@ -28,7 +28,7 @@ class CredsTabState extends State<CredsTab> {
       {int timeout = 15}) async {
     List<String> sublist = value.split('\n');
     for (var line in sublist) {
-      printLog('Mande chunk');
+      // printLog('Mande chunk');
       String datatoSend =
           '${DeviceManager.getProductCode(deviceName)}[6]($thing#$line)';
       printLog(datatoSend);
@@ -49,16 +49,32 @@ class CredsTabState extends State<CredsTab> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               buildText(
-                text: '¿Thing cargada? ${awsInit ? 'SI' : 'NO'}',
+                // text: '¿Thing cargada? ${awsInit ? 'SI' : 'NO'}',
+                text: '',
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: awsInit ? color4 : const Color(0xffFF0000),
+                // color: awsInit ? color4 : const Color(0xffFF0000),
+                textSpans: [
+                  const TextSpan(
+                    text: '¿Thing cargada?  ',
+                    style: TextStyle(
+                      color: color4,
+                    ),
+                  ),
+                  TextSpan(
+                    text: awsInit ? 'SI' : 'NO',
+                    style: TextStyle(
+                      color: awsInit ? color4 : const Color(0xffFF0000),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 10),
               buildTextField(
                 controller: amazonCAController,
                 label: 'Ingresa Amazon CA cert',
                 hint: 'Introduce el certificado Amazon CA',
+                keyboard: TextInputType.multiline,
                 onSubmitted: (text) {},
                 onChanged: (value) {
                   amazonCA = amazonCAController.text;
@@ -68,8 +84,9 @@ class CredsTabState extends State<CredsTab> {
               const SizedBox(height: 10),
               buildTextField(
                 controller: privateKeyController,
-                label: 'Ingresa la private Key',
-                hint: 'Introduce la private key',
+                label: 'Ingresa la Private Key',
+                hint: 'Introduce la Private key',
+                keyboard: TextInputType.multiline,
                 onSubmitted: (text) {},
                 onChanged: (value) {
                   privateKey = privateKeyController.text;
@@ -79,8 +96,9 @@ class CredsTabState extends State<CredsTab> {
               const SizedBox(height: 10),
               buildTextField(
                 controller: deviceCertController,
-                label: 'Ingresa device Cert',
+                label: 'Ingresa Device Cert',
                 hint: 'Introduce el certificado del dispositivo',
+                keyboard: TextInputType.multiline,
                 onSubmitted: (text) {},
                 onChanged: (value) {
                   deviceCert = deviceCertController.text;
@@ -120,6 +138,9 @@ class CredsTabState extends State<CredsTab> {
                           setState(() {
                             sending = false;
                           });
+                          myDevice.toolsUuid.write(
+                              '${DeviceManager.getProductCode(deviceName)}[0](0)'
+                                  .codeUnits);
                         }
                       },
                     ),

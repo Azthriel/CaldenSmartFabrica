@@ -2,7 +2,9 @@ import 'dart:io';
 import 'package:caldensmartfabrica/devices/calefactores.dart';
 import 'package:caldensmartfabrica/devices/detectores.dart';
 import 'package:caldensmartfabrica/devices/domotica.dart';
+import 'package:caldensmartfabrica/devices/domotica4i4o.dart';
 import 'package:caldensmartfabrica/devices/millenium.dart';
+import 'package:caldensmartfabrica/devices/modulo.dart';
 import 'package:caldensmartfabrica/firebase_options.dart';
 import 'package:caldensmartfabrica/global/loading.dart';
 import 'package:caldensmartfabrica/global/login.dart';
@@ -71,18 +73,18 @@ class MyAppState extends State<MyApp> {
       navigatorKey: navigatorKey,
       title: 'CaldénSmart Fábrica',
       theme: ThemeData(
-        primaryColor: const Color(0xFF302b36),
-        primaryColorLight: const Color(0xFFCFC8BD),
+        primaryColor: color0,
+        primaryColorLight: color4,
         textSelectionTheme: const TextSelectionThemeData(
-          selectionColor: Color(0xFFCFC8BD),
-          selectionHandleColor: Color(0xFFCFC8BD),
+          selectionColor: color4,
+          selectionHandleColor: color4,
         ),
         bottomSheetTheme: const BottomSheetThemeData(
           surfaceTintColor: Colors.transparent,
           backgroundColor: Colors.transparent,
         ),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF302b36),
+          seedColor: color0,
         ),
         useMaterial3: true,
       ),
@@ -99,6 +101,8 @@ class MyAppState extends State<MyApp> {
         '/patito': (context) => const PatitoPage(),
         '/roller': (context) => const RollerPage(),
         '/millenium': (context) => const MilleniumPage(),
+        '/domotica4i4o': (context) => const Domotica4i4oPage(),
+        '/modulo': (context) => const ModuloPage(),
       },
     );
   }

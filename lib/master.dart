@@ -17,7 +17,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.1';
+String appVersionNumber = '1.0.4';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -152,6 +152,10 @@ String rollerSGTHRS = '';
 
 //*-Domótica-*\\
 bool burneoDone = false;
+List<String> tipo = [];
+List<String> estado = [];
+List<bool> alertIO = [];
+List<String> common = [];
 //*-Domótica-*\\
 
 //*-Relé-*\\
@@ -1265,6 +1269,7 @@ Widget buildTextField({
   double widthFactor = 0.8,
   TextInputType? keyboard,
   void Function(String)? onChanged,
+  int? maxLines,
 }) {
   return FractionallySizedBox(
     alignment: Alignment.center,
@@ -1290,6 +1295,7 @@ Widget buildTextField({
         controller: controller,
         onSubmitted: onSubmitted,
         onChanged: onChanged,
+        maxLines: maxLines,
         style: const TextStyle(
           color: color4,
         ),
@@ -1645,6 +1651,18 @@ class MyDevice {
 
           break;
         case '020010_IOT':
+          BluetoothService service = services.firstWhere(
+              (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
+          ioUuid = service.characteristics.firstWhere(
+              (c) => c.uuid == Guid('03b1c5d9-534a-4980-aed3-f59615205216'));
+          otaUuid = service.characteristics.firstWhere((c) =>
+              c.uuid ==
+              Guid(
+                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
+          varsUuid = service.characteristics.firstWhere(
+              (c) => c.uuid == Guid('52a2f121-a8e3-468c-a5de-45dca9a2a207'));
+          break;
+        case '020020_IOT':
           BluetoothService service = services.firstWhere(
               (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
           ioUuid = service.characteristics.firstWhere(
@@ -2732,5 +2750,4 @@ class EasterEggs {
     }
   }
 }
-
 //*-Easter egg-*\\

@@ -224,15 +224,18 @@ class MilleniumPageState extends State<MilleniumPage> {
                           : 'Encendido'
                       : 'Apagado',
                   style: TextStyle(
-                      color: turnOn
-                          ? trueStatus
-                              ? Colors.amber[600]
-                              : Colors.green
-                          : Colors.red,
-                      fontSize: 30),
+                    color: turnOn
+                        ? trueStatus
+                            ? Colors.amber[600]
+                            : Colors.green
+                        : Colors.red,
+                    fontSize: 30,
+                  ),
                 ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(
+                height: 30,
+              ),
               Transform.scale(
                 scale: 3.0,
                 child: Switch(
@@ -249,10 +252,13 @@ class MilleniumPageState extends State<MilleniumPage> {
                   },
                 ),
               ),
-              const SizedBox(height: 50),
+              const SizedBox(
+                height: 50,
+              ),
               buildText(
-                  text:
-                      'Temperatura de corte: ${tempValue.round().toString()} °C'),
+                text:
+                    'Temperatura de corte: ${tempValue.round().toString()} °C',
+              ),
               SizedBox(
                 width: MediaQuery.of(context).size.width * 0.8,
                 child: SliderTheme(
@@ -279,11 +285,13 @@ class MilleniumPageState extends State<MilleniumPage> {
                       sendTemperature(value.round());
                     },
                     min: 10,
-                    max: 40,
+                    max: 80,
                   ),
                 ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(
+                height: 30,
+              ),
               SizedBox(
                 width: 300,
                 child: !roomTempSended
@@ -294,12 +302,15 @@ class MilleniumPageState extends State<MilleniumPage> {
                         keyboard: TextInputType.number,
                         onSubmitted: (value) {
                           registerActivity(
-                              DeviceManager.getProductCode(deviceName),
-                              DeviceManager.extractSerialNumber(deviceName),
-                              'Se cambió la temperatura ambiente de $actualTemp°C a $value°C');
+                            DeviceManager.getProductCode(deviceName),
+                            DeviceManager.extractSerialNumber(deviceName),
+                            'Se cambió la temperatura ambiente de $actualTemp°C a $value°C',
+                          );
                           sendRoomTemperature(value);
-                          registerTemp(DeviceManager.getProductCode(deviceName),
-                              DeviceManager.extractSerialNumber(deviceName));
+                          registerTemp(
+                            DeviceManager.getProductCode(deviceName),
+                            DeviceManager.extractSerialNumber(deviceName),
+                          );
                           showToast('Temperatura ambiente seteada');
                           setState(() {
                             roomTempSended = true;
@@ -313,14 +324,18 @@ class MilleniumPageState extends State<MilleniumPage> {
                             text:
                                 'La temperatura ambiente ya fue seteada\npor este legajo el dia \n$tempDate',
                             style: const TextStyle(
-                                color: color4, fontWeight: FontWeight.bold),
+                              color: color4,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                         fontSize: 20.0,
                         textAlign: TextAlign.center,
                       ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(
+                height: 30,
+              ),
               buildText(
                 text: '',
                 textSpans: [
@@ -367,21 +382,26 @@ class MilleniumPageState extends State<MilleniumPage> {
                   color: color4,
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(
+                height: 10,
+              ),
               if (factoryMode) ...[
                 buildText(
                   text: '',
                   textSpans: [
                     const TextSpan(
                       text: 'Mapeo de temperatura:\n',
-                      style:
-                          TextStyle(color: color4, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: color4,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     TextSpan(
                       text: tempMap ? 'REALIZADO' : 'NO REALIZADO',
                       style: TextStyle(
-                          color: tempMap ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.bold),
+                        color: tempMap ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                   fontSize: 20.0,
@@ -392,9 +412,10 @@ class MilleniumPageState extends State<MilleniumPage> {
                   text: 'Iniciar mapeo temperatura',
                   onPressed: () {
                     registerActivity(
-                        DeviceManager.getProductCode(deviceName),
-                        DeviceManager.extractSerialNumber(deviceName),
-                        'Se inicio el mapeo de temperatura en el equipo');
+                      DeviceManager.getProductCode(deviceName),
+                      DeviceManager.extractSerialNumber(deviceName),
+                      'Se inicio el mapeo de temperatura en el equipo',
+                    );
                     startTempMap();
                     showToast('Iniciando mapeo de temperatura');
                   },
@@ -407,8 +428,10 @@ class MilleniumPageState extends State<MilleniumPage> {
                   textSpans: [
                     const TextSpan(
                       text: 'Distancias de control: ',
-                      style:
-                          TextStyle(color: color4, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: color4,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                   fontSize: 20.0,
@@ -422,14 +445,16 @@ class MilleniumPageState extends State<MilleniumPage> {
                   onSubmitted: (value) {
                     if (int.parse(value) <= 5000 && int.parse(value) >= 3000) {
                       registerActivity(
-                          DeviceManager.getProductCode(deviceName),
-                          DeviceManager.extractSerialNumber(deviceName),
-                          'Se modifico la distancia de encendido');
+                        DeviceManager.getProductCode(deviceName),
+                        DeviceManager.extractSerialNumber(deviceName),
+                        'Se modifico la distancia de encendido',
+                      );
                       putDistanceOn(
-                          service,
-                          DeviceManager.getProductCode(deviceName),
-                          DeviceManager.extractSerialNumber(deviceName),
-                          value);
+                        service,
+                        DeviceManager.getProductCode(deviceName),
+                        DeviceManager.extractSerialNumber(deviceName),
+                        value,
+                      );
                     } else {
                       showToast('Parametros no permitidos');
                     }
@@ -446,14 +471,16 @@ class MilleniumPageState extends State<MilleniumPage> {
                   onSubmitted: (value) {
                     if (int.parse(value) <= 300 && int.parse(value) >= 100) {
                       registerActivity(
-                          DeviceManager.getProductCode(deviceName),
-                          DeviceManager.extractSerialNumber(deviceName),
-                          'Se modifico la distancia de apagado');
+                        DeviceManager.getProductCode(deviceName),
+                        DeviceManager.extractSerialNumber(deviceName),
+                        'Se modifico la distancia de apagado',
+                      );
                       putDistanceOff(
-                          service,
-                          DeviceManager.getProductCode(deviceName),
-                          DeviceManager.extractSerialNumber(deviceName),
-                          value);
+                        service,
+                        DeviceManager.getProductCode(deviceName),
+                        DeviceManager.extractSerialNumber(deviceName),
+                        value,
+                      );
                     } else {
                       showToast('Parametros no permitidos');
                     }
@@ -461,7 +488,9 @@ class MilleniumPageState extends State<MilleniumPage> {
                 ),
                 const SizedBox(height: 20),
                 Padding(
-                  padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
+                  padding: EdgeInsets.only(
+                    bottom: bottomBarHeight + 20,
+                  ),
                 ),
               ],
             ],
@@ -490,16 +519,19 @@ class MilleniumPageState extends State<MilleniumPage> {
               content: Row(
                 children: [
                   Image.asset(
-                      EasterEggs.legajosMeme.contains(legajoConectado)
-                          ? 'assets/eg/DSC.gif'
-                          : 'assets/Loading.gif',
-                      width: 100,
-                      height: 100),
+                    EasterEggs.legajosMeme.contains(legajoConectado)
+                        ? 'assets/eg/DSC.gif'
+                        : 'assets/Loading.gif',
+                    width: 100,
+                    height: 100,
+                  ),
                   Container(
                     margin: const EdgeInsets.only(left: 15),
                     child: const Text(
                       "Desconectando...",
-                      style: TextStyle(color: color4),
+                      style: TextStyle(
+                        color: color4,
+                      ),
                     ),
                   ),
                 ],
@@ -545,11 +577,12 @@ class MilleniumPageState extends State<MilleniumPage> {
                     content: Row(
                       children: [
                         Image.asset(
-                            EasterEggs.legajosMeme.contains(legajoConectado)
-                                ? 'assets/eg/DSC.gif'
-                                : 'assets/Loading.gif',
-                            width: 100,
-                            height: 100),
+                          EasterEggs.legajosMeme.contains(legajoConectado)
+                              ? 'assets/eg/DSC.gif'
+                              : 'assets/Loading.gif',
+                          width: 100,
+                          height: 100,
+                        ),
                         Container(
                           margin: const EdgeInsets.only(left: 15),
                           child: const Text(
@@ -608,14 +641,34 @@ class MilleniumPageState extends State<MilleniumPage> {
                 height: 75.0,
                 items: <Widget>[
                   if (accessLevel > 1) ...[
-                    const Icon(Icons.settings, size: 30, color: color4),
-                    const Icon(Icons.star, size: 30, color: color4),
+                    const Icon(
+                      Icons.settings,
+                      size: 30,
+                      color: color4,
+                    ),
+                    const Icon(
+                      Icons.star,
+                      size: 30,
+                      color: color4,
+                    ),
                   ],
-                  const Icon(Icons.thermostat, size: 30, color: color4),
+                  const Icon(
+                    Icons.thermostat,
+                    size: 30,
+                    color: color4,
+                  ),
                   if (accessLevel > 1) ...[
-                    const Icon(Icons.person, size: 30, color: color4),
+                    const Icon(
+                      Icons.person,
+                      size: 30,
+                      color: color4,
+                    ),
                   ],
-                  const Icon(Icons.send, size: 30, color: color4),
+                  const Icon(
+                    Icons.send,
+                    size: 30,
+                    color: color4,
+                  ),
                 ],
                 color: color1,
                 buttonBackgroundColor: color1,
