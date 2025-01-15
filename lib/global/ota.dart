@@ -65,7 +65,7 @@ class OtaGlobalPagePageState extends State<OtaGlobalPage> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: color3.withOpacity(0.3),
+                    color: color3.withValues(alpha:0.3),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -88,7 +88,7 @@ class OtaGlobalPagePageState extends State<OtaGlobalPage> {
                   labelText: 'Ingrese código de producto',
                   labelStyle: const TextStyle(
                       color: color3, fontSize: 16, fontWeight: FontWeight.w500),
-                  hintStyle: TextStyle(color: color3.withOpacity(0.7)),
+                  hintStyle: TextStyle(color: color3.withValues(alpha:0.7)),
                   suffixIcon: productCodeAdded
                       ? const Icon(Icons.check_circle,
                           color: Colors.green, size: 28)
@@ -110,7 +110,7 @@ class OtaGlobalPagePageState extends State<OtaGlobalPage> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: color3.withOpacity(0.3),
+                    color: color3.withValues(alpha:0.3),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -128,7 +128,7 @@ class OtaGlobalPagePageState extends State<OtaGlobalPage> {
                   labelText: 'Ingrese versión de software',
                   labelStyle: const TextStyle(
                       color: color3, fontSize: 16, fontWeight: FontWeight.w500),
-                  hintStyle: TextStyle(color: color3.withOpacity(0.7)),
+                  hintStyle: TextStyle(color: color3.withValues(alpha:0.7)),
                   suffixIcon: versionSoftAdded
                       ? const Icon(Icons.check_circle,
                           color: Colors.green, size: 28)
@@ -150,7 +150,7 @@ class OtaGlobalPagePageState extends State<OtaGlobalPage> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: color3.withOpacity(0.3),
+                    color: color3.withValues(alpha:0.3),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -168,7 +168,7 @@ class OtaGlobalPagePageState extends State<OtaGlobalPage> {
                   labelText: 'Ingrese versión de hardware',
                   labelStyle: const TextStyle(
                       color: color3, fontSize: 16, fontWeight: FontWeight.w500),
-                  hintStyle: TextStyle(color: color3.withOpacity(0.7)),
+                  hintStyle: TextStyle(color: color3.withValues(alpha:0.7)),
                   suffixIcon: versionHardAdded
                       ? const Icon(Icons.check_circle,
                           color: Colors.green, size: 28)
@@ -189,7 +189,7 @@ class OtaGlobalPagePageState extends State<OtaGlobalPage> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
                 elevation: 6,
-                shadowColor: color3.withOpacity(0.4),
+                shadowColor: color3.withValues(alpha:0.4),
               ),
               onPressed: () {
                 if (versionSoftAdded && versionHardAdded && productCodeAdded) {

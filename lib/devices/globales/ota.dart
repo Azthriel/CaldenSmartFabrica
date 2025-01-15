@@ -270,7 +270,7 @@ class OtaTabState extends State<OtaTab> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                         elevation: 6,
-                        shadowColor: color3.withOpacity(0.4),
+                        shadowColor: color3.withValues(alpha:0.4),
                       ),
                       onPressed: () {
                         registerActivity(
@@ -313,7 +313,7 @@ class OtaTabState extends State<OtaTab> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                         elevation: 6,
-                        shadowColor: color3.withOpacity(0.4),
+                        shadowColor: color3.withValues(alpha:0.4),
                       ),
                       onPressed: () {
                         registerActivity(
@@ -364,7 +364,7 @@ class OtaTabState extends State<OtaTab> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                         elevation: 6,
-                        shadowColor: color3.withOpacity(0.4),
+                        shadowColor: color3.withValues(alpha:0.4),
                       ),
                       onPressed: () {
                         registerActivity(
@@ -413,7 +413,7 @@ class OtaTabState extends State<OtaTab> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                         elevation: 6,
-                        shadowColor: color3.withOpacity(0.4),
+                        shadowColor: color3.withValues(alpha:0.4),
                       ),
                       onPressed: () {
                         registerActivity(

@@ -104,7 +104,7 @@ class RegisterPageState extends State<RegisterPage> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: color3.withOpacity(0.3),
+                    color: color3.withValues(alpha:0.3),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -117,7 +117,7 @@ class RegisterPageState extends State<RegisterPage> {
                     labelText: 'Código de producto',
                     labelStyle: const TextStyle(color: color3),
                     hintText: 'Seleccione un código',
-                    hintStyle: TextStyle(color: color3.withOpacity(0.7)),
+                    hintStyle: TextStyle(color: color3.withValues(alpha:0.7)),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                   ),
@@ -153,7 +153,7 @@ class RegisterPageState extends State<RegisterPage> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: color3.withOpacity(0.3),
+                    color: color3.withValues(alpha:0.3),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -174,7 +174,7 @@ class RegisterPageState extends State<RegisterPage> {
                   border: InputBorder.none,
                   labelText: 'Número de serie',
                   labelStyle: const TextStyle(color: color3),
-                  hintStyle: TextStyle(color: color3.withOpacity(0.7)),
+                  hintStyle: TextStyle(color: color3.withValues(alpha:0.7)),
                 ),
               ),
             ),
@@ -187,7 +187,7 @@ class RegisterPageState extends State<RegisterPage> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: color3.withOpacity(0.3),
+                    color: color3.withValues(alpha:0.3),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -209,9 +209,9 @@ class RegisterPageState extends State<RegisterPage> {
                   const Spacer(),
                   Switch(
                     activeColor: color3,
-                    activeTrackColor: color3.withOpacity(0.3),
+                    activeTrackColor: color3.withValues(alpha:0.3),
                     inactiveThumbColor: color4,
-                    inactiveTrackColor: color3.withOpacity(0.2),
+                    inactiveTrackColor: color3.withValues(alpha:0.2),
                     value: stateSell,
                     onChanged: (value) {
                       setState(() {
@@ -231,7 +231,7 @@ class RegisterPageState extends State<RegisterPage> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: color3.withOpacity(0.3),
+                    color: color3.withValues(alpha:0.3),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -247,7 +247,7 @@ class RegisterPageState extends State<RegisterPage> {
                   border: InputBorder.none,
                   labelText: 'Comentario (opcional)',
                   labelStyle: const TextStyle(color: color3),
-                  hintStyle: TextStyle(color: color3.withOpacity(0.7)),
+                  hintStyle: TextStyle(color: color3.withValues(alpha:0.7)),
                 ),
               ),
             ),

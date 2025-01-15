@@ -171,7 +171,7 @@ class ScanPageState extends State<ScanPage> {
                   contentPadding: const EdgeInsets.symmetric(vertical: 12.0),
                   hintText: "Buscar...",
                   hintStyle: TextStyle(
-                    color: color3.withOpacity(0.7),
+                    color: color3.withValues(alpha:0.7),
                   ),
                   border: InputBorder.none,
                   suffixIcon: IconButton(

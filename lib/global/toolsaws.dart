@@ -830,7 +830,7 @@ class ToolsAWSState extends State<ToolsAWS> {
                                 border: Border.all(color: color4, width: 1),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: color4.withOpacity(0.2),
+                                    color: color4.withValues(alpha:0.2),
                                     blurRadius: 6,
                                     offset: const Offset(0, 3),
                                   ),
@@ -884,7 +884,7 @@ class ToolsAWSState extends State<ToolsAWS> {
                                 border: Border.all(color: color4, width: 1),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: color4.withOpacity(0.2),
+                                    color: color4.withValues(alpha:0.2),
                                     blurRadius: 6,
                                     offset: const Offset(0, 3),
                                   ),
@@ -1076,7 +1076,7 @@ class ToolsAWSState extends State<ToolsAWS> {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: color4.withOpacity(0.2),
+                              color: color4.withValues(alpha:0.2),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),

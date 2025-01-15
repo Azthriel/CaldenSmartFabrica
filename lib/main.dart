@@ -3,6 +3,7 @@ import 'package:caldensmartfabrica/devices/calefactores.dart';
 import 'package:caldensmartfabrica/devices/detectores.dart';
 import 'package:caldensmartfabrica/devices/domotica.dart';
 import 'package:caldensmartfabrica/devices/domotica4i4o.dart';
+import 'package:caldensmartfabrica/devices/heladera.dart';
 import 'package:caldensmartfabrica/devices/millenium.dart';
 import 'package:caldensmartfabrica/devices/modulo.dart';
 import 'package:caldensmartfabrica/firebase_options.dart';
@@ -103,6 +104,7 @@ class MyAppState extends State<MyApp> {
         '/millenium': (context) => const MilleniumPage(),
         '/domotica4i4o': (context) => const Domotica4i4oPage(),
         '/modulo': (context) => const ModuloPage(),
+        '/heladera': (context) => const HeladeraPage(),
       },
     );
   }

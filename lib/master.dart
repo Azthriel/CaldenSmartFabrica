@@ -17,7 +17,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.4';
+String appVersionNumber = '1.0.5';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -1104,7 +1104,7 @@ void showAlertDialog(BuildContext context, bool dismissible, Widget? title,
     context: context,
     barrierDismissible: dismissible,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Colors.black.withOpacity(0.5),
+    barrierColor: Colors.black.withValues(alpha:0.5),
     transitionDuration: const Duration(milliseconds: 300),
     pageBuilder: (BuildContext context, Animation<double> animation,
         Animation<double> secondaryAnimation) {
@@ -1122,7 +1122,7 @@ void showAlertDialog(BuildContext context, bool dismissible, Widget? title,
                   decoration: BoxDecoration(
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withValues(alpha:0.5),
                         spreadRadius: 1,
                         blurRadius: 20,
                         offset: const Offset(0, 4),
@@ -1198,7 +1198,7 @@ void showAlertDialog(BuildContext context, bool dismissible, Widget? title,
                           child: Material(
                             elevation: 10,
                             shape: const CircleBorder(),
-                            shadowColor: Colors.black.withOpacity(0.4),
+                            shadowColor: Colors.black.withValues(alpha:0.4),
                             child: CircleAvatar(
                               radius: 50,
                               backgroundColor: color3,
@@ -1249,7 +1249,7 @@ Widget buildButton({
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 6,
-      shadowColor: color3.withOpacity(0.4),
+      shadowColor: color3.withValues(alpha:0.4),
     ),
     onPressed: onPressed,
     child: Text(
@@ -1285,7 +1285,7 @@ Widget buildTextField({
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: color3.withOpacity(0.3),
+            color: color3.withValues(alpha:0.3),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -1609,7 +1609,11 @@ class MyDevice {
           'Serial number: ${DeviceManager.extractSerialNumber(device.platformName)}');
 
       switch (pc) {
-        case '022000_IOT' || '027000_IOT' || '041220_IOT' || '050217_IOT':
+        case '022000_IOT' ||
+              '027000_IOT' ||
+              '041220_IOT' ||
+              '050217_IOT' ||
+              '028000_IOT':
           BluetoothService espService = services.firstWhere(
               (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
 
@@ -1850,7 +1854,7 @@ class QRScanPageState extends State<QRScanPage>
           right: 0,
           height: 250,
           child: Container(
-              color: color1.withOpacity(0.88),
+              color: color1.withValues(alpha:0.88),
               child: const Center(
                 child: Text(
                   'Escanea el QR',
@@ -1867,7 +1871,7 @@ class QRScanPageState extends State<QRScanPage>
           right: 0,
           height: 250,
           child: Container(
-            color: color1.withOpacity(0.88),
+            color: color1.withValues(alpha:0.88),
           ),
         ),
         // Izquierda
@@ -1877,7 +1881,7 @@ class QRScanPageState extends State<QRScanPage>
           left: 0,
           width: 50,
           child: Container(
-            color: color1.withOpacity(0.88),
+            color: color1.withValues(alpha:0.88),
           ),
         ),
         // Derecha
@@ -1887,7 +1891,7 @@ class QRScanPageState extends State<QRScanPage>
           right: 0,
           width: 50,
           child: Container(
-            color: color1.withOpacity(0.88),
+            color: color1.withValues(alpha:0.88),
           ),
         ),
         // Área transparente con bordes redondeados

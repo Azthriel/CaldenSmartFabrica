@@ -64,6 +64,9 @@ class LoadState extends State<LoadingPage> {
           case '050217_IOT':
             navigatorKey.currentState?.pushReplacementNamed('/millenium');
             break;
+          case '028000_IOT':
+            navigatorKey.currentState?.pushReplacementNamed('/heladera');
+            break;
         }
       } else {
         showToast('Error en el dispositivo, intente nuevamente');
@@ -93,7 +96,11 @@ class LoadState extends State<LoadingPage> {
       );
 
       switch (pc) {
-        case '022000_IOT' || '027000_IOT' || '041120_IOT' || '050217_IOT':
+        case '022000_IOT' ||
+              '027000_IOT' ||
+              '041120_IOT' ||
+              '050217_IOT' ||
+              '028000_IOT':
           varsValues = await myDevice.varsUuid.read();
           var parts2 = utf8.decode(varsValues).split(':');
           printLog('Valores vars: $parts2');

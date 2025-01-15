@@ -1038,7 +1038,7 @@ class DetectorPageState extends State<DetectorPage> {
               Icon(
                 Icons.lightbulb,
                 size: 200,
-                color: Colors.yellow.withOpacity(_sliderValue / 100),
+                color: Colors.yellow.withValues(alpha: (_sliderValue / 100)),
               ),
               const SizedBox(
                 height: 30,
