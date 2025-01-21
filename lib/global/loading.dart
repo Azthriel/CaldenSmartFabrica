@@ -44,10 +44,7 @@ class LoadState extends State<LoadingPage> {
             navigatorKey.currentState?.pushReplacementNamed('/detector');
             break;
           case '020010_IOT':
-            hardwareVersion == '240422A'
-                ? navigatorKey.currentState?.pushReplacementNamed('/domotica')
-                : navigatorKey.currentState
-                    ?.pushReplacementNamed('/domotica4i4o');
+            navigatorKey.currentState?.pushReplacementNamed('/domotica');
             break;
           case '020020_IOT':
             navigatorKey.currentState?.pushReplacementNamed('/modulo');
@@ -59,7 +56,12 @@ class LoadState extends State<LoadingPage> {
             navigatorKey.currentState?.pushReplacementNamed('/patito');
             break;
           case '027313_IOT':
-            navigatorKey.currentState?.pushReplacementNamed('/rele');
+            if (Versioner.isPosterior(hardwareVersion, '241220A')) {
+              navigatorKey.currentState?.pushReplacementNamed('/rele1i1o');
+            } else {
+              navigatorKey.currentState?.pushReplacementNamed('/rele');
+            }
+
             break;
           case '050217_IOT':
             navigatorKey.currentState?.pushReplacementNamed('/millenium');
@@ -94,7 +96,7 @@ class LoadState extends State<LoadingPage> {
         DeviceManager.getProductCode(deviceName),
         DeviceManager.extractSerialNumber(deviceName),
       );
-
+//THE GAME
       switch (pc) {
         case '022000_IOT' ||
               '027000_IOT' ||
@@ -136,17 +138,7 @@ class LoadState extends State<LoadingPage> {
           printLog('Valores trabajo: $workValues');
           printLog('Valores work: $workValues');
           break;
-        case '020010_IOT':
-          ioValues = await myDevice.ioUuid.read();
-          printLog('Valores IO: $ioValues || ${utf8.decode(ioValues)}');
-          varsValues = await myDevice.varsUuid.read();
-          printLog('Valores VARS: $varsValues || ${utf8.decode(varsValues)}');
-          var parts2 = utf8.decode(varsValues).split(':');
-          distanceControlActive = parts2[0] == '1';
-          awsInit = parts2[1] == '1';
-          burneoDone = parts2[2] == '1';
-          break;
-        case '020020_IOT':
+        case '020010_IOT' || '020020_IOT':
           ioValues = await myDevice.ioUuid.read();
           printLog('Valores IO: $ioValues || ${utf8.decode(ioValues)}');
           varsValues = await myDevice.varsUuid.read();
@@ -157,13 +149,24 @@ class LoadState extends State<LoadingPage> {
           burneoDone = parts2[2] == '1';
           break;
         case '027313_IOT':
-          varsValues = await myDevice.varsUuid.read();
-          var parts2 = utf8.decode(varsValues).split(':');
-          printLog('Valores vars: $parts2');
-          distanceControlActive = parts2[0] == '1';
-          turnOn = parts2[1] == '1';
-          energyTimer = parts2[2];
-          awsInit = parts2[3] == '1';
+          if (Versioner.isPosterior(hardwareVersion, '241220A')) {
+            ioValues = await myDevice.ioUuid.read();
+            printLog('Valores IO: $ioValues || ${utf8.decode(ioValues)}');
+            varsValues = await myDevice.varsUuid.read();
+            printLog('Valores VARS: $varsValues || ${utf8.decode(varsValues)}');
+            var parts2 = utf8.decode(varsValues).split(':');
+            distanceControlActive = parts2[0] == '1';
+            awsInit = parts2[1] == '1';
+            burneoDone = parts2[2] == '1';
+          } else {
+            varsValues = await myDevice.varsUuid.read();
+            var parts2 = utf8.decode(varsValues).split(':');
+            printLog('Valores vars: $parts2');
+            distanceControlActive = parts2[0] == '1';
+            turnOn = parts2[1] == '1';
+            energyTimer = parts2[2];
+            awsInit = parts2[3] == '1';
+          }
           break;
         case '024011_IOT':
           varsValues = await myDevice.varsUuid.read();

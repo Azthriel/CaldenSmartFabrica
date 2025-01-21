@@ -2,10 +2,10 @@ import 'dart:io';
 import 'package:caldensmartfabrica/devices/calefactores.dart';
 import 'package:caldensmartfabrica/devices/detectores.dart';
 import 'package:caldensmartfabrica/devices/domotica.dart';
-import 'package:caldensmartfabrica/devices/domotica4i4o.dart';
 import 'package:caldensmartfabrica/devices/heladera.dart';
 import 'package:caldensmartfabrica/devices/millenium.dart';
 import 'package:caldensmartfabrica/devices/modulo.dart';
+import 'package:caldensmartfabrica/devices/rele1i1o.dart';
 import 'package:caldensmartfabrica/firebase_options.dart';
 import 'package:caldensmartfabrica/global/loading.dart';
 import 'package:caldensmartfabrica/global/login.dart';
@@ -102,9 +102,9 @@ class MyAppState extends State<MyApp> {
         '/patito': (context) => const PatitoPage(),
         '/roller': (context) => const RollerPage(),
         '/millenium': (context) => const MilleniumPage(),
-        '/domotica4i4o': (context) => const Domotica4i4oPage(),
         '/modulo': (context) => const ModuloPage(),
         '/heladera': (context) => const HeladeraPage(),
+        '/rele1i1o': (context) => const Rele1i1oPage(),
       },
     );
   }

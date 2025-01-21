@@ -17,9 +17,10 @@ class DomoticaPage extends StatefulWidget {
 class DomoticaPageState extends State<DomoticaPage> {
   TextEditingController textController = TextEditingController();
   final PageController _pageController = PageController(initialPage: 0);
+
   bool testingIN = false;
   bool testingOUT = false;
-  List<bool> stateIN = List<bool>.filled(4, false, growable: false);
+  List<bool> stateIN = List<bool>.filled(8, false, growable: false);
   List<bool> stateOUT = List<bool>.filled(4, false, growable: false);
 
   int _selectedIndex = 0;
@@ -120,26 +121,46 @@ class DomoticaPageState extends State<DomoticaPage> {
   void processValues(List<int> values) {
     ioValues = values;
     var parts = utf8.decode(values).split('/');
-    printLog(parts);
+    printLog('Valores: $parts', "Amarillo");
     tipo.clear();
     estado.clear();
     common.clear();
     alertIO.clear();
 
-    for (int i = 0; i < parts.length; i++) {
-      var equipo = parts[i].split(':');
-      tipo.add(equipo[0] == '0' ? 'Salida' : 'Entrada');
-      estado.add(equipo[1]);
-      common.add(equipo[2]);
-      alertIO.add(estado[i] != common[i]);
+    if (hardwareVersion == '240422A') {
+      for (int i = 0; i < parts.length; i++) {
+        var equipo = parts[i].split(':');
+        tipo.add(equipo[0] == '0' ? 'Salida' : 'Entrada');
+        estado.add(equipo[1]);
+        common.add(equipo[2]);
+        alertIO.add(estado[i] != common[i]);
 
-      printLog(
-          'En la posición $i el modo es ${tipo[i]} y su estado es ${estado[i]}');
-      printLog('Su posición es ${common[i]}');
-      printLog('¿Esta en alerta?: ${alertIO[i]}');
+        printLog(
+            'En la posición $i el modo es ${tipo[i]} y su estado es ${estado[i]}');
+        printLog('Su posición de reposo es ${common[i]}');
+        printLog('¿Esta en alerta?: ${alertIO[i]}');
+      }
+      setState(() {});
+    } else {
+      for (int i = 0; i < 4; i++) {
+        tipo.add('Salida');
+        estado.add(parts[i]);
+        common.add('0');
+        alertIO.add(false);
+      }
+
+      for (int j = 4; j < 8; j++) {
+        var equipo = parts[j].split(':');
+        tipo.add('Entrada');
+        estado.add(equipo[0]);
+        common.add(equipo[1]);
+        alertIO.add(estado[j] != common[j]);
+
+        printLog('¿La entrada $j esta en alerta?: ${alertIO[j]}');
+      }
+
+      setState(() {});
     }
-
-    setState(() {});
   }
 
   void subToIO() async {
@@ -331,71 +352,73 @@ class DomoticaPageState extends State<DomoticaPage> {
                       const SizedBox(
                         height: 5,
                       ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const SizedBox(
-                            width: 30,
-                          ),
-                          const Text(
-                            '¿Cambiar de modo?',
-                            style: TextStyle(color: color4, fontSize: 15),
-                          ),
-                          const Spacer(),
-                          IconButton(
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (BuildContext dialogContext) {
-                                  return AlertDialog(
-                                    backgroundColor: color0,
-                                    content: Text(
-                                      '¿Cambiar de ${tipo[index]} a ${entrada ? 'Salida' : 'Entrada'}?',
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        color: color4,
-                                      ),
-                                    ),
-                                    actions: <Widget>[
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(dialogContext).pop(),
-                                        child: const Text(
-                                          'Cancelar',
-                                          style: TextStyle(color: color4),
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          String fun =
-                                              '${DeviceManager.getProductCode(deviceName)}[13]($index#${entrada ? '0' : '1'})';
-                                          printLog(fun);
-                                          myDevice.toolsUuid
-                                              .write(fun.codeUnits);
-                                          Navigator.of(dialogContext).pop();
-                                        },
-                                        child: const Text(
-                                          'Cambiar',
-                                          style: TextStyle(color: color4),
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
-                            icon: const Icon(
-                              Icons.change_circle_outlined,
-                              color: color4,
-                              size: 30,
+                      if (hardwareVersion == '240422A') ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            const SizedBox(
+                              width: 30,
                             ),
-                          ),
-                          const SizedBox(
-                            width: 10,
-                          ),
-                        ],
-                      ),
+                            const Text(
+                              '¿Cambiar de modo?',
+                              style: TextStyle(color: color4, fontSize: 15),
+                            ),
+                            const Spacer(),
+                            IconButton(
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (BuildContext dialogContext) {
+                                    return AlertDialog(
+                                      backgroundColor: color0,
+                                      content: Text(
+                                        '¿Cambiar de ${tipo[index]} a ${entrada ? 'Salida' : 'Entrada'}?',
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          color: color4,
+                                        ),
+                                      ),
+                                      actions: <Widget>[
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(dialogContext).pop(),
+                                          child: const Text(
+                                            'Cancelar',
+                                            style: TextStyle(color: color4),
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            String fun =
+                                                '${DeviceManager.getProductCode(deviceName)}[13]($index#${entrada ? '0' : '1'})';
+                                            printLog(fun);
+                                            myDevice.toolsUuid
+                                                .write(fun.codeUnits);
+                                            Navigator.of(dialogContext).pop();
+                                          },
+                                          child: const Text(
+                                            'Cambiar',
+                                            style: TextStyle(color: color4),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              icon: const Icon(
+                                Icons.change_circle_outlined,
+                                color: color4,
+                                size: 30,
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 10,
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),

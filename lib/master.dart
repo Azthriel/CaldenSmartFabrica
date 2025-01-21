@@ -175,6 +175,10 @@ bool roomTempSended = false;
 String tempDate = '';
 //*-Registro temperatura ambiente enviada-*\\
 
+//*- altura de la barra -*\\
+double bottomBarHeight = kBottomNavigationBarHeight;
+//*- altura de la barra -*\\
+
 // // -------------------------------------------------------------------------------------------------------------\\ \\
 
 //! FUNCIONES !\\
@@ -1104,7 +1108,7 @@ void showAlertDialog(BuildContext context, bool dismissible, Widget? title,
     context: context,
     barrierDismissible: dismissible,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Colors.black.withValues(alpha:0.5),
+    barrierColor: Colors.black.withValues(alpha: 0.5),
     transitionDuration: const Duration(milliseconds: 300),
     pageBuilder: (BuildContext context, Animation<double> animation,
         Animation<double> secondaryAnimation) {
@@ -1122,7 +1126,7 @@ void showAlertDialog(BuildContext context, bool dismissible, Widget? title,
                   decoration: BoxDecoration(
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha:0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                         spreadRadius: 1,
                         blurRadius: 20,
                         offset: const Offset(0, 4),
@@ -1198,7 +1202,7 @@ void showAlertDialog(BuildContext context, bool dismissible, Widget? title,
                           child: Material(
                             elevation: 10,
                             shape: const CircleBorder(),
-                            shadowColor: Colors.black.withValues(alpha:0.4),
+                            shadowColor: Colors.black.withValues(alpha: 0.4),
                             child: CircleAvatar(
                               radius: 50,
                               backgroundColor: color3,
@@ -1249,7 +1253,7 @@ Widget buildButton({
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 6,
-      shadowColor: color3.withValues(alpha:0.4),
+      shadowColor: color3.withValues(alpha: 0.4),
     ),
     onPressed: onPressed,
     child: Text(
@@ -1285,7 +1289,7 @@ Widget buildTextField({
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: color3.withValues(alpha:0.3),
+            color: color3.withValues(alpha: 0.3),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -1654,19 +1658,7 @@ class MyDevice {
               c.uuid == Guid('12d3c6a1-f86e-4d5b-89b5-22dc3f5c831f')); //No leo
 
           break;
-        case '020010_IOT':
-          BluetoothService service = services.firstWhere(
-              (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
-          ioUuid = service.characteristics.firstWhere(
-              (c) => c.uuid == Guid('03b1c5d9-534a-4980-aed3-f59615205216'));
-          otaUuid = service.characteristics.firstWhere((c) =>
-              c.uuid ==
-              Guid(
-                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
-          varsUuid = service.characteristics.firstWhere(
-              (c) => c.uuid == Guid('52a2f121-a8e3-468c-a5de-45dca9a2a207'));
-          break;
-        case '020020_IOT':
+        case '020010_IOT' || '020020_IOT':
           BluetoothService service = services.firstWhere(
               (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
           ioUuid = service.characteristics.firstWhere(
@@ -1679,17 +1671,31 @@ class MyDevice {
               (c) => c.uuid == Guid('52a2f121-a8e3-468c-a5de-45dca9a2a207'));
           break;
         case '027313_IOT':
-          BluetoothService espService = services.firstWhere(
-              (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
+          if (Versioner.isPosterior(hardwareVersion, '241220A')) {
+            BluetoothService service = services.firstWhere(
+                (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
+            ioUuid = service.characteristics.firstWhere(
+                (c) => c.uuid == Guid('03b1c5d9-534a-4980-aed3-f59615205216'));
+            otaUuid = service.characteristics.firstWhere((c) =>
+                c.uuid ==
+                Guid(
+                    'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
+            varsUuid = service.characteristics.firstWhere(
+                (c) => c.uuid == Guid('52a2f121-a8e3-468c-a5de-45dca9a2a207'));
+          } else {
+            BluetoothService espService = services.firstWhere(
+                (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
 
-          varsUuid = espService.characteristics.firstWhere((c) =>
-              c.uuid ==
-              Guid(
-                  '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //DistanceControl:W_Status:EnergyTimer:AwsINIT
-          otaUuid = espService.characteristics.firstWhere((c) =>
-              c.uuid ==
-              Guid(
-                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
+            varsUuid = espService.characteristics.firstWhere((c) =>
+                c.uuid ==
+                Guid(
+                    '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //DistanceControl:W_Status:EnergyTimer:AwsINIT
+            otaUuid = espService.characteristics.firstWhere((c) =>
+                c.uuid ==
+                Guid(
+                    'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
+          }
+
           break;
         case '024011_IOT':
           BluetoothService espService = services.firstWhere(
@@ -1770,6 +1776,77 @@ class NativeService {
   }
 }
 //*-Metodos, interacción con código Nativo-*\\
+
+//*-Versionador, comparador de versiones-*\\
+class Versioner {
+  ///Compara si la primer versión que le envías salio después que la segunda
+  ///
+  ///Si son iguales también retorna true
+  static bool isPosterior(String myVersion, String versionToCompare) {
+    int year1 = int.parse(myVersion.substring(0, 2));
+    int month1 = int.parse(myVersion.substring(2, 4));
+    int day1 = int.parse(myVersion.substring(4, 6));
+    String letter1 = myVersion.substring(6, 7);
+
+    int year2 = int.parse(versionToCompare.substring(0, 2));
+    int month2 = int.parse(versionToCompare.substring(2, 4));
+    int day2 = int.parse(versionToCompare.substring(4, 6));
+    String letter2 = versionToCompare.substring(6, 7);
+
+    if (year1 > year2) {
+      return true;
+    } else {
+      if (month1 > month2) {
+        return true;
+      } else {
+        if (day1 > day2) {
+          return true;
+        } else {
+          if (letter1.compareTo(letter2) > 0 ||
+              letter1.compareTo(letter2) == 0) {
+            return true;
+          } else {
+            return false;
+          }
+        }
+      }
+    }
+  }
+
+  ///Compara si la primer versión que le envías salio antes que la segunda
+  ///
+  ///Si son iguales retorna false
+  static bool isPrevious(String myVersion, String versionToCompare) {
+    int year1 = int.parse(myVersion.substring(0, 2));
+    int month1 = int.parse(myVersion.substring(2, 4));
+    int day1 = int.parse(myVersion.substring(4, 6));
+    String letter1 = myVersion.substring(6, 7);
+
+    int year2 = int.parse(versionToCompare.substring(0, 2));
+    int month2 = int.parse(versionToCompare.substring(2, 4));
+    int day2 = int.parse(versionToCompare.substring(4, 6));
+    String letter2 = versionToCompare.substring(6, 7);
+
+    if (year1 < year2) {
+      return true;
+    } else {
+      if (month1 < month2) {
+        return true;
+      } else {
+        if (day1 < day2) {
+          return true;
+        } else {
+          if (letter1.compareTo(letter2) < 0) {
+            return true;
+          } else {
+            return false;
+          }
+        }
+      }
+    }
+  }
+}
+//*-Versionador, comparador de versiones-*\\
 
 //*-Provider, actualización de data en un widget-*\\
 class GlobalDataNotifier extends ChangeNotifier {
@@ -1854,7 +1931,7 @@ class QRScanPageState extends State<QRScanPage>
           right: 0,
           height: 250,
           child: Container(
-              color: color1.withValues(alpha:0.88),
+              color: color1.withValues(alpha: 0.88),
               child: const Center(
                 child: Text(
                   'Escanea el QR',
@@ -1871,7 +1948,7 @@ class QRScanPageState extends State<QRScanPage>
           right: 0,
           height: 250,
           child: Container(
-            color: color1.withValues(alpha:0.88),
+            color: color1.withValues(alpha: 0.88),
           ),
         ),
         // Izquierda
@@ -1881,7 +1958,7 @@ class QRScanPageState extends State<QRScanPage>
           left: 0,
           width: 50,
           child: Container(
-            color: color1.withValues(alpha:0.88),
+            color: color1.withValues(alpha: 0.88),
           ),
         ),
         // Derecha
@@ -1891,7 +1968,7 @@ class QRScanPageState extends State<QRScanPage>
           right: 0,
           width: 50,
           child: Container(
-            color: color1.withValues(alpha:0.88),
+            color: color1.withValues(alpha: 0.88),
           ),
         ),
         // Área transparente con bordes redondeados

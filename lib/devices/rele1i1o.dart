@@ -7,20 +7,20 @@ import 'package:caldensmartfabrica/devices/globales/tools.dart';
 import 'package:flutter/material.dart';
 import '../master.dart';
 
-class Domotica4i4oPage extends StatefulWidget {
-  const Domotica4i4oPage({super.key});
+class Rele1i1oPage extends StatefulWidget {
+  const Rele1i1oPage({super.key});
 
   @override
-  Domotica4i4oPageState createState() => Domotica4i4oPageState();
+  Rele1i1oPageState createState() => Rele1i1oPageState();
 }
 
-class Domotica4i4oPageState extends State<Domotica4i4oPage> {
+class Rele1i1oPageState extends State<Rele1i1oPage> {
   TextEditingController textController = TextEditingController();
   final PageController _pageController = PageController(initialPage: 0);
   bool testingIN = false;
   bool testingOUT = false;
-  List<bool> stateIN = List<bool>.filled(8, false, growable: false);
-  List<bool> stateOUT = List<bool>.filled(4, false, growable: false);
+  bool stateIN = false;
+  bool stateOUT = false;
 
   int _selectedIndex = 0;
 
@@ -126,22 +126,20 @@ class Domotica4i4oPageState extends State<Domotica4i4oPage> {
     common.clear();
     alertIO.clear();
 
-    for (int i = 0; i < 4; i++) {
-      tipo.add('Salida');
-      estado.add(parts[i]);
-      common.add('0');
-      alertIO.add(false);
-    }
+    //Pin 1
+    tipo.add('Salida');
+    estado.add(parts[0]);
+    common.add('0');
+    alertIO.add(false);
+    //Pin 2
+    tipo.add('Entrada');
+    var equipo = parts[1].split(':');
+    estado.add(equipo[0]);
+    common.add(equipo[1]);
+    alertIO.add(estado[1] != common[1]);
 
-    for (int j = 4; j < 8; j++) {
-      var equipo = parts[j].split(':');
-      tipo.add('Entrada');
-      estado.add(equipo[0]);
-      common.add(equipo[1]);
-      alertIO.add(estado[j] != common[j]);
+    printLog('¿La entrada1 esta en alerta?: ${alertIO[1]}');
 
-      printLog('¿La entrada $j esta en alerta?: ${alertIO[j]}');
-    }
     setState(() {});
   }
 
@@ -170,14 +168,8 @@ class Domotica4i4oPageState extends State<Domotica4i4oPage> {
       'productCode': DeviceManager.getProductCode(deviceName),
       'serialNumber': DeviceManager.extractSerialNumber(deviceName),
       'Legajo': legajoConectado,
-      'in0': stateIN[0],
-      'in1': stateIN[1],
-      'in2': stateIN[2],
-      'in3': stateIN[3],
-      'out0': stateOUT[0],
-      'out1': stateOUT[1],
-      'out2': stateOUT[2],
-      'out3': stateOUT[3],
+      'in0': stateIN,
+      'out0': stateOUT,
       'date': DateTime.now().toIso8601String()
     });
     if (response.statusCode == 200) {
@@ -210,177 +202,170 @@ class Domotica4i4oPageState extends State<Domotica4i4oPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                for (int i = 0; i < 4; i++) ...{
-                  const SizedBox(
-                    height: 10,
+                const SizedBox(
+                  height: 10,
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: color0,
+                    borderRadius: BorderRadius.circular(20),
+                    border: const Border(
+                      bottom: BorderSide(color: color1, width: 5),
+                      right: BorderSide(color: color1, width: 5),
+                      left: BorderSide(color: color1, width: 5),
+                      top: BorderSide(color: color1, width: 5),
+                    ),
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: color0,
-                      borderRadius: BorderRadius.circular(20),
-                      border: const Border(
-                        bottom: BorderSide(color: color1, width: 5),
-                        right: BorderSide(color: color1, width: 5),
-                        left: BorderSide(color: color1, width: 5),
-                        top: BorderSide(color: color1, width: 5),
+                  width: width - 50,
+                  height: 250,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        tipo[0],
+                        style: const TextStyle(
+                          color: color4,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 50,
+                        ),
+                        textAlign: TextAlign.start,
                       ),
-                    ),
-                    width: width - 50,
-                    height: 250,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          tipo[i],
-                          style: const TextStyle(
-                            color: color4,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 50,
-                          ),
-                          textAlign: TextAlign.start,
-                        ),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        Transform.scale(
-                          scale: 2.0,
-                          child: Switch(
-                            activeColor: color4,
-                            activeTrackColor: color1,
-                            inactiveThumbColor: color1,
-                            inactiveTrackColor: color4,
-                            value: estado[i] == '1',
-                            onChanged: (value) async {
-                              String fun = '$i#${value ? '1' : '0'}';
-                              await myDevice.ioUuid.write(fun.codeUnits);
-                            },
-                          ),
-                        ),
-                        Padding(
-                          padding:
-                              EdgeInsets.only(bottom: bottomBarHeight + 20),
-                        ),
-                      ],
-                    ),
-                  ),
-                },
-                for (int j = 4; j < 8; j++) ...{
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: color0,
-                      borderRadius: BorderRadius.circular(20),
-                      border: const Border(
-                        bottom: BorderSide(color: color1, width: 5),
-                        right: BorderSide(color: color1, width: 5),
-                        left: BorderSide(color: color1, width: 5),
-                        top: BorderSide(color: color1, width: 5),
+                      const SizedBox(
+                        height: 10,
                       ),
-                    ),
-                    width: width - 50,
-                    height: 275,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          tipo[j],
-                          style: const TextStyle(
-                            color: color4,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 50,
-                          ),
-                          textAlign: TextAlign.start,
+                      Transform.scale(
+                        scale: 2.0,
+                        child: Switch(
+                          activeColor: color4,
+                          activeTrackColor: color1,
+                          inactiveThumbColor: color1,
+                          inactiveTrackColor: color4,
+                          value: estado[0] == '1',
+                          onChanged: (value) async {
+                            String fun = '0#${value ? '1' : '0'}';
+                            await myDevice.ioUuid.write(fun.codeUnits);
+                          },
                         ),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        alertIO[j]
-                            ? const Icon(
-                                Icons.new_releases,
-                                color: Color(0xffcb3234),
-                                size: 50,
-                              )
-                            : const Icon(
-                                Icons.new_releases,
-                                color: color4,
-                                size: 50,
-                              ),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            const SizedBox(
-                              width: 30,
-                            ),
-                            const Text(
-                              'Estado común:',
-                              style: TextStyle(
-                                color: color4,
-                                fontSize: 15,
-                              ),
-                            ),
-                            const Spacer(),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 10),
-                              child: ChoiceChip(
-                                label: const Text('0'),
-                                selected: common[j] == '0',
-                                shape: const OvalBorder(),
-                                pressElevation: 5,
-                                showCheckmark: false,
-                                selectedColor: color2,
-                                onSelected: (value) {
-                                  setState(() {
-                                    common[j] = '0';
-                                  });
-                                  String data =
-                                      '${DeviceManager.getProductCode(deviceName)}[14]($j#${common[j]})';
-                                  printLog(data);
-                                  myDevice.toolsUuid.write(data.codeUnits);
-                                },
-                              ),
-                            ),
-                            const SizedBox(
-                              width: 10,
-                            ),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 10),
-                              child: ChoiceChip(
-                                label: const Text('1'),
-                                labelStyle: const TextStyle(
-                                  color: color1,
-                                ),
-                                selected: common[j] == '1',
-                                shape: const OvalBorder(),
-                                pressElevation: 5,
-                                showCheckmark: false,
-                                selectedColor: color2,
-                                onSelected: (value) {
-                                  setState(() {
-                                    common[j] = '1';
-                                  });
-                                  String data =
-                                      '${DeviceManager.getProductCode(deviceName)}[14]($j#${common[j]})';
-                                  printLog(data);
-                                  myDevice.toolsUuid.write(data.codeUnits);
-                                },
-                              ),
-                            ),
-                            const SizedBox(
-                              width: 10,
-                            ),
-                          ],
-                        )
-                      ],
+                      ),
+                      Padding(
+                        padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: color0,
+                    borderRadius: BorderRadius.circular(20),
+                    border: const Border(
+                      bottom: BorderSide(color: color1, width: 5),
+                      right: BorderSide(color: color1, width: 5),
+                      left: BorderSide(color: color1, width: 5),
+                      top: BorderSide(color: color1, width: 5),
                     ),
                   ),
-                },
+                  width: width - 50,
+                  height: 275,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        tipo[1],
+                        style: const TextStyle(
+                          color: color4,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 50,
+                        ),
+                        textAlign: TextAlign.start,
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      alertIO[1]
+                          ? const Icon(
+                              Icons.new_releases,
+                              color: Color(0xffcb3234),
+                              size: 50,
+                            )
+                          : const Icon(
+                              Icons.new_releases,
+                              color: color4,
+                              size: 50,
+                            ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          const SizedBox(
+                            width: 30,
+                          ),
+                          const Text(
+                            'Estado común:',
+                            style: TextStyle(
+                              color: color4,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const Spacer(),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: ChoiceChip(
+                              label: const Text('0'),
+                              selected: common[1] == '0',
+                              shape: const OvalBorder(),
+                              pressElevation: 5,
+                              showCheckmark: false,
+                              selectedColor: color2,
+                              onSelected: (value) {
+                                setState(() {
+                                  common[1] = '0';
+                                });
+                                String data =
+                                    '${DeviceManager.getProductCode(deviceName)}[14](1#${common[1]})';
+                                printLog(data);
+                                myDevice.toolsUuid.write(data.codeUnits);
+                              },
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: ChoiceChip(
+                              label: const Text('1'),
+                              labelStyle: const TextStyle(
+                                color: color1,
+                              ),
+                              selected: common[1] == '1',
+                              shape: const OvalBorder(),
+                              pressElevation: 5,
+                              showCheckmark: false,
+                              selectedColor: color2,
+                              onSelected: (value) {
+                                setState(() {
+                                  common[1] = '1';
+                                });
+                                String data =
+                                    '${DeviceManager.getProductCode(deviceName)}[14](1#${common[1]})';
+                                printLog(data);
+                                myDevice.toolsUuid.write(data.codeUnits);
+                              },
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
+                ),
                 const SizedBox(
                   height: 10,
                 ),
@@ -410,7 +395,9 @@ class Domotica4i4oPageState extends State<Domotica4i4oPage> {
                       const TextSpan(
                         text: '¿Burneo realizado?\n',
                         style: TextStyle(
-                            color: color4, fontWeight: FontWeight.bold),
+                          color: color4,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       TextSpan(
                         text: burneoDone ? 'SI' : 'NO',
@@ -427,9 +414,10 @@ class Domotica4i4oPageState extends State<Domotica4i4oPage> {
                     text: 'Probar entradas',
                     onPressed: () {
                       registerActivity(
-                          DeviceManager.getProductCode(deviceName),
-                          DeviceManager.extractSerialNumber(deviceName),
-                          'Se envio el testeo de entradas');
+                        DeviceManager.getProductCode(deviceName),
+                        DeviceManager.extractSerialNumber(deviceName),
+                        'Se envio el testeo de entradas',
+                      );
                       setState(() {
                         testingIN = true;
                       });
@@ -439,48 +427,43 @@ class Domotica4i4oPageState extends State<Domotica4i4oPage> {
                     const SizedBox(
                       height: 10,
                     ),
-                    for (int i = 4; i < 8; i++) ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Funcionamiento Entrada $i: ',
-                            style: const TextStyle(
-                              fontSize: 15.0,
-                              color: color0,
-                              fontWeight: FontWeight.normal,
-                            ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Funcionamiento Entrada: ',
+                          style: TextStyle(
+                            fontSize: 15.0,
+                            color: color0,
+                            fontWeight: FontWeight.normal,
                           ),
-                          Switch(
-                            activeColor: color4,
-                            activeTrackColor: color1,
-                            inactiveThumbColor: color1,
-                            inactiveTrackColor: color4,
-                            trackOutlineColor:
-                                const WidgetStatePropertyAll(color1),
-                            thumbIcon: WidgetStateProperty.resolveWith<Icon?>(
-                              (Set<WidgetState> states) {
-                                if (states.contains(WidgetState.selected)) {
-                                  return const Icon(Icons.check, color: color1);
-                                } else {
-                                  return const Icon(Icons.close, color: color4);
-                                }
-                              },
-                            ),
-                            value: stateIN[i],
-                            onChanged: (value) {
-                              setState(() {
-                                stateIN[i] = value;
-                              });
-                              printLog(stateIN);
+                        ),
+                        Switch(
+                          activeColor: color4,
+                          activeTrackColor: color1,
+                          inactiveThumbColor: color1,
+                          inactiveTrackColor: color4,
+                          trackOutlineColor:
+                              const WidgetStatePropertyAll(color1),
+                          thumbIcon: WidgetStateProperty.resolveWith<Icon?>(
+                            (Set<WidgetState> states) {
+                              if (states.contains(WidgetState.selected)) {
+                                return const Icon(Icons.check, color: color1);
+                              } else {
+                                return const Icon(Icons.close, color: color4);
+                              }
                             },
                           ),
-                        ],
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                    ],
+                          value: stateIN,
+                          onChanged: (value) {
+                            setState(() {
+                              stateIN = value;
+                            });
+                            printLog(stateIN);
+                          },
+                        ),
+                      ],
+                    ),
                   ],
                   const SizedBox(
                     height: 10,
@@ -490,13 +473,11 @@ class Domotica4i4oPageState extends State<Domotica4i4oPage> {
                     onPressed: () {
                       if (testingIN) {
                         registerActivity(
-                          DeviceManager.getProductCode(deviceName),
-                          DeviceManager.extractSerialNumber(deviceName),
-                          'Se envio el testeo de salidas',
-                        );
+                            DeviceManager.getProductCode(deviceName),
+                            DeviceManager.extractSerialNumber(deviceName),
+                            'Se envio el testeo de salidas');
                         String fun1 =
                             '${DeviceManager.getProductCode(deviceName)}[15](0)';
-                        printLog(fun1);
                         myDevice.toolsUuid.write(fun1.codeUnits);
                         setState(() {
                           testingOUT = true;
@@ -510,48 +491,43 @@ class Domotica4i4oPageState extends State<Domotica4i4oPage> {
                     const SizedBox(
                       height: 10,
                     ),
-                    for (int i = 0; i < 4; i++) ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Funcionamiento Salida $i: ',
-                            style: const TextStyle(
-                              fontSize: 15.0,
-                              color: color0,
-                              fontWeight: FontWeight.normal,
-                            ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Funcionamiento Salida: ',
+                          style: TextStyle(
+                            fontSize: 15.0,
+                            color: color0,
+                            fontWeight: FontWeight.normal,
                           ),
-                          Switch(
-                            activeColor: color4,
-                            activeTrackColor: color1,
-                            inactiveThumbColor: color1,
-                            inactiveTrackColor: color4,
-                            trackOutlineColor:
-                                const WidgetStatePropertyAll(color1),
-                            thumbIcon: WidgetStateProperty.resolveWith<Icon?>(
-                              (Set<WidgetState> states) {
-                                if (states.contains(WidgetState.selected)) {
-                                  return const Icon(Icons.check, color: color1);
-                                } else {
-                                  return const Icon(Icons.close, color: color4);
-                                }
-                              },
-                            ),
-                            value: stateOUT[i],
-                            onChanged: (value) {
-                              setState(() {
-                                stateOUT[i] = value;
-                              });
-                              printLog(stateOUT);
+                        ),
+                        Switch(
+                          activeColor: color4,
+                          activeTrackColor: color1,
+                          inactiveThumbColor: color1,
+                          inactiveTrackColor: color4,
+                          trackOutlineColor:
+                              const WidgetStatePropertyAll(color1),
+                          thumbIcon: WidgetStateProperty.resolveWith<Icon?>(
+                            (Set<WidgetState> states) {
+                              if (states.contains(WidgetState.selected)) {
+                                return const Icon(Icons.check, color: color1);
+                              } else {
+                                return const Icon(Icons.close, color: color4);
+                              }
                             },
                           ),
-                        ],
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                    ],
+                          value: stateOUT,
+                          onChanged: (value) {
+                            setState(() {
+                              stateOUT = value;
+                            });
+                            printLog(stateOUT);
+                          },
+                        ),
+                      ],
+                    ),
                   ],
                   const SizedBox(
                     height: 10,
@@ -561,9 +537,10 @@ class Domotica4i4oPageState extends State<Domotica4i4oPage> {
                     onPressed: () {
                       if (testingIN && testingOUT) {
                         registerActivity(
-                            DeviceManager.getProductCode(deviceName),
-                            DeviceManager.extractSerialNumber(deviceName),
-                            'Se envio el burneo');
+                          DeviceManager.getProductCode(deviceName),
+                          DeviceManager.extractSerialNumber(deviceName),
+                          'Se envio el burneo',
+                        );
                         printLog('Se envío burneo');
                         mandarBurneo();
                         String fun2 =
