@@ -1,0 +1,2 @@
+C:/Desktop/caldensmartfabrica/android/app/.cxx/RelWithDebInfo/2eo139r3/arm64-v8a/CMakeFiles/edit_cache.dir
+C:/Desktop/caldensmartfabrica/android/app/.cxx/RelWithDebInfo/2eo139r3/arm64-v8a/CMakeFiles/rebuild_cache.dir

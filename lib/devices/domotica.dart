@@ -85,6 +85,7 @@ class DomoticaPageState extends State<DomoticaPage> {
         //If comes from subscription, parts[1] = reason of error.
         setState(() {
           wifiIcon = Icons.warning_amber_rounded;
+          werror = true;
         });
 
         if (parts[1] == '202' || parts[1] == '15') {

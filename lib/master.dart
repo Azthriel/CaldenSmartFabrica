@@ -17,7 +17,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.5';
+String appVersionNumber = '1.0.11';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -63,7 +63,6 @@ Map<String, String?> _wifiPasswordsMap = {};
 FocusNode wifiPassNode = FocusNode();
 bool _scanInProgress = false;
 int? _expandedIndex;
-bool wifiError = false;
 String errorMessage = '';
 String errorSintax = '';
 String nameOfWifi = '';
@@ -116,10 +115,10 @@ List<String> secondaryAdmins = [];
 typedef LetIndexPage = bool Function(int value);
 //*-CurvedNavigationBar-*\\
 
-//*-AnimSearchBar*-\\
+//*-AnimSearchBar-*\\
 int toggle = 0;
 String textFieldValue = '';
-//*-AnimSearchBar*-\\
+//*-AnimSearchBar-*\\
 
 //*-Calefactores-*\\
 bool turnOn = false;
@@ -133,6 +132,7 @@ String actualTemp = '';
 //*-Calefactores-*\\
 
 //*- Roller -*\\
+int actualPositionGrades = 0;
 int actualPosition = 0;
 bool rollerMoving = false;
 int workingPosition = 0;
@@ -378,6 +378,7 @@ void wifiText(BuildContext context) {
   bool isAddingNetwork = false;
   String manualSSID = '';
   String manualPassword = '';
+  bool obscureText = true;
 
   showDialog(
     barrierDismissible: true,
@@ -583,35 +584,54 @@ void wifiText(BuildContext context) {
                                                           color: color4,
                                                         ),
                                                         decoration:
-                                                            const InputDecoration(
+                                                            InputDecoration(
                                                           hintText:
                                                               'Escribir contraseña',
-                                                          hintStyle: TextStyle(
+                                                          hintStyle:
+                                                              const TextStyle(
                                                             color: color3,
                                                           ),
                                                           enabledBorder:
-                                                              UnderlineInputBorder(
+                                                              const UnderlineInputBorder(
                                                             borderSide:
                                                                 BorderSide(
                                                               color: color4,
                                                             ),
                                                           ),
                                                           focusedBorder:
-                                                              UnderlineInputBorder(
+                                                              const UnderlineInputBorder(
                                                             borderSide:
                                                                 BorderSide(
                                                               color: color4,
                                                             ),
                                                           ),
                                                           border:
-                                                              UnderlineInputBorder(
+                                                              const UnderlineInputBorder(
                                                             borderSide:
                                                                 BorderSide(
                                                               color: color4,
                                                             ),
                                                           ),
+                                                          suffixIcon:
+                                                              IconButton(
+                                                            icon: Icon(
+                                                              obscureText
+                                                                  ? Icons
+                                                                      .visibility
+                                                                  : Icons
+                                                                      .visibility_off,
+                                                              color: color4,
+                                                            ),
+                                                            onPressed: () {
+                                                              setState(() {
+                                                                obscureText =
+                                                                    !obscureText;
+                                                              });
+                                                            },
+                                                          ),
                                                         ),
-                                                        obscureText: true,
+                                                        obscureText:
+                                                            obscureText,
                                                         onChanged: (value) {
                                                           setState(() {
                                                             _currentlySelectedSSID =
@@ -692,23 +712,36 @@ void wifiText(BuildContext context) {
                                     style: const TextStyle(
                                       color: color4,
                                     ),
-                                    decoration: const InputDecoration(
+                                    decoration: InputDecoration(
                                       hintText: 'Contraseña',
-                                      hintStyle: TextStyle(
+                                      hintStyle: const TextStyle(
                                         color: color3,
                                       ),
-                                      enabledBorder: UnderlineInputBorder(
+                                      enabledBorder: const UnderlineInputBorder(
                                         borderSide: BorderSide(
                                           color: color4,
                                         ),
                                       ),
-                                      focusedBorder: UnderlineInputBorder(
+                                      focusedBorder: const UnderlineInputBorder(
                                         borderSide: BorderSide(
                                           color: color4,
                                         ),
+                                      ),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          obscureText
+                                              ? Icons.visibility
+                                              : Icons.visibility_off,
+                                          color: color4,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            obscureText = !obscureText;
+                                          });
+                                        },
                                       ),
                                     ),
-                                    obscureText: true,
+                                    obscureText: obscureText,
                                     onChanged: (value) {
                                       manualPassword = value;
                                     },
@@ -867,23 +900,36 @@ void wifiText(BuildContext context) {
                             style: const TextStyle(
                               color: color4,
                             ),
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               hintText: 'Contraseña',
-                              hintStyle: TextStyle(
+                              hintStyle: const TextStyle(
                                 color: color3,
                               ),
-                              enabledBorder: UnderlineInputBorder(
+                              enabledBorder: const UnderlineInputBorder(
                                 borderSide: BorderSide(
                                   color: color4,
                                 ),
                               ),
-                              focusedBorder: UnderlineInputBorder(
+                              focusedBorder: const UnderlineInputBorder(
                                 borderSide: BorderSide(
                                   color: color4,
                                 ),
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  obscureText
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: color4,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    obscureText = !obscureText;
+                                  });
+                                },
                               ),
                             ),
-                            obscureText: true,
+                            obscureText: obscureText,
                             onChanged: (value) {
                               manualPassword = value;
                             },
@@ -1258,8 +1304,12 @@ Widget buildButton({
     onPressed: onPressed,
     child: Text(
       text,
+      textAlign: TextAlign.center,
       style: const TextStyle(
-          fontSize: 18, fontWeight: FontWeight.bold, color: color4),
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: color4,
+      ),
     ),
   );
 }
@@ -1612,6 +1662,10 @@ class MyDevice {
       printLog(
           'Serial number: ${DeviceManager.extractSerialNumber(device.platformName)}');
 
+      printLog("Hardware Version: $hardwareVersion");
+
+      printLog("Software Version: $softwareVersion");
+
       switch (pc) {
         case '022000_IOT' ||
               '027000_IOT' ||
@@ -1672,6 +1726,7 @@ class MyDevice {
           break;
         case '027313_IOT':
           if (Versioner.isPosterior(hardwareVersion, '241220A')) {
+            printLog("Soy nuevito aña");
             BluetoothService service = services.firstWhere(
                 (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
             ioUuid = service.characteristics.firstWhere(
@@ -1783,33 +1838,37 @@ class Versioner {
   ///
   ///Si son iguales también retorna true
   static bool isPosterior(String myVersion, String versionToCompare) {
-    int year1 = int.parse(myVersion.substring(0, 2));
+    int year1 = int.parse('20${myVersion.substring(0, 2)}');
     int month1 = int.parse(myVersion.substring(2, 4));
     int day1 = int.parse(myVersion.substring(4, 6));
     String letter1 = myVersion.substring(6, 7);
 
-    int year2 = int.parse(versionToCompare.substring(0, 2));
+    int year2 = int.parse('20${versionToCompare.substring(0, 2)}');
     int month2 = int.parse(versionToCompare.substring(2, 4));
     int day2 = int.parse(versionToCompare.substring(4, 6));
     String letter2 = versionToCompare.substring(6, 7);
 
-    if (year1 > year2) {
-      return true;
-    } else {
-      if (month1 > month2) {
+    printLog('Year1: $year1');
+    printLog('Month1: $month1');
+    printLog('Day1: $day1');
+
+    printLog('Year2: $year2');
+    printLog('Month2: $month2');
+    printLog('Day2: $day2');
+
+    DateTime fecha1 = DateTime(year1, month1, day1);
+    DateTime fecha2 = DateTime(year2, month2, day2);
+
+    if (fecha1.isAtSameMomentAs(fecha2)) {
+      if (letter1.compareTo(letter2) > 0 || letter1.compareTo(letter2) == 0) {
         return true;
       } else {
-        if (day1 > day2) {
-          return true;
-        } else {
-          if (letter1.compareTo(letter2) > 0 ||
-              letter1.compareTo(letter2) == 0) {
-            return true;
-          } else {
-            return false;
-          }
-        }
+        return false;
       }
+    } else if (fecha1.isAfter(fecha2)) {
+      return true;
+    } else {
+      return false;
     }
   }
 
@@ -1817,32 +1876,37 @@ class Versioner {
   ///
   ///Si son iguales retorna false
   static bool isPrevious(String myVersion, String versionToCompare) {
-    int year1 = int.parse(myVersion.substring(0, 2));
+    int year1 = int.parse('20${myVersion.substring(0, 2)}');
     int month1 = int.parse(myVersion.substring(2, 4));
     int day1 = int.parse(myVersion.substring(4, 6));
     String letter1 = myVersion.substring(6, 7);
 
-    int year2 = int.parse(versionToCompare.substring(0, 2));
+    int year2 = int.parse('20${versionToCompare.substring(0, 2)}');
     int month2 = int.parse(versionToCompare.substring(2, 4));
     int day2 = int.parse(versionToCompare.substring(4, 6));
     String letter2 = versionToCompare.substring(6, 7);
 
-    if (year1 < year2) {
-      return true;
-    } else {
-      if (month1 < month2) {
+    printLog('Year1: $year1');
+    printLog('Month1: $month1');
+    printLog('Day1: $day1');
+
+    printLog('Year2: $year2');
+    printLog('Month2: $month2');
+    printLog('Day2: $day2');
+
+    DateTime fecha1 = DateTime(year1, month1, day1);
+    DateTime fecha2 = DateTime(year2, month2, day2);
+
+    if (fecha1.isAtSameMomentAs(fecha2)) {
+      if (letter1.compareTo(letter2) < 0) {
         return true;
       } else {
-        if (day1 < day2) {
-          return true;
-        } else {
-          if (letter1.compareTo(letter2) < 0) {
-            return true;
-          } else {
-            return false;
-          }
-        }
+        return false;
       }
+    } else if (fecha1.isBefore(fecha2)) {
+      return true;
+    } else {
+      return false;
     }
   }
 }
@@ -2711,7 +2775,7 @@ class AnimSearchBarState extends State<AnimSearchBar>
 }
 //*-AnimSearchBar*-\\
 
-//*-ThumbSlider-*//s
+//*-ThumbSlider-*//
 class IconThumbSlider extends SliderComponentShape {
   final IconData iconData;
   final double thumbRadius;

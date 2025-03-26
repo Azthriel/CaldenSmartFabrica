@@ -96,7 +96,6 @@ class LoadState extends State<LoadingPage> {
         DeviceManager.getProductCode(deviceName),
         DeviceManager.extractSerialNumber(deviceName),
       );
-//THE GAME
       switch (pc) {
         case '022000_IOT' ||
               '027000_IOT' ||
@@ -170,24 +169,25 @@ class LoadState extends State<LoadingPage> {
           break;
         case '024011_IOT':
           varsValues = await myDevice.varsUuid.read();
-          var parts2 = utf8.decode(varsValues).split(':');
-          printLog('Valores vars: $parts2');
-          distanceControlActive = parts2[0] == '1';
-          rollerlength = parts2[1];
-          rollerPolarity = parts2[2];
-          rollerRPM = parts2[3];
-          rollerMicroStep = parts2[4];
-          rollerIMAX = parts2[5];
-          rollerIRMSRUN = parts2[6];
-          rollerIRMSHOLD = parts2[7];
-          rollerFreewheeling = parts2[8] == '1';
-          rollerTPWMTHRS = parts2[9];
-          rollerTCOOLTHRS = parts2[10];
-          rollerSGTHRS = parts2[11];
-          actualPosition = int.parse(parts2[12]);
-          workingPosition = int.parse(parts2[13]);
-          rollerMoving = parts2[14] == '1';
-          awsInit = parts2[15] == '1';
+          var partes = utf8.decode(varsValues).split(':');
+          printLog('Valores VARS: $varsValues || ${utf8.decode(varsValues)}');
+          distanceControlActive = partes[0] == '1';
+          rollerlength = partes[1];
+          rollerPolarity = partes[2];
+          rollerRPM = partes[3];
+          rollerMicroStep = partes[4];
+          rollerIMAX = partes[5];
+          rollerIRMSRUN = partes[6];
+          rollerIRMSHOLD = partes[7];
+          rollerFreewheeling = partes[8] == '1';
+          rollerTPWMTHRS = partes[9];
+          rollerTCOOLTHRS = partes[10];
+          rollerSGTHRS = partes[11];
+          actualPositionGrades = int.parse(partes[12]);
+          actualPosition = int.parse(partes[13]);
+          workingPosition = int.parse(partes[14]);
+          rollerMoving = partes[15] == '1';
+          awsInit = partes[16] == '1';
           break;
       }
 

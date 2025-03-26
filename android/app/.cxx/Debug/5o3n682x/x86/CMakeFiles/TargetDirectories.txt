@@ -1,0 +1,2 @@
+C:/Desktop/caldensmartfabrica/android/app/.cxx/Debug/5o3n682x/x86/CMakeFiles/edit_cache.dir
+C:/Desktop/caldensmartfabrica/android/app/.cxx/Debug/5o3n682x/x86/CMakeFiles/rebuild_cache.dir

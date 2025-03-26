@@ -115,6 +115,7 @@ class MilleniumPageState extends State<MilleniumPage> {
         //If comes from subscription, parts[1] = reason of error.
         setState(() {
           wifiIcon = Icons.warning_amber_rounded;
+          werror = true;
         });
 
         if (parts[1] == '202' || parts[1] == '15') {
@@ -284,8 +285,8 @@ class MilleniumPageState extends State<MilleniumPage> {
                       printLog(value);
                       sendTemperature(value.round());
                     },
-                    min: 10,
-                    max: 80,
+                    min: 15,
+                    max: 70,
                   ),
                 ),
               ),

@@ -7,7 +7,7 @@ import Foundation
 
 import cloud_firestore
 import firebase_core
-import flutter_blue_plus
+import flutter_blue_plus_darwin
 import mobile_scanner
 import path_provider_foundation
 import share_plus
