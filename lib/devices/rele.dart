@@ -54,12 +54,12 @@ class RelePageState extends State<RelePage> {
     var fun =
         utf8.decode(data); //Wifi status | wifi ssid | ble status | nickname
     fun = fun.replaceAll(RegExp(r'[^\x20-\x7E]'), '');
-    printLog(fun);
+    // printLog(fun);
     var parts = fun.split(':');
     if (parts[0] == 'WCS_CONNECTED') {
       nameOfWifi = parts[1];
       isWifiConnected = true;
-      printLog('sis $isWifiConnected');
+      // printLog('sis $isWifiConnected');
       setState(() {
         textState = 'CONECTADO';
         statusColor = Colors.green;
@@ -140,10 +140,9 @@ class RelePageState extends State<RelePage> {
     double bottomBarHeight = kBottomNavigationBarHeight;
 
     final List<Widget> pages = [
+      //*- Página 1 TOOLS -*\\
+      const ToolsPage(),
       if (accessLevel > 1) ...[
-        //*- Página 1 TOOLS -*\\
-        const ToolsPage(),
-
         //*- Página 2 PARAMS -*\\
         const ParamsTab(),
       ],
@@ -358,9 +357,12 @@ class RelePageState extends State<RelePage> {
               backgroundColor: color1,
               content: Row(
                 children: [
-                  Image.asset(EasterEggs.legajosMeme.contains(legajoConectado)
+                  Image.asset(
+                      EasterEggs.legajosMeme.contains(legajoConectado)
                           ? 'assets/eg/DSC.gif'
-                          : 'assets/Loading.gif', width: 100, height: 100),
+                          : 'assets/Loading.gif',
+                      width: 100,
+                      height: 100),
                   Container(
                     margin: const EdgeInsets.only(left: 15),
                     child: const Text(
@@ -406,10 +408,12 @@ class RelePageState extends State<RelePage> {
                     backgroundColor: color1,
                     content: Row(
                       children: [
-                        Image.asset(EasterEggs.legajosMeme.contains(legajoConectado)
-                          ? 'assets/eg/DSC.gif'
-                          : 'assets/Loading.gif',
-                            width: 100, height: 100),
+                        Image.asset(
+                            EasterEggs.legajosMeme.contains(legajoConectado)
+                                ? 'assets/eg/DSC.gif'
+                                : 'assets/Loading.gif',
+                            width: 100,
+                            height: 100),
                         Container(
                           margin: const EdgeInsets.only(left: 15),
                           child: const Text(
@@ -462,8 +466,8 @@ class RelePageState extends State<RelePage> {
                 index: _selectedIndex,
                 height: 75.0,
                 items: <Widget>[
+                  const Icon(Icons.settings, size: 30, color: color4),
                   if (accessLevel > 1) ...[
-                    const Icon(Icons.settings, size: 30, color: color4),
                     const Icon(Icons.star, size: 30, color: color4),
                   ],
                   const Icon(Icons.switch_left, size: 30, color: color4),

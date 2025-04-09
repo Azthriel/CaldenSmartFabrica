@@ -195,10 +195,9 @@ class CalefactoresPageState extends State<CalefactoresPage> {
     double bottomBarHeight = kBottomNavigationBarHeight;
 
     final List<Widget> pages = [
+      //*- Página 1 TOOLS -*\\
+      const ToolsPage(),
       if (accessLevel > 1) ...[
-        //*- Página 1 TOOLS -*\\
-        const ToolsPage(),
-
         //*- Página 2 PARAMS -*\\
         const ParamsTab(),
       ],
@@ -833,8 +832,8 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                 index: _selectedIndex,
                 height: 75.0,
                 items: <Widget>[
+                  const Icon(Icons.settings, size: 30, color: color4),
                   if (accessLevel > 1) ...[
-                    const Icon(Icons.settings, size: 30, color: color4),
                     const Icon(Icons.star, size: 30, color: color4),
                   ],
                   const Icon(Icons.thermostat, size: 30, color: color4),

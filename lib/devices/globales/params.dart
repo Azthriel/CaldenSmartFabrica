@@ -115,35 +115,42 @@ class ParamsTabState extends State<ParamsTab> {
                     const Divider(color: color1),
                     Align(
                       alignment: AlignmentDirectional.centerStart,
-                      child: Row(
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              registerActivity(
-                                DeviceManager.getProductCode(deviceName),
-                                DeviceManager.extractSerialNumber(deviceName),
-                                'Se elimino el admin ${secondaryAdmins[i]} del equipo',
-                              );
-                              setState(() {
-                                secondaryAdmins.removeAt(i);
-                              });
-                              putSecondaryAdmins(
-                                service,
-                                DeviceManager.getProductCode(deviceName),
-                                DeviceManager.extractSerialNumber(deviceName),
-                                secondaryAdmins,
-                              );
-                            },
-                            icon: const Icon(Icons.delete, color: color1),
-                          ),
-                          Text(
-                            secondaryAdmins[i],
-                            style: const TextStyle(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                registerActivity(
+                                  DeviceManager.getProductCode(deviceName),
+                                  DeviceManager.extractSerialNumber(deviceName),
+                                  'Se elimino el admin ${secondaryAdmins[i]} del equipo',
+                                );
+                                setState(() {
+                                  secondaryAdmins.removeAt(i);
+                                });
+                                putSecondaryAdmins(
+                                  service,
+                                  DeviceManager.getProductCode(deviceName),
+                                  DeviceManager.extractSerialNumber(deviceName),
+                                  secondaryAdmins,
+                                );
+                              },
+                              icon: const Icon(
+                                Icons.delete,
+                                color: color1,
+                              ),
+                            ),
+                            Text(
+                              secondaryAdmins[i],
+                              style: const TextStyle(
                                 fontSize: 20.0,
                                 color: color0,
-                                fontWeight: FontWeight.normal),
-                          ),
-                        ],
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(width: 5),

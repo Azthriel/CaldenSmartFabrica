@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -17,7 +16,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.11';
+String appVersionNumber = '1.0.13';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -165,10 +164,6 @@ String energyTimer = '';
 //*-Fetch data from firestore-*\\
 Map<String, dynamic> fbData = {};
 //*-Fetch data from firestore-*\\
-
-//*-Solicitudes http-*\\
-Dio dio = Dio();
-//*-Solicitudes http-*\\
 
 //*-Registro temperatura ambiente enviada-*\\
 bool roomTempSended = false;

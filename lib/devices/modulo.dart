@@ -5,6 +5,7 @@ import 'package:caldensmartfabrica/devices/globales/ota.dart';
 import 'package:caldensmartfabrica/devices/globales/params.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../master.dart';
 
 class ModuloPage extends StatefulWidget {
@@ -167,7 +168,7 @@ class ModuloPageState extends State<ModuloPage> {
     const String url =
         'https://script.google.com/macros/s/AKfycbyESEF-o_iBAotpLi7gszSfelJVLlJbrgSVSiMYWYaHfC8io5fJ2tlAKkGpH7iJYK3p0Q/exec';
 
-    final response = await dio.get(url, queryParameters: {
+    final Map<String, dynamic> queryParams = {
       'productCode': DeviceManager.getProductCode(deviceName),
       'serialNumber': DeviceManager.extractSerialNumber(deviceName),
       'Legajo': legajoConectado,
@@ -176,7 +177,12 @@ class ModuloPageState extends State<ModuloPage> {
       'out0': stateOUT[0],
       'out1': stateOUT[1],
       'date': DateTime.now().toIso8601String()
-    });
+    };
+
+    final Uri uri = Uri.parse(url).replace(queryParameters: queryParams);
+
+    final response = await http.get(uri);
+
     if (response.statusCode == 200) {
       printLog('Anashe');
     } else {
@@ -191,10 +197,9 @@ class ModuloPageState extends State<ModuloPage> {
     double bottomBarHeight = kBottomNavigationBarHeight;
 
     final List<Widget> pages = [
+      //*- Página 1 TOOLS -*\\
+      const ToolsPage(),
       if (accessLevel > 1) ...[
-        //*- Página 1 TOOLS -*\\
-        const ToolsPage(),
-
         //*- Página 2 PARAMS -*\\
         const ParamsTab(),
       ],
@@ -703,8 +708,8 @@ class ModuloPageState extends State<ModuloPage> {
                 index: _selectedIndex,
                 height: 75.0,
                 items: <Widget>[
+                  const Icon(Icons.settings, size: 30, color: color4),
                   if (accessLevel > 1) ...[
-                    const Icon(Icons.settings, size: 30, color: color4),
                     const Icon(Icons.star, size: 30, color: color4),
                     const Icon(Icons.settings_accessibility,
                         size: 30, color: color4),

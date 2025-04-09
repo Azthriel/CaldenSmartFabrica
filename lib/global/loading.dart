@@ -99,7 +99,7 @@ class LoadState extends State<LoadingPage> {
       switch (pc) {
         case '022000_IOT' ||
               '027000_IOT' ||
-              '041120_IOT' ||
+              '041220_IOT' ||
               '050217_IOT' ||
               '028000_IOT':
           varsValues = await myDevice.varsUuid.read();

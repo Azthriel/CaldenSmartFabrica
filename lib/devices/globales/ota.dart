@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 import '../../master.dart';
@@ -145,14 +145,14 @@ class OtaTabState extends State<OtaTab> {
     if (factory) {
       if (otaSVController.text.contains('_F')) {
         url =
-            'https://github.com/barberop/sime-domotica/raw/main/${DeviceManager.getProductCode(deviceName)}_IOT/OTA_FW/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
+            'https://github.com/barberop/sime-domotica/raw/refs/heads/main/${DeviceManager.getProductCode(deviceName)}/OTA_FW/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
       } else {
         url =
-            'https://github.com/barberop/sime-domotica/raw/main/${DeviceManager.getProductCode(deviceName)}_IOT/OTA_FW/hv${hardwareVersion}sv${otaSVController.text.trim()}_F.bin';
+            'https://github.com/barberop/sime-domotica/raw/refs/heads/main/${DeviceManager.getProductCode(deviceName)}/OTA_FW/hv${hardwareVersion}sv${otaSVController.text.trim()}_F.bin';
       }
     } else {
       url =
-          'https://github.com/barberop/sime-domotica/raw/main/${DeviceManager.getProductCode(deviceName)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
+          'https://github.com/barberop/sime-domotica/raw/refs/heads/main/${DeviceManager.getProductCode(deviceName)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
     }
 
     printLog(url);
@@ -166,8 +166,15 @@ class OtaTabState extends State<OtaTab> {
           await file.delete();
         }
 
-        var req = await dio.get(url);
-        var bytes = req.data.toString().codeUnits;
+        var req = await http.get(Uri.parse(url));
+
+        var bytes = req.bodyBytes;
+
+        printLog('Bytes: $bytes', "amarillo");
+
+        printLog(
+            'Bytes en hexadecimal: ${bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
+            "amarillo");
 
         await file.writeAsBytes(bytes);
 
@@ -233,10 +240,9 @@ class OtaTabState extends State<OtaTab> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: LinearProgressIndicator(
-                      value: progressValue,
-                      backgroundColor: Colors.transparent,
-                      color: color1
-                    ),
+                        value: progressValue,
+                        backgroundColor: Colors.transparent,
+                        color: color1),
                   ),
                 ),
                 Text(
@@ -270,7 +276,7 @@ class OtaTabState extends State<OtaTab> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                         elevation: 6,
-                        shadowColor: color3.withValues(alpha:0.4),
+                        shadowColor: color3.withValues(alpha: 0.4),
                       ),
                       onPressed: () {
                         registerActivity(
@@ -313,7 +319,7 @@ class OtaTabState extends State<OtaTab> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                         elevation: 6,
-                        shadowColor: color3.withValues(alpha:0.4),
+                        shadowColor: color3.withValues(alpha: 0.4),
                       ),
                       onPressed: () {
                         registerActivity(
@@ -364,7 +370,7 @@ class OtaTabState extends State<OtaTab> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                         elevation: 6,
-                        shadowColor: color3.withValues(alpha:0.4),
+                        shadowColor: color3.withValues(alpha: 0.4),
                       ),
                       onPressed: () {
                         registerActivity(
@@ -413,7 +419,7 @@ class OtaTabState extends State<OtaTab> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                         elevation: 6,
-                        shadowColor: color3.withValues(alpha:0.4),
+                        shadowColor: color3.withValues(alpha: 0.4),
                       ),
                       onPressed: () {
                         registerActivity(

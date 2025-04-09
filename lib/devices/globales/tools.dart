@@ -56,26 +56,28 @@ class ToolsPageState extends State<ToolsPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 10),
-            buildTextField(
-              controller: textController,
-              label: 'Introducir nuevo numero de serie',
-              hint: 'Nuevo número de serie',
-              onSubmitted: (text) {},
-              widthFactor: 0.8,
-              keyboard: TextInputType.number,
-            ),
-            buildButton(
-              text: 'Enviar',
-              onPressed: () {
-                registerActivity(
-                  DeviceManager.getProductCode(deviceName),
-                  textController.text,
-                  'Se coloco el número de serie',
-                );
-                sendDataToDevice();
-              },
-            ),
+            if (accessLevel > 1) ...{
+              const SizedBox(height: 10),
+              buildTextField(
+                controller: textController,
+                label: 'Introducir nuevo numero de serie',
+                hint: 'Nuevo número de serie',
+                onSubmitted: (text) {},
+                widthFactor: 0.8,
+                keyboard: TextInputType.number,
+              ),
+              buildButton(
+                text: 'Enviar',
+                onPressed: () {
+                  registerActivity(
+                    DeviceManager.getProductCode(deviceName),
+                    textController.text,
+                    'Se coloco el número de serie',
+                  );
+                  sendDataToDevice();
+                },
+              ),
+            },
             const SizedBox(height: 10),
             buildText(
               text:
@@ -96,19 +98,21 @@ class ToolsPageState extends State<ToolsPage> {
               fontWeight: FontWeight.bold,
               widthFactor: 0.8,
             ),
-            buildButton(
-              text: 'Borrar NVS',
-              onPressed: () {
-                registerActivity(
-                  DeviceManager.getProductCode(deviceName),
-                  DeviceManager.extractSerialNumber(deviceName),
-                  'Se borró la NVS de este equipo...',
-                );
-                String data =
-                    '${DeviceManager.getProductCode(deviceName)}[0](1)';
-                myDevice.toolsUuid.write(data.codeUnits);
-              },
-            ),
+            if (accessLevel > 1) ...{
+              buildButton(
+                text: 'Borrar NVS',
+                onPressed: () {
+                  registerActivity(
+                    DeviceManager.getProductCode(deviceName),
+                    DeviceManager.extractSerialNumber(deviceName),
+                    'Se borró la NVS de este equipo...',
+                  );
+                  String data =
+                      '${DeviceManager.getProductCode(deviceName)}[0](1)';
+                  myDevice.toolsUuid.write(data.codeUnits);
+                },
+              ),
+            },
             Padding(
               padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
             ),

@@ -544,10 +544,9 @@ class DetectorPageState extends State<DetectorPage> {
     double bottomBarHeight = kBottomNavigationBarHeight;
 
     final List<Widget> pages = [
+      //*- Página 1 TOOLS -*\\
+      const ToolsPage(),
       if (accessLevel > 1) ...[
-        //*- Página 1 TOOLS -*\\
-        const ToolsPage(),
-
         if (factoryMode) ...[
           //*- Página 2 CALIBRACION -*\\
           Scaffold(
@@ -1313,8 +1312,8 @@ class DetectorPageState extends State<DetectorPage> {
                 index: _selectedIndex,
                 height: 75.0,
                 items: <Widget>[
+                  const Icon(Icons.settings, size: 30, color: color4),
                   if (accessLevel > 1) ...[
-                    const Icon(Icons.settings, size: 30, color: color4),
                     if (factoryMode) ...[
                       const Icon(Icons.numbers, size: 30, color: color4),
                       const Icon(Icons.tune, size: 30, color: color4),
