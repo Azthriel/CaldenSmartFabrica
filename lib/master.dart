@@ -16,7 +16,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.13';
+String appVersionNumber = '1.0.14';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -128,6 +128,8 @@ double distOffValue = 0.0;
 bool tempMap = false;
 double tempValue = 0.0;
 String actualTemp = '';
+bool hasSensor = false;
+String offsetTemp = '';
 //*-Calefactores-*\\
 
 //*- Roller -*\\
@@ -1528,6 +1530,29 @@ void registerTemp(String productCode, String serialNumber) async {
   }
 }
 //*-Registro temperatura ambiente enviada-*\\
+
+//*- Revisa si el equipo tiene sensor dallas -*\\
+bool hasDallasSensor(String productCode, String hwVersion) {
+  String versionWithDallas = '';
+  switch (productCode) {
+    case '022000_IOT':
+      versionWithDallas = '240924A';
+    case '027000_IOT':
+      versionWithDallas = '241003A';
+    case '028000_IOT':
+      versionWithDallas = '241004B';
+    case '041220_IOT':
+      versionWithDallas = '241003A';
+    case '051217_IOT':
+      versionWithDallas = '241004B';
+    default:
+      versionWithDallas = '991231A';
+  }
+
+  bool hasIt = Versioner.isPosterior(hwVersion, versionWithDallas);
+
+  return hasIt;
+}
 
 // // -------------------------------------------------------------------------------------------------------------\\ \\
 

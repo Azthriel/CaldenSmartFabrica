@@ -61,7 +61,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
   }
 
   @override
-  initState() {
+  void initState() {
     super.initState();
     updateWifiValues(toolsValues);
     subscribeToWifiStatus();
@@ -77,10 +77,13 @@ class CalefactoresPageState extends State<CalefactoresPage> {
     final trueStatusSub =
         myDevice.varsUuid.onValueReceived.listen((List<int> status) {
       var parts = utf8.decode(status).split(':');
-      // printLog(parts);
+      printLog(parts);
       setState(() {
         trueStatus = parts[0] == '1';
         actualTemp = parts[1];
+        if (parts.length > 2) {
+          offsetTemp = parts[2];
+        }
       });
     });
 
@@ -91,12 +94,12 @@ class CalefactoresPageState extends State<CalefactoresPage> {
     var fun =
         utf8.decode(data); //Wifi status | wifi ssid | ble status | nickname
     fun = fun.replaceAll(RegExp(r'[^\x20-\x7E]'), '');
-    printLog(fun);
+    // printLog(fun);
     var parts = fun.split(':');
     if (parts[0] == 'WCS_CONNECTED') {
       nameOfWifi = parts[1];
       isWifiConnected = true;
-      printLog('sis $isWifiConnected');
+      // printLog('sis $isWifiConnected');
       setState(() {
         textState = 'CONECTADO';
         statusColor = Colors.green;
@@ -104,7 +107,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
       });
     } else if (parts[0] == 'WCS_DISCONNECTED') {
       isWifiConnected = false;
-      printLog('non $isWifiConnected');
+      // printLog('non $isWifiConnected');
 
       setState(() {
         textState = 'DESCONECTADO';
@@ -311,44 +314,47 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     child: buildButton(onPressed: () {}, text: 'Chispero'),
                   ),
                 },
-                const SizedBox(height: 30),
-                SizedBox(
-                  width: 300,
-                  child: !roomTempSended
-                      ? buildTextField(
-                          controller: roomTempController,
-                          label: 'Introducir temperatura de la habitación',
-                          hint: '',
-                          keyboard: TextInputType.number,
-                          onSubmitted: (value) {
-                            registerActivity(
-                                DeviceManager.getProductCode(deviceName),
-                                DeviceManager.extractSerialNumber(deviceName),
-                                'Se cambió la temperatura ambiente de $actualTemp°C a $value°C');
-                            sendRoomTemperature(value);
-                            registerTemp(
-                                DeviceManager.getProductCode(deviceName),
-                                DeviceManager.extractSerialNumber(deviceName));
-                            showToast('Temperatura ambiente seteada');
-                            setState(() {
-                              roomTempSended = true;
-                            });
-                          },
-                        )
-                      : buildText(
-                          text: '',
-                          textSpans: [
-                            TextSpan(
-                              text:
-                                  'La temperatura ambiente ya fue seteada\npor este legajo el dia \n$tempDate',
-                              style: const TextStyle(
-                                  color: color4, fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                          fontSize: 20.0,
-                          textAlign: TextAlign.center,
-                        ),
-                ),
+                if (!hasSensor) ...{
+                  const SizedBox(height: 30),
+                  SizedBox(
+                    width: 300,
+                    child: !roomTempSended
+                        ? buildTextField(
+                            controller: roomTempController,
+                            label: 'Introducir temperatura de la habitación',
+                            hint: '',
+                            keyboard: TextInputType.number,
+                            onSubmitted: (value) {
+                              registerActivity(
+                                  DeviceManager.getProductCode(deviceName),
+                                  DeviceManager.extractSerialNumber(deviceName),
+                                  'Se cambió la temperatura ambiente de $actualTemp°C a $value°C');
+                              sendRoomTemperature(value);
+                              registerTemp(
+                                  DeviceManager.getProductCode(deviceName),
+                                  DeviceManager.extractSerialNumber(
+                                      deviceName));
+                              showToast('Temperatura ambiente seteada');
+                              setState(() {
+                                roomTempSended = true;
+                              });
+                            },
+                          )
+                        : buildText(
+                            text: '',
+                            textSpans: [
+                              TextSpan(
+                                text:
+                                    'La temperatura ambiente ya fue seteada\npor este legajo el dia \n$tempDate',
+                                style: const TextStyle(
+                                    color: color4, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                            fontSize: 20.0,
+                            textAlign: TextAlign.center,
+                          ),
+                  ),
+                },
                 const SizedBox(height: 30),
                 buildText(
                   text: '',
@@ -364,7 +370,39 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                   fontSize: 20.0,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 10),
+                if (hasSensor) ...{
+                  // const SizedBox(height: 10),
+                  buildText(
+                    text: '',
+                    textSpans: [
+                      TextSpan(
+                        text:
+                            'Offset temperatura: $offsetTemp °C',
+                        style: const TextStyle(
+                          color: color4,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                    fontSize: 20.0,
+                    textAlign: TextAlign.center,
+                  ),
+                  buildText(
+                    text: '',
+                    textSpans: [
+                      TextSpan(
+                        text: 'Lectura sensor: ${int.parse(actualTemp) + int.parse(offsetTemp)} °C',
+                        style: const TextStyle(
+                          color: color4,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                    fontSize: 20.0,
+                    textAlign: TextAlign.center,
+                  ),
+                },
+                // const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
                     setState(() {
@@ -396,162 +434,167 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     color: color4,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
                 if (factoryMode) ...[
-                  buildText(
-                    text: '',
-                    textSpans: [
-                      const TextSpan(
-                        text: 'Mapeo de temperatura:\n',
-                        style: TextStyle(
-                            color: color4, fontWeight: FontWeight.bold),
-                      ),
-                      TextSpan(
-                        text: tempMap ? 'REALIZADO' : 'NO REALIZADO',
-                        style: TextStyle(
-                            color: tempMap ? Colors.green : Colors.red,
-                            fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                    fontSize: 20.0,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  buildButton(
-                    text: 'Iniciar mapeo temperatura',
-                    onPressed: () {
-                      registerActivity(
-                          DeviceManager.getProductCode(deviceName),
-                          DeviceManager.extractSerialNumber(deviceName),
-                          'Se inicio el mapeo de temperatura en el equipo');
-                      startTempMap();
-                      showToast('Iniciando mapeo de temperatura');
-                    },
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  buildButton(
-                    text: 'Ciclado fijo',
-                    onPressed: () {
-                      registerActivity(
-                          DeviceManager.getProductCode(deviceName),
-                          DeviceManager.extractSerialNumber(deviceName),
-                          'Se mando el ciclado de la válvula de este equipo');
-                      String data =
-                          '${DeviceManager.getProductCode(deviceName)}[13](1000#5)';
-                      myDevice.toolsUuid.write(data.codeUnits);
-                    },
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  buildButton(
-                    text: 'Configurar ciclado',
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          final TextEditingController cicleController =
-                              TextEditingController();
-                          final TextEditingController timeController =
-                              TextEditingController();
-                          return AlertDialog(
-                            backgroundColor: color1,
-                            title: const Center(
-                              child: Text(
-                                'Especificar parametros del ciclador:',
-                                style: TextStyle(
-                                  color: color4,
-                                  fontWeight: FontWeight.bold,
+                  if (!hasSensor) ...{
+                    buildText(
+                      text: '',
+                      textSpans: [
+                        const TextSpan(
+                          text: 'Mapeo de temperatura:\n',
+                          style: TextStyle(
+                              color: color4, fontWeight: FontWeight.bold),
+                        ),
+                        TextSpan(
+                          text: tempMap ? 'REALIZADO' : 'NO REALIZADO',
+                          style: TextStyle(
+                              color: tempMap
+                                  ? Colors.green
+                                  : const Color.fromARGB(255, 32, 21, 20),
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                      fontSize: 20.0,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    buildButton(
+                      text: 'Iniciar mapeo temperatura',
+                      onPressed: () {
+                        registerActivity(
+                            DeviceManager.getProductCode(deviceName),
+                            DeviceManager.extractSerialNumber(deviceName),
+                            'Se inicio el mapeo de temperatura en el equipo');
+                        startTempMap();
+                        showToast('Iniciando mapeo de temperatura');
+                      },
+                    ),
+                  },
+                  if (DeviceManager.getProductCode(deviceName) ==
+                      '027000_IOT') ...[
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    buildButton(
+                      text: 'Ciclado fijo',
+                      onPressed: () {
+                        registerActivity(
+                            DeviceManager.getProductCode(deviceName),
+                            DeviceManager.extractSerialNumber(deviceName),
+                            'Se mando el ciclado de la válvula de este equipo');
+                        String data =
+                            '${DeviceManager.getProductCode(deviceName)}[13](1000#5)';
+                        myDevice.toolsUuid.write(data.codeUnits);
+                      },
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    buildButton(
+                      text: 'Configurar ciclado',
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            final TextEditingController cicleController =
+                                TextEditingController();
+                            final TextEditingController timeController =
+                                TextEditingController();
+                            return AlertDialog(
+                              backgroundColor: color1,
+                              title: const Center(
+                                child: Text(
+                                  'Especificar parametros del ciclador:',
+                                  style: TextStyle(
+                                    color: color4,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                            ),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: 300,
-                                  child: TextField(
-                                    style: const TextStyle(color: color4),
-                                    controller: cicleController,
-                                    keyboardType: TextInputType.number,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Ingrese cantidad de ciclos',
-                                      hintText: 'Certificación: 1000',
-                                      labelStyle: TextStyle(color: color4),
-                                      hintStyle: TextStyle(color: color4),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 300,
+                                    child: TextField(
+                                      style: const TextStyle(color: color4),
+                                      controller: cicleController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Ingrese cantidad de ciclos',
+                                        hintText: 'Certificación: 1000',
+                                        labelStyle: TextStyle(color: color4),
+                                        hintStyle: TextStyle(color: color4),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    height: 20,
+                                  ),
+                                  SizedBox(
+                                    width: 300,
+                                    child: TextField(
+                                      style: const TextStyle(color: color4),
+                                      controller: timeController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: const InputDecoration(
+                                        labelText:
+                                            'Ingrese duración de los ciclos',
+                                        hintText: 'Recomendado: 1000',
+                                        suffixText: '(mS)',
+                                        suffixStyle: TextStyle(
+                                          color: color4,
+                                        ),
+                                        labelStyle: TextStyle(
+                                          color: color4,
+                                        ),
+                                        hintStyle: TextStyle(
+                                          color: color4,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    navigatorKey.currentState!.pop();
+                                  },
+                                  child: const Text(
+                                    'Cancelar',
+                                    style: TextStyle(
+                                      color: color4,
                                     ),
                                   ),
                                 ),
-                                const SizedBox(
-                                  height: 20,
-                                ),
-                                SizedBox(
-                                  width: 300,
-                                  child: TextField(
-                                    style: const TextStyle(color: color4),
-                                    controller: timeController,
-                                    keyboardType: TextInputType.number,
-                                    decoration: const InputDecoration(
-                                      labelText:
-                                          'Ingrese duración de los ciclos',
-                                      hintText: 'Recomendado: 1000',
-                                      suffixText: '(mS)',
-                                      suffixStyle: TextStyle(
-                                        color: color4,
-                                      ),
-                                      labelStyle: TextStyle(
-                                        color: color4,
-                                      ),
-                                      hintStyle: TextStyle(
-                                        color: color4,
-                                      ),
-                                    ),
+                                TextButton(
+                                  onPressed: () {
+                                    int cicle =
+                                        int.parse(cicleController.text) * 2;
+                                    registerActivity(
+                                        DeviceManager.getProductCode(
+                                            deviceName),
+                                        DeviceManager.extractSerialNumber(
+                                            deviceName),
+                                        'Se mando el ciclado de la válvula de este equipo\nMilisegundos: ${timeController.text}\nIteraciones:$cicle');
+                                    String data =
+                                        '${DeviceManager.getProductCode(deviceName)}[13](${timeController.text}#$cicle)';
+                                    myDevice.toolsUuid.write(data.codeUnits);
+                                    navigatorKey.currentState!.pop();
+                                  },
+                                  child: const Text(
+                                    'Iniciar proceso',
+                                    style: TextStyle(color: color4),
                                   ),
                                 ),
                               ],
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  navigatorKey.currentState!.pop();
-                                },
-                                child: const Text(
-                                  'Cancelar',
-                                  style: TextStyle(
-                                    color: color4,
-                                  ),
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  int cicle =
-                                      int.parse(cicleController.text) * 2;
-                                  registerActivity(
-                                      DeviceManager.getProductCode(deviceName),
-                                      DeviceManager.extractSerialNumber(
-                                          deviceName),
-                                      'Se mando el ciclado de la válvula de este equipo\nMilisegundos: ${timeController.text}\nIteraciones:$cicle');
-                                  String data =
-                                      '${DeviceManager.getProductCode(deviceName)}[13](${timeController.text}#$cicle)';
-                                  myDevice.toolsUuid.write(data.codeUnits);
-                                  navigatorKey.currentState!.pop();
-                                },
-                                child: const Text(
-                                  'Iniciar proceso',
-                                  style: TextStyle(color: color4),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                  ),
-                  if (DeviceManager.getProductCode(deviceName) ==
-                      '027000_IOT') ...[
+                            );
+                          },
+                        );
+                      },
+                    ),
                     const SizedBox(
                       height: 10,
                     ),

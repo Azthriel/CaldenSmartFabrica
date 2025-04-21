@@ -116,10 +116,17 @@ class LoadState extends State<LoadingPage> {
             tempMap = parts2[8] == '1';
           }
 
-          roomTempSended = await tempWasSended(
-            DeviceManager.getProductCode(deviceName),
-            DeviceManager.extractSerialNumber(deviceName),
-          );
+          offsetTemp = factoryMode ? parts2[8] : parts2[7];
+
+          hasSensor = hasDallasSensor(
+              DeviceManager.getProductCode(deviceName), hardwareVersion);
+
+          if (!hasSensor) {
+            roomTempSended = await tempWasSended(
+              DeviceManager.getProductCode(deviceName),
+              DeviceManager.extractSerialNumber(deviceName),
+            );
+          }
 
           printLog('Estado: $turnOn');
           break;
