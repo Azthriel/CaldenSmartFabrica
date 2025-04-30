@@ -113,7 +113,14 @@ void listenToTopics() {
       if (messageMap['esp_res'] != null) {
         if (messageMap['esp_res'].toString().contains(':')) {
           List<String> parts = messageMap['esp_res'].toString().split(':');
-          deviceResponseMqtt = 'SoftVer: ${parts[2]}\nHardVer: ${parts[3]}';
+          if (parts.length < 4 && !parts[0].contains('OTA')) {
+            deviceResponseMqtt = 'ActualTemp: ${parts[0]}\nOffset: ${parts[1]}';
+          } else if (parts.length >= 4) {
+            deviceResponseMqtt = 'SoftVer: ${parts[2]}\nHardVer: ${parts[3]}';
+          } else {
+            deviceResponseMqtt = messageMap['esp_res'].toString();
+          }
+
           showToast('Equipo conectado');
         } else {
           deviceResponseMqtt = messageMap['esp_res'].toString();

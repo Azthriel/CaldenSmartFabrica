@@ -376,8 +376,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     text: '',
                     textSpans: [
                       TextSpan(
-                        text:
-                            'Offset temperatura: $offsetTemp °C',
+                        text: 'Offset temperatura: $offsetTemp °C',
                         style: const TextStyle(
                           color: color4,
                           fontWeight: FontWeight.bold,
@@ -391,7 +390,8 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     text: '',
                     textSpans: [
                       TextSpan(
-                        text: 'Lectura sensor: ${int.parse(actualTemp) + int.parse(offsetTemp)} °C',
+                        text:
+                            'Lectura sensor: ${int.parse(actualTemp) + int.parse(offsetTemp)} °C',
                         style: const TextStyle(
                           color: color4,
                           fontWeight: FontWeight.bold,
@@ -727,6 +727,41 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     },
                   ),
                   const SizedBox(height: 20),
+                  buildText(
+                    text: '',
+                    textSpans: [
+                      const TextSpan(
+                        text: 'Mono manual:',
+                        style: TextStyle(
+                            color: color4, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                    fontSize: 20.0,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  buildButton(
+                    text: manualControl ? 'Desactivar' : 'Activar',
+                    onPressed: () {
+                      registerActivity(
+                        DeviceManager.getProductCode(deviceName),
+                        DeviceManager.extractSerialNumber(deviceName),
+                        'Se activo el modo manual del equipo',
+                      );
+                      String data =
+                          '${DeviceManager.getProductCode(deviceName)}[16](${manualControl ? '0' : '1'})';
+                      myDevice.toolsUuid.write(data.codeUnits);
+                      setState(() {
+                        turnOn = false;
+                        manualControl = !manualControl;
+                      });
+                    },
+                  ),
+                  const SizedBox(
+                    height: 50,
+                  ),
                   Padding(
                     padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
                   ),

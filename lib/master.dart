@@ -16,7 +16,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.14';
+String appVersionNumber = '1.0.17';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -130,6 +130,7 @@ double tempValue = 0.0;
 String actualTemp = '';
 bool hasSensor = false;
 String offsetTemp = '';
+bool manualControl = false;
 //*-Calefactores-*\\
 
 //*- Roller -*\\
@@ -1553,6 +1554,7 @@ bool hasDallasSensor(String productCode, String hwVersion) {
 
   return hasIt;
 }
+//*- Revisa si el equipo tiene sensor dallas -*\\
 
 // // -------------------------------------------------------------------------------------------------------------\\ \\
 

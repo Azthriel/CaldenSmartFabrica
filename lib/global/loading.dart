@@ -61,7 +61,6 @@ class LoadState extends State<LoadingPage> {
             } else {
               navigatorKey.currentState?.pushReplacementNamed('/rele');
             }
-
             break;
           case '050217_IOT':
             navigatorKey.currentState?.pushReplacementNamed('/millenium');
@@ -117,6 +116,10 @@ class LoadState extends State<LoadingPage> {
           }
 
           offsetTemp = factoryMode ? parts2[8] : parts2[7];
+
+          if (parts2.length > 9) {
+            manualControl = factoryMode ? parts2[9] == '1' : parts2[8] == '1';
+          }
 
           hasSensor = hasDallasSensor(
               DeviceManager.getProductCode(deviceName), hardwareVersion);

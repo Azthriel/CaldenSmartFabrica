@@ -51,6 +51,10 @@ class ToolsAWSState extends State<ToolsAWS> {
         } else {
           return 'Private Key';
         }
+      case '16':
+        return '0 desactivar | 1 activar';
+      case '17':
+        return 'No requiere parametros';
       case '':
         return 'Aún no se agrega comando';
       default:
@@ -70,6 +74,8 @@ class ToolsAWSState extends State<ToolsAWS> {
         return TextInputType.text;
       case '6':
         return TextInputType.multiline;
+      case '16':
+        return TextInputType.number;
       case '':
         return TextInputType.none;
       default:
@@ -830,7 +836,7 @@ class ToolsAWSState extends State<ToolsAWS> {
                                 border: Border.all(color: color4, width: 1),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: color4.withValues(alpha:0.2),
+                                    color: color4.withValues(alpha: 0.2),
                                     blurRadius: 6,
                                     offset: const Offset(0, 3),
                                   ),
@@ -849,7 +855,14 @@ class ToolsAWSState extends State<ToolsAWS> {
                                   '2',
                                   '4',
                                   '5',
-                                  '6'
+                                  '6',
+                                  if (productCode == '027000_IOT' ||
+                                      productCode == '022000_IOT' ||
+                                      productCode == '041220_IOT' ||
+                                      productCode == '050217_IOT') ...{
+                                    '16',
+                                    '17'
+                                  },
                                 ].map<DropdownMenuItem<String>>((String value) {
                                   return DropdownMenuItem<String>(
                                     value: value,
@@ -884,7 +897,7 @@ class ToolsAWSState extends State<ToolsAWS> {
                                 border: Border.all(color: color4, width: 1),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: color4.withValues(alpha:0.2),
+                                    color: color4.withValues(alpha: 0.2),
                                     blurRadius: 6,
                                     offset: const Offset(0, 3),
                                   ),
@@ -1011,62 +1024,65 @@ class ToolsAWSState extends State<ToolsAWS> {
                         ],
                       ),
                       const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
+                      buildButton(
+                          text: 'Enviar comando',
                           onPressed: () {
-                            String topic =
-                                'tools/$productCode/${serialNumberController.text.trim()}';
-                            subToTopicMQTT(topic);
-                            listenToTopics();
-                            if (commandText == '6') {
-                              for (var line in content) {
+                            if (commandText != '' &&
+                                contentController.text.isNotEmpty) {
+                              String topic =
+                                  'tools/$productCode/${serialNumberController.text.trim()}';
+                              subToTopicMQTT(topic);
+                              listenToTopics();
+                              if (commandText == '6') {
+                                for (var line in content) {
+                                  String msg = jsonEncode({
+                                    'cmd': commandText,
+                                    'content': '$key#$line'
+                                  });
+                                  printLog(msg);
+                                  sendMessagemqtt(topic, msg);
+                                }
+                                String fun = key == 0
+                                    ? 'Amazon CA'
+                                    : key == 1
+                                        ? 'Device cert.'
+                                        : 'Private Key';
+                                registerActivity(
+                                    productCode,
+                                    serialNumberController.text.trim(),
+                                    'Se envió vía MQTT un $fun');
+                                contentController.clear();
+                              } else {
                                 String msg = jsonEncode({
                                   'cmd': commandText,
-                                  'content': '$key#$line'
+                                  'content': contentController.text.trim()
                                 });
-                                printLog(msg);
+                                registerActivity(
+                                    productCode,
+                                    serialNumberController.text.trim(),
+                                    'Se envió vía MQTT: $msg');
                                 sendMessagemqtt(topic, msg);
+                                contentController.clear();
                               }
-                              String fun = key == 0
-                                  ? 'Amazon CA'
-                                  : key == 1
-                                      ? 'Device cert.'
-                                      : 'Private Key';
-                              registerActivity(
-                                  productCode,
-                                  serialNumberController.text.trim(),
-                                  'Se envió vía MQTT un $fun');
-                              contentController.clear();
-                            } else {
+                            }else if(commandText == '17'){
+                              printLog('Enviando comando 17');
+                              String topic = 'tools/$productCode/${serialNumberController.text.trim()}';
+                              subToTopicMQTT(topic);
+                              listenToTopics();
                               String msg = jsonEncode({
                                 'cmd': commandText,
-                                'content': contentController.text.trim()
+                                'content': 'ANASHARDO'
                               });
                               registerActivity(
                                   productCode,
                                   serialNumberController.text.trim(),
-                                  'Se envió vía MQTT: $msg');
+                                  'Se consultó temperatura vía MQTT');
                               sendMessagemqtt(topic, msg);
                               contentController.clear();
+                            } else {
+                              showToast('Faltan datos para enviar el comando');
                             }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: color4,
-                            backgroundColor: color2,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            textStyle: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 5,
-                          ),
-                          child: const Text('Enviar comando'),
-                        ),
-                      ),
+                          }),
                       const SizedBox(height: 10),
                       Container(
                         width: double.infinity,
@@ -1076,7 +1092,7 @@ class ToolsAWSState extends State<ToolsAWS> {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: color4.withValues(alpha:0.2),
+                              color: color4.withValues(alpha: 0.2),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
