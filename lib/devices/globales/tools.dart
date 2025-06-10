@@ -113,6 +113,9 @@ class ToolsPageState extends State<ToolsPage> {
                 },
               ),
             },
+            const SizedBox(
+              height: 20,
+            ),
             Padding(
               padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
             ),

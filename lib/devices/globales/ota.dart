@@ -19,12 +19,18 @@ class OtaTabState extends State<OtaTab> {
   var dataToShow = 0;
   var progressValue = 0.0;
   TextEditingController otaSVController = TextEditingController();
+  TextEditingController otaHVController = TextEditingController();
+  TextEditingController otaPCController = TextEditingController();
   late Uint8List firmwareGlobal;
   bool sizeWasSend = false;
+  bool _isAuto = true;
+  bool _factory = false;
 
   @override
   void dispose() {
     otaSVController.dispose();
+    otaHVController.dispose();
+    otaPCController.dispose();
     super.dispose();
   }
 
@@ -32,35 +38,6 @@ class OtaTabState extends State<OtaTab> {
   void initState() {
     super.initState();
     subToProgress();
-  }
-
-  void sendOTAWifi(bool factory) async {
-    //0 work 1 factory
-    String url = '';
-
-    if (factory) {
-      if (otaSVController.text.contains('_F')) {
-        url =
-            'https://github.com/barberop/sime-domotica/raw/refs/heads/main/${DeviceManager.getProductCode(deviceName)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
-      } else {
-        url =
-            'https://github.com/barberop/sime-domotica/raw/refs/heads/main/${DeviceManager.getProductCode(deviceName)}/OTA_FW/F/hv${hardwareVersion}sv${otaSVController.text.trim()}_F.bin';
-      }
-    } else {
-      url =
-          'https://github.com/barberop/sime-domotica/raw/refs/heads/main/${DeviceManager.getProductCode(deviceName)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
-    }
-
-    printLog(url);
-    try {
-      String data = '${DeviceManager.getProductCode(deviceName)}[2]($url)';
-      await myDevice.toolsUuid.write(data.codeUnits);
-      printLog('Si mandé ota');
-    } catch (e, stackTrace) {
-      printLog('Error al enviar la OTA $e $stackTrace');
-      showToast('Error al enviar OTA');
-    }
-    showToast('Enviando OTA...');
   }
 
   void subToProgress() async {
@@ -137,28 +114,28 @@ class OtaTabState extends State<OtaTab> {
     myDevice.device.cancelWhenDisconnected(otaSub);
   }
 
-  void sendOTABLE(bool factory) async {
-    showToast("Enviando OTA...");
+  void sendAutoOTA({
+    required bool factory,
+  }) async {
+    final fileName = await Versioner.fetchLatestFirmwareFile(
+        DeviceManager.getProductCode(deviceName), hardwareVersion, factory);
+    String url = Versioner.buildFirmwareUrl(
+        DeviceManager.getProductCode(deviceName), fileName, factory);
+    printLog('URL del firmware: $url');
 
-    String url = '';
+    registerActivity(
+        DeviceManager.getProductCode(deviceName),
+        DeviceManager.extractSerialNumber(deviceName),
+        'Envié OTA automatica con el file: $fileName');
 
-    if (factory) {
-      if (otaSVController.text.contains('_F')) {
-        url =
-            'https://github.com/barberop/sime-domotica/raw/refs/heads/main/${DeviceManager.getProductCode(deviceName)}/OTA_FW/hv${hardwareVersion}sv${otaSVController.text.trim()}.bin';
+    try {
+      if (isWifiConnected) {
+        printLog('Si mandé ota Wifi');
+        printLog('url: $url');
+        String data = '${DeviceManager.getProductCode(deviceName)}[2]($url)';
+        await myDevice.toolsUuid.write(data.codeUnits);
       } else {
-        url =
-            'https://github.com/barberop/sime-domotica/raw/refs/heads/main/${DeviceManager.getProductCode(deviceName)}/OTA_FW/hv${hardwareVersion}sv${otaSVController.text.trim()}_F.bin';
-      }
-    } else {
-      url =
-          'https://github.com/barberop/sime-domotica/raw/refs/heads/main/${DeviceManager.getProductCode(deviceName)}/OTA_FW/W/hv${hardwareVersion}sv${otaSVController.text}.bin';
-    }
-
-    printLog(url);
-
-    if (sizeWasSend == false) {
-      try {
+        printLog('Arranca por la derecha la OTA BLE');
         String dir = (await getApplicationDocumentsDirectory()).path;
         File file = File('$dir/firmware.bin');
 
@@ -170,298 +147,270 @@ class OtaTabState extends State<OtaTab> {
 
         var bytes = req.bodyBytes;
 
-        printLog('Bytes: $bytes', "amarillo");
-
-        printLog(
-            'Bytes en hexadecimal: ${bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
-            "amarillo");
-
         await file.writeAsBytes(bytes);
 
         var firmware = await file.readAsBytes();
-        firmwareGlobal = firmware;
 
         String data =
             '${DeviceManager.getProductCode(deviceName)}[3](${bytes.length})';
         printLog(data);
         await myDevice.toolsUuid.write(data.codeUnits);
-        sizeWasSend = true;
-
-        sendchunk();
-      } catch (e, stackTrace) {
-        printLog('Error al enviar la OTA $e $stackTrace');
-        // handleManualError(e, stackTrace);
-        showToast("Error al enviar OTA");
+        printLog("Arranco OTA");
+        try {
+          int chunk = 255 - 3;
+          for (int i = 0; i < firmware.length; i += chunk) {
+            List<int> subvalue = firmware.sublist(
+              i,
+              min(i + chunk, firmware.length),
+            );
+            await myDevice.infoUuid.write(subvalue, withoutResponse: false);
+          }
+          printLog('Acabe');
+        } catch (e, stackTrace) {
+          printLog('El error es: $e $stackTrace');
+        }
       }
-    }
-  }
-
-  void sendchunk() async {
-    try {
-      int mtuSize = 255;
-      await writeChunk(firmwareGlobal, mtuSize);
     } catch (e, stackTrace) {
-      printLog('El error es: $e $stackTrace');
-      showToast('Error al enviar chunk');
-      // handleManualError(e, stackTrace);
+      printLog('Error al enviar la OTA $e $stackTrace');
     }
   }
 
-  Future<void> writeChunk(List<int> value, int mtu, {int timeout = 15}) async {
-    int chunk = mtu - 3;
-    for (int i = 0; i < value.length; i += chunk) {
-      printLog('Mande chunk');
-      List<int> subvalue = value.sublist(i, min(i + chunk, value.length));
-      await myDevice.infoUuid.write(subvalue, withoutResponse: false);
+  void sendManualOTA({
+    required String productCode,
+    required String hardwareVersion,
+    required String softwareVersion,
+    required bool factory,
+  }) async {
+    if (productCode.isEmpty ||
+        hardwareVersion.isEmpty ||
+        softwareVersion.isEmpty) {
+      showToast('Por favor, completa todos los campos');
+      return;
     }
-    printLog('Acabe');
+
+    if (factory && !softwareVersion.contains('_F')) {
+      softwareVersion = '${softwareVersion}_F';
+    }
+
+    String url =
+        'https://raw.githubusercontent.com/barberop/sime-domotica/main/'
+        '$productCode/OTA_FW/${factory ? 'F' : 'W'}/hv${hardwareVersion}sv$softwareVersion.bin';
+
+    registerActivity(
+        DeviceManager.getProductCode(deviceName),
+        DeviceManager.extractSerialNumber(deviceName),
+        'Envié OTA manual $productCode con el file: hv${hardwareVersion}sv$softwareVersion.bin');
+
+    try {
+      if (isWifiConnected) {
+        printLog('Si mandé ota Wifi');
+        printLog('url: $url');
+        String data = '${DeviceManager.getProductCode(deviceName)}[2]($url)';
+        await myDevice.toolsUuid.write(data.codeUnits);
+      } else {
+        printLog('Arranca por la derecha la OTA BLE');
+        String dir = (await getApplicationDocumentsDirectory()).path;
+        File file = File('$dir/firmware.bin');
+
+        if (await file.exists()) {
+          await file.delete();
+        }
+
+        var req = await http.get(Uri.parse(url));
+
+        var bytes = req.bodyBytes;
+
+        await file.writeAsBytes(bytes);
+
+        var firmware = await file.readAsBytes();
+
+        String data =
+            '${DeviceManager.getProductCode(deviceName)}[3](${bytes.length})';
+        printLog(data);
+        await myDevice.toolsUuid.write(data.codeUnits);
+        printLog("Arranco OTA");
+        try {
+          int chunk = 255 - 3;
+          for (int i = 0; i < firmware.length; i += chunk) {
+            List<int> subvalue = firmware.sublist(
+              i,
+              min(i + chunk, firmware.length),
+            );
+            await myDevice.infoUuid.write(subvalue, withoutResponse: false);
+          }
+          printLog('Acabe');
+        } catch (e, stackTrace) {
+          printLog('El error es: $e $stackTrace');
+        }
+      }
+    } catch (e, stackTrace) {
+      printLog('Error al enviar la OTA $e $stackTrace');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     double bottomBarHeight = kBottomNavigationBarHeight;
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       backgroundColor: color4,
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  height: 40,
-                  width: 300,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    color: color0,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: LinearProgressIndicator(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // ─────────── ChoiceChips Auto / Manual ───────────
+              if (accessLevel > 2) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Auto'),
+                      selected: _isAuto,
+                      onSelected: (sel) => setState(() => _isAuto = true),
+                      selectedColor: color1,
+                      backgroundColor: color0,
+                      labelStyle: TextStyle(color: _isAuto ? color4 : color1),
+                      checkmarkColor: color4,
+                    ),
+                    const SizedBox(width: 12),
+                    ChoiceChip(
+                      label: const Text('Manual'),
+                      selected: !_isAuto,
+                      onSelected: (sel) => setState(() => _isAuto = false),
+                      selectedColor: color1,
+                      backgroundColor: color0,
+                      labelStyle: TextStyle(color: !_isAuto ? color4 : color1),
+                      checkmarkColor: color4,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+              ],
+              // ─────────── Barra de progreso OTA ───────────
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    height: 40,
+                    width: 300,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: color0,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: LinearProgressIndicator(
                         value: progressValue,
                         backgroundColor: Colors.transparent,
-                        color: color1),
+                        color: color1,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'Progreso descarga OTA: ${(progressValue * 100).toInt()}%',
+                    style: const TextStyle(
+                      color: color4,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 40),
+
+              // ─────────── UI Condicional según isAuto ───────────
+              if (_isAuto) ...[
+                buildButton(
+                    text: 'Enviar OTA Work',
+                    onPressed: () => sendAutoOTA(factory: false)),
+                const SizedBox(height: 12),
+                buildButton(
+                    text: 'Enviar OTA Factory',
+                    onPressed: () => sendAutoOTA(factory: true)),
+              ] else ...[
+                SizedBox(
+                  height: 100,
+                  child: Focus(
+                    onFocusChange: (hasFocus) {
+                      if (!hasFocus) {
+                        final text = otaPCController.text;
+                        if (!text.endsWith('_IOT')) {
+                          otaPCController.text = '${text}_IOT';
+                          otaPCController.selection = TextSelection.collapsed(
+                            offset: otaPCController.text.length,
+                          );
+                          printLog('Appended _IOT to productCode', 'magenta');
+                        }
+                      }
+                    },
+                    child: buildTextField(
+                        label: 'Código de Producto',
+                        onSubmitted: (_) {},
+                        controller: otaPCController,
+                        keyboard: TextInputType.number),
                   ),
                 ),
-                Text(
-                  'Progreso descarga OTA: ${(progressValue * 100).toInt()}%',
-                  style: const TextStyle(
-                    color: color4,
-                    fontWeight: FontWeight.bold,
+                const SizedBox(height: 6),
+                SizedBox(
+                  height: 100,
+                  child: buildTextField(
+                      label: 'Versión de Hardware',
+                      onSubmitted: (_) {},
+                      controller: otaHVController),
+                ),
+                const SizedBox(height: 6),
+                SizedBox(
+                  height: 100,
+                  child: buildTextField(
+                      label: 'Versión de Software',
+                      onSubmitted: (_) {},
+                      controller: otaSVController),
+                ),
+                const SizedBox(
+                  height: 6,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Work'),
+                      selected: !_factory,
+                      onSelected: (sel) => setState(() => _factory = false),
+                      selectedColor: color1,
+                      backgroundColor: color0,
+                      labelStyle: TextStyle(color: !_factory ? color4 : color1),
+                      checkmarkColor: color4,
+                    ),
+                    const SizedBox(width: 12),
+                    ChoiceChip(
+                      label: const Text('Factory'),
+                      selected: _factory,
+                      onSelected: (sel) => setState(() => _factory = true),
+                      selectedColor: color1,
+                      backgroundColor: color0,
+                      labelStyle: TextStyle(color: _factory ? color4 : color1),
+                      checkmarkColor: color4,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                buildButton(
+                  text: 'Enviar OTA',
+                  onPressed: () => sendManualOTA(
+                    productCode: otaPCController.text.trim(),
+                    hardwareVersion: otaHVController.text.trim(),
+                    softwareVersion: otaSVController.text.trim(),
+                    factory: _factory,
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 40),
-            buildTextField(
-              controller: otaSVController,
-              label: 'Introducir última versión de Software',
-              hint: '',
-              onSubmitted: (value) {},
-              widthFactor: 0.9,
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: color1,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 40, vertical: 16),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        elevation: 6,
-                        shadowColor: color3.withValues(alpha: 0.4),
-                      ),
-                      onPressed: () {
-                        registerActivity(
-                            DeviceManager.getProductCode(deviceName),
-                            DeviceManager.extractSerialNumber(deviceName),
-                            'Se envio OTA Wifi a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
-                        sendOTAWifi(false);
-                      },
-                      child: const Center(
-                        child: Column(
-                          children: [
-                            SizedBox(height: 10),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.build, size: 16, color: color4),
-                                SizedBox(width: 20),
-                                Icon(Icons.wifi, size: 16, color: color4),
-                              ],
-                            ),
-                            SizedBox(height: 10),
-                            Text(
-                              'Mandar OTA Work (WiFi)',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: color4),
-                            ),
-                            SizedBox(height: 10),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: color1,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 40, vertical: 16),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        elevation: 6,
-                        shadowColor: color3.withValues(alpha: 0.4),
-                      ),
-                      onPressed: () {
-                        registerActivity(
-                            DeviceManager.getProductCode(deviceName),
-                            DeviceManager.extractSerialNumber(deviceName),
-                            'Se envio OTA Wifi a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
-                        sendOTAWifi(true);
-                      },
-                      child: const Center(
-                        // Added to center elements
-                        child: Column(
-                          children: [
-                            SizedBox(height: 10),
-                            Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.factory_outlined,
-                                      size: 15, color: color4),
-                                  SizedBox(width: 20),
-                                  Icon(Icons.wifi, size: 15, color: color4),
-                                ]),
-                            SizedBox(height: 10),
-                            Text(
-                              'Mandar OTA fábrica (WiFi)',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: color4),
-                            ),
-                            SizedBox(height: 10),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 20),
+              Padding(
+                padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
               ),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: color1,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 40, vertical: 16),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        elevation: 6,
-                        shadowColor: color3.withValues(alpha: 0.4),
-                      ),
-                      onPressed: () {
-                        registerActivity(
-                            DeviceManager.getProductCode(deviceName),
-                            DeviceManager.extractSerialNumber(deviceName),
-                            'Se envio OTA ble a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
-                        sendOTABLE(false);
-                      },
-                      child: const Center(
-                        // Added to center elements
-                        child: Column(
-                          children: [
-                            SizedBox(height: 10),
-                            Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.build,
-                                    size: 16,
-                                    color: color4,
-                                  ),
-                                  SizedBox(width: 20),
-                                  Icon(Icons.bluetooth,
-                                      size: 16, color: color4),
-                                  SizedBox(height: 10),
-                                ]),
-                            SizedBox(height: 10),
-                            Text(
-                              'Mandar OTA Work (BLE)',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: color4),
-                            ),
-                            SizedBox(height: 10),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: color1,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 40, vertical: 16),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        elevation: 6,
-                        shadowColor: color3.withValues(alpha: 0.4),
-                      ),
-                      onPressed: () {
-                        registerActivity(
-                            DeviceManager.getProductCode(deviceName),
-                            DeviceManager.extractSerialNumber(deviceName),
-                            'Se envio OTA ble a el equipo. Sv: ${otaSVController.text}. Hv $hardwareVersion');
-                        sendOTABLE(true);
-                      },
-                      child: const Center(
-                        // Added to center elements
-                        child: Column(
-                          children: [
-                            SizedBox(height: 10),
-                            Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.factory_outlined,
-                                      size: 15, color: color4),
-                                  SizedBox(width: 20),
-                                  Icon(Icons.bluetooth,
-                                      size: 15, color: color4),
-                                ]),
-                            SizedBox(height: 10),
-                            Text(
-                              'Mandar OTA fábrica (BLE)',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: color4),
-                            ),
-                            SizedBox(height: 10),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Padding(
-                    padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

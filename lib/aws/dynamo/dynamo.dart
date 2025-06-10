@@ -27,6 +27,7 @@ Future<void> queryItems(DynamoDB service, String pc, String sn) async {
         if (secondaryAdmins.contains('') && secondaryAdmins.length == 1) {
           secondaryAdmins = [];
         }
+        isConnectedToAWS = item['cstate']?.boolValue ?? false;
       }
     } else {
       printLog('Dispositivo no encontrado');

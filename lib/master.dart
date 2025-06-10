@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:http/http.dart' as http;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
@@ -16,7 +17,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.17';
+String appVersionNumber = '1.0.18';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -72,6 +73,7 @@ String textState = '';
 bool werror = false;
 IconData wifiIcon = Icons.wifi_off;
 MaterialColor statusColor = Colors.grey;
+bool isConnectedToAWS = false;
 //*-Relacionado al wifi-*\\
 
 //*-Relacionado al ble-*\\
@@ -1316,7 +1318,7 @@ Widget buildButton({
 Widget buildTextField({
   TextEditingController? controller,
   required String label,
-  required String hint,
+  String? hint,
   required void Function(String) onSubmitted,
   double widthFactor = 0.8,
   TextInputType? keyboard,
@@ -1653,6 +1655,8 @@ class MyDevice {
   late BluetoothCharacteristic debugUuid;
   late BluetoothCharacteristic ioUuid;
   late BluetoothCharacteristic patitoUuid;
+  late BluetoothCharacteristic wifiAvailableUuid;
+  late BluetoothCharacteristic wifiStoredUuid;
 
   Future<bool> setup(BluetoothDevice connectedDevice) async {
     try {
@@ -1705,6 +1709,16 @@ class MyDevice {
               c.uuid ==
               Guid(
                   'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
+
+          if (pc == '027000_IOT') {
+            BluetoothService wifiService = services.firstWhere(
+                (s) => s.uuid == Guid('312ccb9a-72aa-4b30-bfbd-2157050e2e43'));
+
+            wifiAvailableUuid = wifiService.characteristics.firstWhere(
+                (c) => c.uuid == Guid('238297b6-1ca1-423d-a2c0-739871488c4a'));
+            wifiStoredUuid = wifiService.characteristics.firstWhere(
+                (c) => c.uuid == Guid('bcbb4443-78a8-47cc-bb75-b9728847d5c4'));
+          }
           break;
 
         case '015773_IOT':
@@ -1856,81 +1870,125 @@ class NativeService {
 
 //*-Versionador, comparador de versiones-*\\
 class Versioner {
-  ///Compara si la primer versión que le envías salio después que la segunda
-  ///
-  ///Si son iguales también retorna true
+  // ---------------------- CONFIGURACIÓN ----------------------
+  static const String _owner = 'barberop';
+  static const String _repo = 'sime-domotica';
+  static const String _branch = 'main';
+
+  // ---------------------- COMPARADORES ----------------------
+  /// Compara si la primera versión (AAMMDDL) salió después o es igual a la segunda.
   static bool isPosterior(String myVersion, String versionToCompare) {
-    int year1 = int.parse('20${myVersion.substring(0, 2)}');
-    int month1 = int.parse(myVersion.substring(2, 4));
-    int day1 = int.parse(myVersion.substring(4, 6));
-    String letter1 = myVersion.substring(6, 7);
-
-    int year2 = int.parse('20${versionToCompare.substring(0, 2)}');
-    int month2 = int.parse(versionToCompare.substring(2, 4));
-    int day2 = int.parse(versionToCompare.substring(4, 6));
-    String letter2 = versionToCompare.substring(6, 7);
-
-    printLog('Year1: $year1');
-    printLog('Month1: $month1');
-    printLog('Day1: $day1');
-
-    printLog('Year2: $year2');
-    printLog('Month2: $month2');
-    printLog('Day2: $day2');
-
-    DateTime fecha1 = DateTime(year1, month1, day1);
-    DateTime fecha2 = DateTime(year2, month2, day2);
-
-    if (fecha1.isAtSameMomentAs(fecha2)) {
-      if (letter1.compareTo(letter2) > 0 || letter1.compareTo(letter2) == 0) {
-        return true;
-      } else {
-        return false;
-      }
-    } else if (fecha1.isAfter(fecha2)) {
-      return true;
-    } else {
-      return false;
+    final v1 = _parseVersion(myVersion);
+    final v2 = _parseVersion(versionToCompare);
+    if (v1.date.isAtSameMomentAs(v2.date)) {
+      return v1.letter.compareTo(v2.letter) >= 0;
     }
+    return v1.date.isAfter(v2.date);
   }
 
-  ///Compara si la primer versión que le envías salio antes que la segunda
-  ///
-  ///Si son iguales retorna false
+  /// Compara si la primera versión salió antes que la segunda.
   static bool isPrevious(String myVersion, String versionToCompare) {
-    int year1 = int.parse('20${myVersion.substring(0, 2)}');
-    int month1 = int.parse(myVersion.substring(2, 4));
-    int day1 = int.parse(myVersion.substring(4, 6));
-    String letter1 = myVersion.substring(6, 7);
-
-    int year2 = int.parse('20${versionToCompare.substring(0, 2)}');
-    int month2 = int.parse(versionToCompare.substring(2, 4));
-    int day2 = int.parse(versionToCompare.substring(4, 6));
-    String letter2 = versionToCompare.substring(6, 7);
-
-    printLog('Year1: $year1');
-    printLog('Month1: $month1');
-    printLog('Day1: $day1');
-
-    printLog('Year2: $year2');
-    printLog('Month2: $month2');
-    printLog('Day2: $day2');
-
-    DateTime fecha1 = DateTime(year1, month1, day1);
-    DateTime fecha2 = DateTime(year2, month2, day2);
-
-    if (fecha1.isAtSameMomentAs(fecha2)) {
-      if (letter1.compareTo(letter2) < 0) {
-        return true;
-      } else {
-        return false;
-      }
-    } else if (fecha1.isBefore(fecha2)) {
-      return true;
-    } else {
-      return false;
+    final v1 = _parseVersion(myVersion);
+    final v2 = _parseVersion(versionToCompare);
+    if (v1.date.isAtSameMomentAs(v2.date)) {
+      return v1.letter.compareTo(v2.letter) < 0;
     }
+    return v1.date.isBefore(v2.date);
   }
+
+  // ---------------------- PARSEADO ----------------------
+  /// Auxiliar para parsear AAMMDD(Letra) en DateTime y letra.
+  static _VersionData _parseVersion(String version) {
+    final yy = int.parse('20${version.substring(0, 2)}');
+    final mm = int.parse(version.substring(2, 4));
+    final dd = int.parse(version.substring(4, 6));
+    final letter = version.substring(6, 7);
+    return _VersionData(DateTime(yy, mm, dd), letter);
+  }
+
+  // ---------------------- LISTADO Y OBTENCIÓN ----------------------
+
+  /// Lista los archivos .bin en GitHub bajo OTA_FW/W y devuelve
+  /// el nombre del archivo con la última subversión cuyo prefijo
+  /// coincida EXACTAMENTE con la versión de hardware (hwVersion) recibida.
+  ///
+  /// [productCode]: Carpeta del producto (ej. '015773_IOT').
+  /// [hwVersion]: Fecha+letra de hardware (ej. '240214A').
+  static Future<String> fetchLatestFirmwareFile(
+      String productCode, String hwVersion, bool factory) async {
+    // Nos aseguramos de quitar espacios extras y mantener el case original.
+    final sanitizedHw = hwVersion.trim();
+    final prefix = 'hv${sanitizedHw}sv';
+    printLog('Prefix hardware: $prefix');
+
+    final path = '$productCode/OTA_FW/${factory ? 'F' : 'W'}';
+    final uri = Uri.https(
+      'api.github.com',
+      '/repos/$_owner/$_repo/contents/$path',
+      {'ref': _branch},
+    );
+    printLog('Fetching OTA_FW/${factory ? 'F' : 'W'} from: $uri');
+    final response = await http.get(uri, headers: {
+      'Accept': 'application/vnd.github.v3+json',
+    });
+    printLog('GitHub API status: ${response.statusCode}');
+    if (response.statusCode != 200) {
+      printLog('Error listing OTA_FW/${factory ? 'F' : 'W'}: ${response.body}');
+      throw Exception(
+          'Error al listar OTA_FW/${factory ? 'F' : 'W'}: ${response.statusCode}');
+    }
+
+    final List<dynamic> items = jsonDecode(response.body);
+    final firmwareFiles = <String>[];
+
+    for (final item in items) {
+      if (item['type'] == 'file') {
+        final name = item['name'] as String;
+        // Comprobamos que el nombre empiece exactamente con el prefijo y termine en ".bin"
+        final matchesPrefix = name.startsWith(prefix);
+        final isBin = name.endsWith('.bin');
+        printLog(
+            'Found item: $name (startsWith prefix? $matchesPrefix, endsWith .bin? $isBin)');
+        if (matchesPrefix && isBin) {
+          firmwareFiles.add(name);
+        }
+      }
+    }
+
+    if (firmwareFiles.isEmpty) {
+      printLog(
+          'No matching firmware found for HW $sanitizedHw with prefix $prefix');
+      throw Exception('No se encontró firmware para HW $sanitizedHw');
+    }
+
+    // Ordenamos alfabéticamente para que el último tenga la subversión más alta.
+    firmwareFiles.sort();
+    final latest = firmwareFiles.last;
+    printLog('Latest firmware file: $latest');
+    return latest;
+  }
+
+  /// A partir del nombre de archivo devuelto por fetchLatestFirmwareFile,
+  /// extrae y retorna solo la subversión (SV) sin prefijos ni extensión.
+  /// Ejemplo: de 'hv240214Asv240528H.bin' devuelve '240528H'.
+  static String extractSV(String firmwareFileName, String hwVersion) {
+    printLog('Extracting SV from $firmwareFileName for HW version $hwVersion');
+    final prefix = 'hv${hwVersion}sv';
+    return firmwareFileName.replaceFirst(prefix, '').replaceFirst('.bin', '');
+  }
+
+  /// Construye la URL raw de GitHub para la última versión de firmware.
+  static String buildFirmwareUrl(String productCode, String firmwareFileName, bool factory) {
+    return 'https://raw.githubusercontent.com/$_owner/$_repo/$_branch/'
+        '$productCode/OTA_FW/${factory ? 'F' : 'W'}/$firmwareFileName';
+  }
+}
+
+/// Datos internos de versión.
+class _VersionData {
+  final DateTime date;
+  final String letter;
+  _VersionData(this.date, this.letter);
 }
 //*-Versionador, comparador de versiones-*\\
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
 import 'package:caldensmartfabrica/devices/globales/params.dart';
@@ -12,6 +13,7 @@ import 'package:csv/csv.dart';
 import '../aws/dynamo/dynamo.dart';
 import '../aws/dynamo/dynamo_certificates.dart';
 import '../master.dart';
+import 'package:cbor/simple.dart';
 
 class CalefactoresPage extends StatefulWidget {
   const CalefactoresPage({super.key});
@@ -280,13 +282,13 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                         printLog(value);
                         sendTemperature(value.round());
                       },
-                      min: 10,
+                      min: 0,
                       max: 40,
                     ),
                   ),
                 ),
                 if (DeviceManager.getProductCode(deviceName) ==
-                    '027000_IOT') ...{
+                    '027000_IOT') ...[
                   const SizedBox(
                     height: 30,
                   ),
@@ -313,8 +315,90 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     },
                     child: buildButton(onPressed: () {}, text: 'Chispero'),
                   ),
-                },
-                if (!hasSensor) ...{
+                  const SizedBox(
+                    height: 30,
+                  ),
+                  buildButton(
+                    text: 'Wifi (Leer)',
+                    onPressed: () async {
+                      // Leemos la característica completa (una sola lectura con MTU grande)
+                      try {
+                        printLog('Inicio lectura ${DateTime.now()}', 'verde');
+                        List<int> avalList =
+                            await myDevice.wifiAvailableUuid.read();
+                        printLog('Ya leí ${DateTime.now()}', 'verde');
+                        printLog('Wifi raw List<int>: $avalList', 'cyan');
+
+                        Uint8List cborBytes = Uint8List.fromList(avalList);
+
+                        final hexChars =
+                            cborBytes.map((b) => b.toRadixString(16)).toList();
+                        printLog('Hex CBOR completo: $hexChars', 'cyan');
+
+                        try {
+                          String cadena = String.fromCharCodes(avalList);
+                          printLog('Texto: $cadena', 'cyan');
+
+                          const codec = CborSimpleCodec();
+                          dynamic decoded = codec.decode(cborBytes);
+                          printLog('CBOR decodificado manualmente: $decoded',
+                              'cyan');
+
+                          // 5) (Opcional) Convertir a JSON String
+                          String jsonStr = jsonEncode(decoded);
+                          printLog(
+                              'Procese anasheidown ${DateTime.now()}', 'verde');
+                          printLog('CBOR → JSON: $jsonStr', 'cyan');
+                        } catch (e) {
+                          printLog('Error: $e', 'red');
+                        }
+                      } catch (e) {
+                        printLog('Error al leer característica BLE: $e', 'red');
+                      }
+                    },
+                  ),
+                  const SizedBox(
+                    height: 30,
+                  ),
+                  buildButton(
+                    text: 'Wifi (Subscribe)',
+                    onPressed: () async {
+                      try {
+                        printLog('Inicio Sub ${DateTime.now()}', 'verde');
+                        myDevice.wifiAvailableUuid.setNotifyValue(true);
+                        printLog('Ya me subscribí ${DateTime.now()}', 'verde');
+                        final wifiAvalsub =
+                            myDevice.wifiAvailableUuid.onValueReceived.listen(
+                          (List<int> status) {
+                            printLog('Recibí datos de wifi: ${DateTime.now()}',
+                                'verde');
+                            Uint8List cborBytes = Uint8List.fromList(status);
+
+                            try {
+                              const codec = CborSimpleCodec();
+                              dynamic decoded = codec.decode(cborBytes);
+                              printLog(
+                                  'CBOR decodificado manualmente: $decoded',
+                                  'cyan');
+
+                              String jsonStr = jsonEncode(decoded);
+                              printLog('Procese anasheidown ${DateTime.now()}',
+                                  'verde');
+                              printLog('CBOR → JSON: $jsonStr', 'cyan');
+                            } catch (e) {
+                              printLog('Error: $e', 'red');
+                            }
+                          },
+                        );
+
+                        myDevice.device.cancelWhenDisconnected(wifiAvalsub);
+                      } catch (e) {
+                        printLog('Error al leer característica BLE: $e', 'red');
+                      }
+                    },
+                  ),
+                ],
+                if (!hasSensor) ...[
                   const SizedBox(height: 30),
                   SizedBox(
                     width: 300,
@@ -354,7 +438,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                             textAlign: TextAlign.center,
                           ),
                   ),
-                },
+                ],
                 const SizedBox(height: 30),
                 buildText(
                   text: '',

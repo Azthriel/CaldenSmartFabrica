@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import '../aws/dynamo/dynamo.dart';
 import '../aws/dynamo/dynamo_certificates.dart';
@@ -96,11 +95,7 @@ class LoadState extends State<LoadingPage> {
         DeviceManager.extractSerialNumber(deviceName),
       );
       switch (pc) {
-        case '022000_IOT' ||
-              '027000_IOT' ||
-              '041220_IOT' ||
-              '050217_IOT' ||
-              '028000_IOT':
+        case '022000_IOT' || '041220_IOT' || '050217_IOT' || '028000_IOT' || '027000_IOT':
           varsValues = await myDevice.varsUuid.read();
           var parts2 = utf8.decode(varsValues).split(':');
           printLog('Valores vars: $parts2');
@@ -199,6 +194,31 @@ class LoadState extends State<LoadingPage> {
           rollerMoving = partes[15] == '1';
           awsInit = partes[16] == '1';
           break;
+        // case '027000_IOT':
+        //   varsValues = await myDevice.varsUuid.read();
+
+        //   // Convertimos a Uint8List
+        //   Uint8List cborBytes = Uint8List.fromList(varsValues);
+
+        //   // Verificamos en HEX que la secuencia termine en 0xFF (si usas indefinido) o que no falten bytes
+        //   final hexChars = cborBytes.map((b) => b.toRadixString(16)).toList();
+        //   printLog('Hex CBOR completo: $hexChars', 'cyan');
+
+        //   try {
+        //     String cadena = String.fromCharCodes(varsValues);
+        //     printLog('Texto: $cadena', 'cyan');
+
+        //     const codec = CborSimpleCodec();
+        //     dynamic decoded = codec.decode(cborBytes);
+        //     printLog('CBOR decodificado manualmente: $decoded', 'cyan');
+
+        //     // 5) (Opcional) Convertir a JSON String
+        //     String jsonStr = jsonEncode(decoded);
+        //     printLog('CBOR → JSON: $jsonStr', 'cyan');
+        //   } catch (e) {
+        //     printLog('Error: $e', 'red');
+        //   }
+        //   break;
       }
 
       return Future.value(true);
