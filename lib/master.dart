@@ -17,7 +17,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.18';
+String appVersionNumber = '1.0.19';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -1291,7 +1291,7 @@ void showAlertDialog(BuildContext context, bool dismissible, Widget? title,
 ///Genera un botón generico con los parametros que le pases
 Widget buildButton({
   required String text,
-  required VoidCallback onPressed,
+  required void Function()? onPressed,
 }) {
   return ElevatedButton(
     style: ElevatedButton.styleFrom(
@@ -1319,7 +1319,7 @@ Widget buildTextField({
   TextEditingController? controller,
   required String label,
   String? hint,
-  required void Function(String) onSubmitted,
+  void Function(String)? onSubmitted,
   double widthFactor = 0.8,
   TextInputType? keyboard,
   void Function(String)? onChanged,
@@ -1710,15 +1710,15 @@ class MyDevice {
               Guid(
                   'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
 
-          if (pc == '027000_IOT') {
-            BluetoothService wifiService = services.firstWhere(
-                (s) => s.uuid == Guid('312ccb9a-72aa-4b30-bfbd-2157050e2e43'));
+          // if (pc == '027000_IOT') {
+          //   BluetoothService wifiService = services.firstWhere(
+          //       (s) => s.uuid == Guid('312ccb9a-72aa-4b30-bfbd-2157050e2e43'));
 
-            wifiAvailableUuid = wifiService.characteristics.firstWhere(
-                (c) => c.uuid == Guid('238297b6-1ca1-423d-a2c0-739871488c4a'));
-            wifiStoredUuid = wifiService.characteristics.firstWhere(
-                (c) => c.uuid == Guid('bcbb4443-78a8-47cc-bb75-b9728847d5c4'));
-          }
+          //   wifiAvailableUuid = wifiService.characteristics.firstWhere(
+          //       (c) => c.uuid == Guid('238297b6-1ca1-423d-a2c0-739871488c4a'));
+          //   wifiStoredUuid = wifiService.characteristics.firstWhere(
+          //       (c) => c.uuid == Guid('bcbb4443-78a8-47cc-bb75-b9728847d5c4'));
+          // }
           break;
 
         case '015773_IOT':
@@ -1815,7 +1815,8 @@ class MyDevice {
 
       return Future.value(true);
     } catch (e, stackTrace) {
-      printLog('Lcdtmbe $e $stackTrace');
+      printLog('Lcdtmbe $e', 'rojo');
+      printLog('Stacktrace: $stackTrace', 'rojo');
 
       return Future.value(false);
     }
@@ -1978,7 +1979,8 @@ class Versioner {
   }
 
   /// Construye la URL raw de GitHub para la última versión de firmware.
-  static String buildFirmwareUrl(String productCode, String firmwareFileName, bool factory) {
+  static String buildFirmwareUrl(
+      String productCode, String firmwareFileName, bool factory) {
     return 'https://raw.githubusercontent.com/$_owner/$_repo/$_branch/'
         '$productCode/OTA_FW/${factory ? 'F' : 'W'}/$firmwareFileName';
   }

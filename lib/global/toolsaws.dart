@@ -127,7 +127,7 @@ class ToolsAWSState extends State<ToolsAWS> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
-                      width: 335,
+                      width: MediaQuery.of(context).size.width * 0.8,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16.0, vertical: 12.0),
                       decoration: BoxDecoration(
@@ -173,7 +173,7 @@ class ToolsAWSState extends State<ToolsAWS> {
                     ),
                     const SizedBox(height: 20),
                     SizedBox(
-                      width: 335,
+                      width: MediaQuery.of(context).size.width * 0.8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16.0, vertical: 12.0),
