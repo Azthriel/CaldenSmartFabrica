@@ -42,30 +42,6 @@ class ScanPageState extends State<ScanPage> {
       printLog('Entre a escanear');
       try {
         await FlutterBluePlus.startScan(
-          withMsd: [
-            MsdFilter(0x6143),
-          ],
-          timeout: const Duration(seconds: 30),
-          androidUsesFineLocation: true,
-          continuousUpdates: false,
-        );
-
-        FlutterBluePlus.scanResults.listen((results) {
-          for (ScanResult result in results) {
-            if (!devices
-                .any((device) => device.remoteId == result.device.remoteId)) {
-              setState(() {
-                devices.add(result.device);
-                devices
-                    .sort((a, b) => a.platformName.compareTo(b.platformName));
-                filteredDevices = devices;
-              });
-            }
-          }
-        });
-
-        await Future.delayed(const Duration(seconds: 1));
-        await FlutterBluePlus.startScan(
           withKeywords: keywords,
           timeout: const Duration(seconds: 30),
           androidUsesFineLocation: true,
@@ -77,8 +53,8 @@ class ScanPageState extends State<ScanPage> {
                 .any((device) => device.remoteId == result.device.remoteId)) {
               setState(() {
                 devices.add(result.device);
-                devices
-                    .sort((a, b) => a.platformName.compareTo(b.platformName));
+                // devices
+                //     .sort((a, b) => a.platformName.compareTo(b.platformName));
                 filteredDevices = devices;
               });
             }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../aws/dynamo/dynamo.dart';
-import '../../aws/dynamo/dynamo_certificates.dart';
 import '../../master.dart';
 
 class ParamsTab extends StatefulWidget {
@@ -83,7 +82,7 @@ class ParamsTabState extends State<ParamsTab> {
                 buildButton(
                   text: 'Eliminar Owner',
                   onPressed: () {
-                    putOwner(service, DeviceManager.getProductCode(deviceName),
+                    putOwner(DeviceManager.getProductCode(deviceName),
                         DeviceManager.extractSerialNumber(deviceName), '');
                     registerActivity(
                       DeviceManager.getProductCode(deviceName),
@@ -130,7 +129,6 @@ class ParamsTabState extends State<ParamsTab> {
                                   secondaryAdmins.removeAt(i);
                                 });
                                 putSecondaryAdmins(
-                                  service,
                                   DeviceManager.getProductCode(deviceName),
                                   DeviceManager.extractSerialNumber(deviceName),
                                   secondaryAdmins,
@@ -243,7 +241,6 @@ class ParamsTabState extends State<ParamsTab> {
                                   DeviceManager.extractSerialNumber(deviceName),
                                   'Se modifico el vencimiento del beneficio "alquiler temporario"');
                               putDate(
-                                  service,
                                   DeviceManager.getProductCode(deviceName),
                                   DeviceManager.extractSerialNumber(deviceName),
                                   dateController.text.trim(),
@@ -345,7 +342,6 @@ class ParamsTabState extends State<ParamsTab> {
                                   DeviceManager.extractSerialNumber(deviceName),
                                   'Se modifico el vencimiento del beneficio "alquiler temporario"');
                               putDate(
-                                  service,
                                   DeviceManager.getProductCode(deviceName),
                                   DeviceManager.extractSerialNumber(deviceName),
                                   dateController.text.trim(),

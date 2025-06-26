@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:caldensmartfabrica/aws/dynamo/dynamo.dart';
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
 import 'package:caldensmartfabrica/devices/globales/params.dart';
@@ -371,6 +372,57 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
                       )
                     ],
                   ),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                buildText(text: '¿Este equipo tendrá entrada?'),
+                const SizedBox(
+                  height: 10,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('SI tendrá entrada'),
+                      selected: hasEntry,
+                      onSelected: (sel) async {
+                        setState(() => hasEntry = true);
+                        await putHasEntry(
+                            DeviceManager.getProductCode(deviceName),
+                            DeviceManager.extractSerialNumber(deviceName),
+                            true);
+                        registerActivity(
+                            DeviceManager.getProductCode(deviceName),
+                            DeviceManager.extractSerialNumber(deviceName),
+                            "Se selecciono que el equipo posee una entrada");
+                      },
+                      selectedColor: color1,
+                      backgroundColor: color0,
+                      labelStyle: TextStyle(color: hasEntry ? color4 : color1),
+                      checkmarkColor: color4,
+                    ),
+                    const SizedBox(width: 12),
+                    ChoiceChip(
+                      label: const Text('NO tendrá entrada'),
+                      selected: !hasEntry,
+                      onSelected: (sel) async {
+                        setState(() => hasEntry = false);
+                        await putHasEntry(
+                            DeviceManager.getProductCode(deviceName),
+                            DeviceManager.extractSerialNumber(deviceName),
+                            false);
+                        registerActivity(
+                            DeviceManager.getProductCode(deviceName),
+                            DeviceManager.extractSerialNumber(deviceName),
+                            "Se selecciono que el equipo NO posee una entrada");
+                      },
+                      selectedColor: color1,
+                      backgroundColor: color0,
+                      labelStyle: TextStyle(color: !hasEntry ? color4 : color1),
+                      checkmarkColor: color4,
+                    ),
+                  ],
                 ),
                 const SizedBox(
                   height: 10,

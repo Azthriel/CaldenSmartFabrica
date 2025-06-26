@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../aws/dynamo/dynamo.dart';
-import '../aws/dynamo/dynamo_certificates.dart';
 import '../master.dart';
 
 class LoadingPage extends StatefulWidget {
@@ -90,12 +89,15 @@ class LoadState extends State<LoadingPage> {
       printLog('Valores info: $infoValues || ${utf8.decode(infoValues)}');
 
       await queryItems(
-        service,
         DeviceManager.getProductCode(deviceName),
         DeviceManager.extractSerialNumber(deviceName),
       );
       switch (pc) {
-        case '022000_IOT' || '041220_IOT' || '050217_IOT' || '028000_IOT' || '027000_IOT':
+        case '022000_IOT' ||
+              '041220_IOT' ||
+              '050217_IOT' ||
+              '028000_IOT' ||
+              '027000_IOT':
           varsValues = await myDevice.varsUuid.read();
           var parts2 = utf8.decode(varsValues).split(':');
           printLog('Valores vars: $parts2');

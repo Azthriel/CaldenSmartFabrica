@@ -1,7 +1,8 @@
 import 'package:aws_dynamodb_api/dynamodb-2012-08-10.dart';
+import 'package:caldensmartfabrica/aws/dynamo/dynamo_certificates.dart';
 import 'package:caldensmartfabrica/master.dart';
 
-Future<void> queryItems(DynamoDB service, String pc, String sn) async {
+Future<void> queryItems(String pc, String sn) async {
   try {
     printLog("Buscando Item");
     final response = await service.query(
@@ -37,8 +38,7 @@ Future<void> queryItems(DynamoDB service, String pc, String sn) async {
   }
 }
 
-Future<void> putOwner(
-    DynamoDB service, String pc, String sn, String data) async {
+Future<void> putOwner(String pc, String sn, String data) async {
   try {
     final response = await service.updateItem(tableName: 'sime-domotica', key: {
       'product_code': AttributeValue(s: pc),
@@ -53,8 +53,7 @@ Future<void> putOwner(
   }
 }
 
-Future<void> putDistanceOn(
-    DynamoDB service, String pc, String sn, String data) async {
+Future<void> putDistanceOn(String pc, String sn, String data) async {
   try {
     final response = await service.updateItem(tableName: 'sime-domotica', key: {
       'product_code': AttributeValue(s: pc),
@@ -69,8 +68,7 @@ Future<void> putDistanceOn(
   }
 }
 
-Future<void> putDistanceOff(
-    DynamoDB service, String pc, String sn, String data) async {
+Future<void> putDistanceOff(String pc, String sn, String data) async {
   try {
     final response = await service.updateItem(tableName: 'sime-domotica', key: {
       'product_code': AttributeValue(s: pc),
@@ -85,8 +83,7 @@ Future<void> putDistanceOff(
   }
 }
 
-Future<void> putSecondaryAdmins(
-    DynamoDB service, String pc, String sn, List<String> data) async {
+Future<void> putSecondaryAdmins(String pc, String sn, List<String> data) async {
   if (data.isEmpty) {
     data.add('');
   }
@@ -104,8 +101,7 @@ Future<void> putSecondaryAdmins(
   }
 }
 
-Future<void> putDate(
-    DynamoDB service, String pc, String sn, String data, bool at) async {
+Future<void> putDate(String pc, String sn, String data, bool at) async {
   try {
     final response = await service.updateItem(tableName: 'sime-domotica', key: {
       'product_code': AttributeValue(s: pc),
@@ -113,6 +109,76 @@ Future<void> putDate(
     }, attributeUpdates: {
       at ? 'DateAT' : 'DateSecAdm':
           AttributeValueUpdate(value: AttributeValue(s: data)),
+    });
+
+    printLog('Item escrito perfectamente $response');
+  } catch (e) {
+    printLog('Error inserting item: $e');
+  }
+}
+
+Future<void> putLabProcessFinished(String pc, String sn, bool done) async {
+  try {
+    final response = await service.updateItem(tableName: 'sime-domotica', key: {
+      'product_code': AttributeValue(s: pc),
+      'device_id': AttributeValue(s: sn),
+    }, attributeUpdates: {
+      'LabProcessFinished':
+          AttributeValueUpdate(value: AttributeValue(boolValue: done)),
+    });
+
+    printLog('Item escrito perfectamente $response');
+  } catch (e) {
+    printLog('Error inserting item: $e');
+  }
+}
+
+Future<bool> getConnection(String pc, String sn) async {
+  try {
+    final response = await service.getItem(
+      tableName: 'sime-domotica',
+      key: {
+        'product_code': AttributeValue(s: pc),
+        'device_id': AttributeValue(s: sn),
+      },
+    );
+    if (response.item != null) {
+      // Convertir AttributeValue a String
+      var item = response.item!;
+      bool o = item['cstate']?.boolValue ?? false;
+      return o;
+    } else {
+      printLog('Item no encontrado.');
+      return false;
+    }
+  } catch (e) {
+    printLog('Error al obtener el item: $e');
+    return false;
+  }
+}
+
+Future<void> putHasEntry(String pc, String sn, bool data) async {
+  try {
+    final response = await service.updateItem(tableName: 'sime-domotica', key: {
+      'product_code': AttributeValue(s: pc),
+      'device_id': AttributeValue(s: sn),
+    }, attributeUpdates: {
+      'hasEntry': AttributeValueUpdate(value: AttributeValue(boolValue: data)),
+    });
+
+    printLog('Item escrito perfectamente $response');
+  } catch (e) {
+    printLog('Error inserting item: $e');
+  }
+}
+
+Future<void> putHasSpark(String pc, String sn, bool data) async {
+  try {
+    final response = await service.updateItem(tableName: 'sime-domotica', key: {
+      'product_code': AttributeValue(s: pc),
+      'device_id': AttributeValue(s: sn),
+    }, attributeUpdates: {
+      'hasSpark': AttributeValueUpdate(value: AttributeValue(boolValue: data)),
     });
 
     printLog('Item escrito perfectamente $response');

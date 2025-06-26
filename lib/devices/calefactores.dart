@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
 import 'package:caldensmartfabrica/devices/globales/params.dart';
@@ -11,9 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:csv/csv.dart';
 import '../aws/dynamo/dynamo.dart';
-import '../aws/dynamo/dynamo_certificates.dart';
 import '../master.dart';
-import 'package:cbor/simple.dart';
 
 class CalefactoresPage extends StatefulWidget {
   const CalefactoresPage({super.key});
@@ -318,84 +315,58 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                   const SizedBox(
                     height: 30,
                   ),
-                  buildButton(
-                    text: 'Wifi (Leer)',
-                    onPressed: () async {
-                      // Leemos la característica completa (una sola lectura con MTU grande)
-                      try {
-                        printLog('Inicio lectura ${DateTime.now()}', 'verde');
-                        List<int> avalList =
-                            await myDevice.wifiAvailableUuid.read();
-                        printLog('Ya leí ${DateTime.now()}', 'verde');
-                        printLog('Wifi raw List<int>: $avalList', 'cyan');
-
-                        Uint8List cborBytes = Uint8List.fromList(avalList);
-
-                        final hexChars =
-                            cborBytes.map((b) => b.toRadixString(16)).toList();
-                        printLog('Hex CBOR completo: $hexChars', 'cyan');
-
-                        try {
-                          String cadena = String.fromCharCodes(avalList);
-                          printLog('Texto: $cadena', 'cyan');
-
-                          const codec = CborSimpleCodec();
-                          dynamic decoded = codec.decode(cborBytes);
-                          printLog('CBOR decodificado manualmente: $decoded',
-                              'cyan');
-
-                          // 5) (Opcional) Convertir a JSON String
-                          String jsonStr = jsonEncode(decoded);
-                          printLog(
-                              'Procese anasheidown ${DateTime.now()}', 'verde');
-                          printLog('CBOR → JSON: $jsonStr', 'cyan');
-                        } catch (e) {
-                          printLog('Error: $e', 'red');
-                        }
-                      } catch (e) {
-                        printLog('Error al leer característica BLE: $e', 'red');
-                      }
-                    },
+                  buildText(text: '¿Este equipo tendrá chispero?'),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ChoiceChip(
+                        label: const Text('SI tendrá chispero'),
+                        selected: hasSpark,
+                        onSelected: (sel) async {
+                          setState(() => hasSpark = true);
+                          await putHasSpark(
+                              DeviceManager.getProductCode(deviceName),
+                              DeviceManager.extractSerialNumber(deviceName),
+                              true);
+                          registerActivity(
+                              DeviceManager.getProductCode(deviceName),
+                              DeviceManager.extractSerialNumber(deviceName),
+                              "Se selecciono que el equipo posee chispero");
+                        },
+                        selectedColor: color1,
+                        backgroundColor: color0,
+                        labelStyle:
+                            TextStyle(color: hasSpark ? color4 : color1),
+                        checkmarkColor: color4,
+                      ),
+                      const SizedBox(width: 12),
+                      ChoiceChip(
+                        label: const Text('NO tendrá chispero'),
+                        selected: !hasSpark,
+                        onSelected: (sel) async {
+                          setState(() => hasSpark = false);
+                          await putHasSpark(
+                              DeviceManager.getProductCode(deviceName),
+                              DeviceManager.extractSerialNumber(deviceName),
+                              false);
+                          registerActivity(
+                              DeviceManager.getProductCode(deviceName),
+                              DeviceManager.extractSerialNumber(deviceName),
+                              "Se selecciono que el equipo NO posee un chispero");
+                        },
+                        selectedColor: color1,
+                        backgroundColor: color0,
+                        labelStyle:
+                            TextStyle(color: !hasSpark ? color4 : color1),
+                        checkmarkColor: color4,
+                      ),
+                    ],
                   ),
                   const SizedBox(
-                    height: 30,
-                  ),
-                  buildButton(
-                    text: 'Wifi (Subscribe)',
-                    onPressed: () async {
-                      try {
-                        printLog('Inicio Sub ${DateTime.now()}', 'verde');
-                        myDevice.wifiAvailableUuid.setNotifyValue(true);
-                        printLog('Ya me subscribí ${DateTime.now()}', 'verde');
-                        final wifiAvalsub =
-                            myDevice.wifiAvailableUuid.onValueReceived.listen(
-                          (List<int> status) {
-                            printLog('Recibí datos de wifi: ${DateTime.now()}',
-                                'verde');
-                            Uint8List cborBytes = Uint8List.fromList(status);
-
-                            try {
-                              const codec = CborSimpleCodec();
-                              dynamic decoded = codec.decode(cborBytes);
-                              printLog(
-                                  'CBOR decodificado manualmente: $decoded',
-                                  'cyan');
-
-                              String jsonStr = jsonEncode(decoded);
-                              printLog('Procese anasheidown ${DateTime.now()}',
-                                  'verde');
-                              printLog('CBOR → JSON: $jsonStr', 'cyan');
-                            } catch (e) {
-                              printLog('Error: $e', 'red');
-                            }
-                          },
-                        );
-
-                        myDevice.device.cancelWhenDisconnected(wifiAvalsub);
-                      } catch (e) {
-                        printLog('Error al leer característica BLE: $e', 'red');
-                      }
-                    },
+                    height: 10,
                   ),
                 ],
                 if (!hasSensor) ...[
@@ -777,7 +748,6 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                             DeviceManager.extractSerialNumber(deviceName),
                             'Se modifico la distancia de encendido');
                         putDistanceOn(
-                            service,
                             DeviceManager.getProductCode(deviceName),
                             DeviceManager.extractSerialNumber(deviceName),
                             value);
@@ -801,7 +771,6 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                             DeviceManager.extractSerialNumber(deviceName),
                             'Se modifico la distancia de apagado');
                         putDistanceOff(
-                            service,
                             DeviceManager.getProductCode(deviceName),
                             DeviceManager.extractSerialNumber(deviceName),
                             value);
@@ -846,10 +815,10 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                   const SizedBox(
                     height: 50,
                   ),
-                  Padding(
-                    padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
-                  ),
                 ],
+                Padding(
+                  padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
+                ),
               ],
             ),
           ),

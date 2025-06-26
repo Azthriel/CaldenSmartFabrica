@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../aws/dynamo/dynamo.dart';
-import '../aws/dynamo/dynamo_certificates.dart';
 
 class ToolsAWS extends StatefulWidget {
   const ToolsAWS({super.key});
@@ -217,7 +216,7 @@ class ToolsAWSState extends State<ToolsAWS> {
                           ),
                           onSubmitted: (value) {
                             setState(() {
-                              queryItems(service, productCode,
+                              queryItems(productCode,
                                   serialNumberController.text.trim());
                             });
                           },
@@ -352,7 +351,7 @@ class ToolsAWSState extends State<ToolsAWS> {
                                     const SizedBox(height: 10),
                                     ElevatedButton.icon(
                                       onPressed: () {
-                                        putOwner(service, productCode,
+                                        putOwner(productCode,
                                             serialNumberController.text, '');
                                         registerActivity(
                                             productCode,
@@ -452,7 +451,6 @@ class ToolsAWSState extends State<ToolsAWS> {
                                                         .removeAt(index);
                                                   });
                                                   putSecondaryAdmins(
-                                                      service,
                                                       productCode,
                                                       serialNumberController
                                                           .text
@@ -597,7 +595,6 @@ class ToolsAWSState extends State<ToolsAWS> {
                                                           .text,
                                                       'Se modificó el vencimiento del beneficio "administradores secundarios extras"');
                                                   putDate(
-                                                      service,
                                                       productCode,
                                                       serialNumberController
                                                           .text
@@ -753,7 +750,6 @@ class ToolsAWSState extends State<ToolsAWS> {
                                                           .text,
                                                       'Se modificó el vencimiento del beneficio "alquiler temporario"');
                                                   putDate(
-                                                      service,
                                                       productCode,
                                                       serialNumberController
                                                           .text
@@ -1064,15 +1060,14 @@ class ToolsAWSState extends State<ToolsAWS> {
                                 sendMessagemqtt(topic, msg);
                                 contentController.clear();
                               }
-                            }else if(commandText == '17'){
+                            } else if (commandText == '17') {
                               printLog('Enviando comando 17');
-                              String topic = 'tools/$productCode/${serialNumberController.text.trim()}';
+                              String topic =
+                                  'tools/$productCode/${serialNumberController.text.trim()}';
                               subToTopicMQTT(topic);
                               listenToTopics();
-                              String msg = jsonEncode({
-                                'cmd': commandText,
-                                'content': 'ANASHARDO'
-                              });
+                              String msg = jsonEncode(
+                                  {'cmd': commandText, 'content': 'ANASHARDO'});
                               registerActivity(
                                   productCode,
                                   serialNumberController.text.trim(),

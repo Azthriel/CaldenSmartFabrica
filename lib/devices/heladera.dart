@@ -10,7 +10,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:csv/csv.dart';
 import '../aws/dynamo/dynamo.dart';
-import '../aws/dynamo/dynamo_certificates.dart';
 import '../master.dart';
 
 class HeladeraPage extends StatefulWidget {
@@ -533,11 +532,8 @@ class HeladeraPageState extends State<HeladeraPage> {
                           DeviceManager.getProductCode(deviceName),
                           DeviceManager.extractSerialNumber(deviceName),
                           'Se modifico la distancia de encendido');
-                      putDistanceOn(
-                          service,
-                          DeviceManager.getProductCode(deviceName),
-                          DeviceManager.extractSerialNumber(deviceName),
-                          value);
+                      putDistanceOn(DeviceManager.getProductCode(deviceName),
+                          DeviceManager.extractSerialNumber(deviceName), value);
                     } else {
                       showToast('Parametros no permitidos');
                     }
@@ -557,11 +553,8 @@ class HeladeraPageState extends State<HeladeraPage> {
                           DeviceManager.getProductCode(deviceName),
                           DeviceManager.extractSerialNumber(deviceName),
                           'Se modifico la distancia de apagado');
-                      putDistanceOff(
-                          service,
-                          DeviceManager.getProductCode(deviceName),
-                          DeviceManager.extractSerialNumber(deviceName),
-                          value);
+                      putDistanceOff(DeviceManager.getProductCode(deviceName),
+                          DeviceManager.extractSerialNumber(deviceName), value);
                     } else {
                       showToast('Parametros no permitidos');
                     }

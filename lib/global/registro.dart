@@ -227,17 +227,20 @@ class RegistroScreenState extends State<RegistroScreen> {
                 text: 'Buscar',
                 onPressed: _loading ? null : _buscar,
               ),
-              if (_loading)
+              if (_loading) ...[
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
                   child: Center(child: CircularProgressIndicator()),
                 ),
-              if (_error != null)
+              ],
+
+              if (_error != null) ...[
                 Padding(
                   padding: const EdgeInsets.only(top: 16),
                   child:
                       Text(_error!, style: const TextStyle(color: Colors.red)),
                 ),
+              ],
 
               const Divider(
                 color: color1,

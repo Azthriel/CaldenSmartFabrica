@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:caldensmartfabrica/aws/dynamo/dynamo.dart';
+import 'package:caldensmartfabrica/aws/mqtt/mqtt.dart';
 import 'package:flutter/material.dart';
 
 import '../../master.dart';
@@ -25,6 +29,27 @@ class ToolsPageState extends State<ToolsPage> {
     } catch (e) {
       printLog(e);
     }
+  }
+
+  void _finalizeProcess() async {
+    final pc = DeviceManager.getProductCode(deviceName);
+    final sn = DeviceManager.extractSerialNumber(deviceName);
+    registerActivity(
+      pc,
+      sn,
+      'Se finalizó el proceso de laboratorio',
+    );
+
+    final msg = jsonEncode({'LabFinished': true});
+
+    final topic1 = 'devices_rx/$pc/$sn';
+    final topic2 = 'devices_tx/$pc/$sn';
+
+    sendMessagemqtt(topic1, msg);
+    sendMessagemqtt(topic2, msg);
+
+    await putLabProcessFinished(pc, sn, true);
+    showToast('Proceso de laboratorio finalizado correctamente.');
   }
 
   //! Visual
@@ -112,6 +137,37 @@ class ToolsPageState extends State<ToolsPage> {
                   myDevice.toolsUuid.write(data.codeUnits);
                 },
               ),
+              const SizedBox(
+                height: 20,
+              ),
+              buildButton(
+                  text: 'Finalizar Proceso',
+                  onPressed: () {
+                    showAlertDialog(
+                        context,
+                        false,
+                        const Text(
+                          '¡ESTE BOTÓN DEBE SER PRESIONADO UNICAMENTE POR LABORATORIO!',
+                          textAlign: TextAlign.center,
+                        ),
+                        const Text(
+                            'Este botón marcará como finalizado el procedimiento de laboratorio.\nAl hacer esto, certificarás que el equipo cumplió todos sus pasos de manera correcta y sin fallos.\nEl mal uso o incumplimiento de este procedimiento causará una sanción a la persona correspondiente.\n'),
+                        [
+                          TextButton(
+                            child: const Text('Cancelar'),
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                          ),
+                          TextButton(
+                            child: const Text('Aceptar'),
+                            onPressed: () {
+                              _finalizeProcess();
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ]);
+                  }),
             },
             const SizedBox(
               height: 20,

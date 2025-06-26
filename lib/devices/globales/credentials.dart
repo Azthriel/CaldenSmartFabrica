@@ -44,7 +44,7 @@ class CredsTabState extends State<CredsTab> {
       printLog('Respuesta: ${response.body}');
       showToast('Thing creado: $thingName');
 
-      registerActivity(pc, sn, 'Cree $thingName y lo cargué al equipo');
+      registerActivity(pc, sn, 'Cree $thingName');
 
       Map<String, dynamic> jsonResponse = jsonDecode(response.body);
       Map<String, dynamic> body = jsonDecode(jsonResponse['body']);
@@ -82,10 +82,12 @@ class CredsTabState extends State<CredsTab> {
             .write(datatoSend.codeUnits, withoutResponse: false);
         // await Future.delayed(const Duration(milliseconds: 200));
       }
+      registerActivity(
+          pc, sn, 'Envié los certificados de $thingName al equipo');
     } else {
       printLog('Error: ${response.statusCode}');
       showToast('Error al crear el Thing: $thingName');
-      registerActivity(pc, sn, 'Fallo la creación de $thingName');
+      registerActivity(pc, sn, 'Fallo el proceso de $thingName');
     }
   }
 
@@ -144,27 +146,34 @@ class CredsTabState extends State<CredsTab> {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              sending
-                  ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        EasterEggs.things(legajoConectado),
-                        const LinearProgressIndicator(),
-                      ],
-                    )
-                  : buildButton(
-                      text: 'Crear y enviar Thing',
-                      onPressed: () async {
-                        await createAndSendThings();
-                        setState(() {
-                          sending = false;
-                        });
-                        myDevice.toolsUuid.write(
-                            '${DeviceManager.getProductCode(deviceName)}[0](0)'
-                                .codeUnits);
-                      }),
-              const SizedBox(height: 20),
+              const SizedBox(
+                height: 10,
+              ),
+              if (!isConnectedToAWS) ...[
+                sending
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          EasterEggs.things(legajoConectado),
+                          const LinearProgressIndicator(),
+                        ],
+                      )
+                    : buildButton(
+                        text: 'Crear y enviar Thing',
+                        onPressed: () async {
+                          await createAndSendThings();
+                          setState(() {
+                            sending = false;
+                          });
+                          myDevice.toolsUuid.write(
+                              '${DeviceManager.getProductCode(deviceName)}[0](0)'
+                                  .codeUnits);
+                        },
+                      ),
+                const SizedBox(
+                  height: 20,
+                ),
+              ],
               Padding(
                 padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
               ),

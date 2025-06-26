@@ -10,7 +10,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:csv/csv.dart';
 import '../aws/dynamo/dynamo.dart';
-import '../aws/dynamo/dynamo_certificates.dart';
 import '../master.dart';
 
 class MilleniumPage extends StatefulWidget {
@@ -450,7 +449,6 @@ class MilleniumPageState extends State<MilleniumPage> {
                         'Se modifico la distancia de encendido',
                       );
                       putDistanceOn(
-                        service,
                         DeviceManager.getProductCode(deviceName),
                         DeviceManager.extractSerialNumber(deviceName),
                         value,
@@ -476,7 +474,6 @@ class MilleniumPageState extends State<MilleniumPage> {
                         'Se modifico la distancia de apagado',
                       );
                       putDistanceOff(
-                        service,
                         DeviceManager.getProductCode(deviceName),
                         DeviceManager.extractSerialNumber(deviceName),
                         value,

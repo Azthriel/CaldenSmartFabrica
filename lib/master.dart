@@ -17,7 +17,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.19';
+String appVersionNumber = '1.0.20';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -133,6 +133,7 @@ String actualTemp = '';
 bool hasSensor = false;
 String offsetTemp = '';
 bool manualControl = false;
+bool hasSpark = false;
 //*-Calefactores-*\\
 
 //*- Roller -*\\
@@ -164,6 +165,7 @@ List<String> common = [];
 
 //*-Relé-*\\
 String energyTimer = '';
+bool hasEntry = false;
 //*-Relé-*\\
 
 //*-Fetch data from firestore-*\\
@@ -1317,7 +1319,7 @@ Widget buildButton({
 ///Genera un cuadro de texto generico con los parametros que le pases
 Widget buildTextField({
   TextEditingController? controller,
-  required String label,
+  String? label,
   String? hint,
   void Function(String)? onSubmitted,
   double widthFactor = 0.8,
