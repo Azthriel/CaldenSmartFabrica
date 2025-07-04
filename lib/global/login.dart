@@ -13,6 +13,12 @@ class LoginPageState extends State<LoginPage> {
   final TextEditingController passController = TextEditingController();
   final FocusNode passNode = FocusNode();
 
+  @override
+  void initState() {
+    super.initState();
+    fToast.init(navigatorKey.currentState!.context);
+  }
+
   Future<void> verificarCredenciales() async {
     printLog('Entro aquís');
     try {

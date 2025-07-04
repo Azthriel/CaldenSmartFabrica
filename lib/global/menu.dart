@@ -256,7 +256,7 @@ class MenuPageState extends State<MenuPage> {
               const ScanPage(),
               if (accessLevel >= 2) const ToolsAWS(),
               if (accessLevel >= 3) const RegistroScreen(),
-              if (accessLevel >= 3) const WifiTestScreen(),
+              if (accessLevel >= 2) const WifiTestScreen(),
             ],
           ),
           Positioned(

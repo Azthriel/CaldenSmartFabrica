@@ -66,6 +66,9 @@ class LoadState extends State<LoadingPage> {
           case '028000_IOT':
             navigatorKey.currentState?.pushReplacementNamed('/heladera');
             break;
+          case '023430_IOT':
+            navigatorKey.currentState?.pushReplacementNamed('/termometro');
+            break;
         }
       } else {
         showToast('Error en el dispositivo, intente nuevamente');
@@ -196,31 +199,18 @@ class LoadState extends State<LoadingPage> {
           rollerMoving = partes[15] == '1';
           awsInit = partes[16] == '1';
           break;
-        // case '027000_IOT':
-        //   varsValues = await myDevice.varsUuid.read();
-
-        //   // Convertimos a Uint8List
-        //   Uint8List cborBytes = Uint8List.fromList(varsValues);
-
-        //   // Verificamos en HEX que la secuencia termine en 0xFF (si usas indefinido) o que no falten bytes
-        //   final hexChars = cborBytes.map((b) => b.toRadixString(16)).toList();
-        //   printLog('Hex CBOR completo: $hexChars', 'cyan');
-
-        //   try {
-        //     String cadena = String.fromCharCodes(varsValues);
-        //     printLog('Texto: $cadena', 'cyan');
-
-        //     const codec = CborSimpleCodec();
-        //     dynamic decoded = codec.decode(cborBytes);
-        //     printLog('CBOR decodificado manualmente: $decoded', 'cyan');
-
-        //     // 5) (Opcional) Convertir a JSON String
-        //     String jsonStr = jsonEncode(decoded);
-        //     printLog('CBOR → JSON: $jsonStr', 'cyan');
-        //   } catch (e) {
-        //     printLog('Error: $e', 'red');
-        //   }
-        //   break;
+        case '023430_IOT':
+          varsValues = await myDevice.varsUuid.read();
+          var partes = utf8.decode(varsValues).split(':');
+          printLog('Valores VARS: $varsValues || ${utf8.decode(varsValues)}');
+          actualTemp = partes[0];
+          offsetTemp = partes[1];
+          awsInit = partes[2] == '1';
+          alertMaxFlag = partes[3] == '1';
+          alertMinFlag = partes[4] == '1';
+          alertMaxTemp = partes[5];
+          alertMinTemp = partes[6];
+          break;
       }
 
       return Future.value(true);

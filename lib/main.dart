@@ -6,6 +6,7 @@ import 'package:caldensmartfabrica/devices/heladera.dart';
 import 'package:caldensmartfabrica/devices/millenium.dart';
 import 'package:caldensmartfabrica/devices/modulo.dart';
 import 'package:caldensmartfabrica/devices/rele1i1o.dart';
+import 'package:caldensmartfabrica/devices/termometro.dart';
 import 'package:caldensmartfabrica/firebase_options.dart';
 import 'package:caldensmartfabrica/global/loading.dart';
 import 'package:caldensmartfabrica/global/login.dart';
@@ -14,6 +15,7 @@ import 'package:caldensmartfabrica/global/permission.dart';
 import 'package:caldensmartfabrica/master.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'devices/patito.dart';
@@ -61,6 +63,8 @@ class MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      fToast = FToast();
+      fToast.init(context);
       fbData = await fetchDocumentData();
       printLog(fbData, "rojo");
     });
@@ -71,6 +75,7 @@ class MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      builder: FToastBuilder(),
       navigatorKey: navigatorKey,
       title: 'CaldénSmart Fábrica',
       theme: ThemeData(
@@ -105,6 +110,7 @@ class MyAppState extends State<MyApp> {
         '/modulo': (context) => const ModuloPage(),
         '/heladera': (context) => const HeladeraPage(),
         '/rele1i1o': (context) => const Rele1i1oPage(),
+        '/termometro': (context) => const TermometroPage(),
       },
     );
   }

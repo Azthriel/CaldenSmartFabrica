@@ -17,7 +17,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.20';
+String appVersionNumber = '1.0.22';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -181,6 +181,17 @@ String tempDate = '';
 double bottomBarHeight = kBottomNavigationBarHeight;
 //*- altura de la barra -*\\
 
+//*-Termómetro-*\\
+bool alertMaxFlag = false;
+bool alertMinFlag = false;
+String alertMaxTemp = '';
+String alertMinTemp = '';
+//*-Termómetro-*\\
+
+//*-Fluttertoast-*\\
+late FToast fToast;
+//*-Fluttertoast-*\\
+
 // // -------------------------------------------------------------------------------------------------------------\\ \\
 
 //! FUNCIONES !\\
@@ -237,14 +248,49 @@ void printLog(var text, [String? color]) {
 //*-Funciones diversas-*\\
 void showToast(String message) {
   printLog('Toast: $message');
-  Fluttertoast.showToast(
-    msg: message,
-    toastLength: Toast.LENGTH_SHORT,
+  fToast.removeCustomToast();
+  Widget toast = Container(
+    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(25.0),
+      color: color3,
+      border: Border.all(
+        color: color2,
+        width: 1.0,
+      ),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Image.asset(
+          'assets/Dragon.png',
+          width: 24,
+          height: 24,
+        ),
+        const SizedBox(
+          width: 12.0,
+        ),
+        Flexible(
+          child: Text(
+            message,
+            style: const TextStyle(
+              fontSize: 16,
+              color: color0,
+            ),
+            softWrap: true,
+            maxLines: 10,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    ),
+  );
+
+  fToast.showToast(
+    child: toast,
     gravity: ToastGravity.BOTTOM,
-    timeInSecForIosWeb: 1,
-    backgroundColor: color3,
-    textColor: color0,
-    fontSize: 16.0,
+    toastDuration: const Duration(seconds: 2),
   );
 }
 
@@ -1326,6 +1372,7 @@ Widget buildTextField({
   TextInputType? keyboard,
   void Function(String)? onChanged,
   int? maxLines,
+  IconButton? suffixIcon,
 }) {
   return FractionallySizedBox(
     alignment: Alignment.center,
@@ -1380,6 +1427,7 @@ Widget buildTextField({
               width: 2.0,
             ),
           ),
+          suffixIcon: suffixIcon,
         ),
       ),
     ),
@@ -1699,7 +1747,8 @@ class MyDevice {
               '027000_IOT' ||
               '041220_IOT' ||
               '050217_IOT' ||
-              '028000_IOT':
+              '028000_IOT' ||
+              '023430_IOT':
           BluetoothService espService = services.firstWhere(
               (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
 
