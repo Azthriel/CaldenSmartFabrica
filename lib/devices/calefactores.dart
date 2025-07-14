@@ -473,7 +473,8 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                         const Duration(seconds: 1),
                         (Timer t) {
                           if (recording) {
-                            recordedData.add([DateTime.now(), actualTemp, offsetTemp]);
+                            recordedData
+                                .add([DateTime.now(), actualTemp, offsetTemp]);
                           }
                         },
                       );

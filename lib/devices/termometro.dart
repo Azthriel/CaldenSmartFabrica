@@ -21,8 +21,10 @@ class TermometroPage extends StatefulWidget {
 
 class TermometroPageState extends State<TermometroPage> {
   final PageController _pageController = PageController(initialPage: 0);
-  TextEditingController tempMaxController = TextEditingController(text: alertMaxTemp);
-  TextEditingController tempMinController = TextEditingController(text: alertMinTemp);
+  TextEditingController tempMaxController =
+      TextEditingController(text: alertMaxTemp);
+  TextEditingController tempMinController =
+      TextEditingController(text: alertMinTemp);
   int _selectedIndex = 0;
   bool recording = false;
   List<List<dynamic>> recordedData = [];
@@ -269,6 +271,41 @@ class TermometroPageState extends State<TermometroPage> {
                         Icons.send,
                         color: color4,
                       )),
+                ),
+                const SizedBox(height: 20),
+                buildText(
+                  text: '',
+                  textSpans: [
+                    const TextSpan(
+                      text: 'Mapeo de temperatura:\n',
+                      style:
+                          TextStyle(color: color4, fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text: tempMap ? 'REALIZADO' : 'NO REALIZADO',
+                      style: TextStyle(
+                          color: tempMap
+                              ? Colors.green
+                              : const Color.fromARGB(255, 32, 21, 20),
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                  fontSize: 20.0,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 5),
+                buildButton(
+                  text: 'Iniciar mapeo temperatura',
+                  onPressed: () {
+                    String pc = DeviceManager.getProductCode(deviceName);
+                    registerActivity(
+                        pc,
+                        DeviceManager.extractSerialNumber(deviceName),
+                        'Se inicio el mapeo de temperatura en el equipo');
+                    String data = '$pc[10](0)';
+                    myDevice.toolsUuid.write(data.codeUnits);
+                    showToast('Iniciando mapeo de temperatura');
+                  },
                 ),
                 const SizedBox(height: 20),
                 Padding(

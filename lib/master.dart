@@ -17,7 +17,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.22';
+String appVersionNumber = '1.0.23';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\

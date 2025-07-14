@@ -15,7 +15,8 @@ class LoadState extends State<LoadingPage> {
   String _dots = '';
   int dot = 0;
   late Timer _dotTimer;
-  String pc = DeviceManager.getProductCode(deviceName);
+  final String pc = DeviceManager.getProductCode(deviceName);
+  final String sn = DeviceManager.extractSerialNumber(deviceName);
 
   @override
   void initState() {
@@ -92,8 +93,8 @@ class LoadState extends State<LoadingPage> {
       printLog('Valores info: $infoValues || ${utf8.decode(infoValues)}');
 
       await queryItems(
-        DeviceManager.getProductCode(deviceName),
-        DeviceManager.extractSerialNumber(deviceName),
+        pc,
+        sn,
       );
       switch (pc) {
         case '022000_IOT' ||
@@ -121,13 +122,12 @@ class LoadState extends State<LoadingPage> {
             manualControl = factoryMode ? parts2[9] == '1' : parts2[8] == '1';
           }
 
-          hasSensor = hasDallasSensor(
-              DeviceManager.getProductCode(deviceName), hardwareVersion);
+          hasSensor = hasDallasSensor(pc, hardwareVersion);
 
           if (!hasSensor) {
             roomTempSended = await tempWasSended(
-              DeviceManager.getProductCode(deviceName),
-              DeviceManager.extractSerialNumber(deviceName),
+              pc,
+              sn,
             );
           }
 
@@ -210,6 +210,7 @@ class LoadState extends State<LoadingPage> {
           alertMinFlag = partes[4] == '1';
           alertMaxTemp = partes[5];
           alertMinTemp = partes[6];
+          tempMap = partes[7] == '1';
           break;
       }
 
