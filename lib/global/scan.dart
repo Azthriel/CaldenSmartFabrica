@@ -69,6 +69,9 @@ class ScanPageState extends State<ScanPage> {
 
   void connectToDevice(BluetoothDevice device) async {
     try {
+      // Reset connection flag before attempting connection
+      connectionFlag = false;
+      
       await device.connect(timeout: const Duration(seconds: 6));
       deviceName = device.platformName;
       myDeviceid = device.remoteId.toString();
@@ -84,9 +87,9 @@ class ScanPageState extends State<ScanPage> {
             case BluetoothConnectionState.disconnected:
               {
                 showToast('Dispositivo desconectado');
-                calibrationValues.clear();
-                regulationValues.clear();
-                toolsValues.clear();
+                calibrationValues = [];
+                regulationValues = [];
+                toolsValues = [];
                 nameOfWifi = '';
                 connectionFlag = false;
                 alreadySubCal = false;

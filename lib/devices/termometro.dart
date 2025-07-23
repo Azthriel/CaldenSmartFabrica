@@ -25,6 +25,7 @@ class TermometroPageState extends State<TermometroPage> {
       TextEditingController(text: alertMaxTemp);
   TextEditingController tempMinController =
       TextEditingController(text: alertMinTemp);
+  TextEditingController offsetController = TextEditingController();
   int _selectedIndex = 0;
   bool recording = false;
   List<List<dynamic>> recordedData = [];
@@ -162,6 +163,8 @@ class TermometroPageState extends State<TermometroPage> {
     _pageController.dispose();
     tempMaxController.dispose();
     tempMinController.dispose();
+    offsetController.dispose();
+    recordTimer?.cancel();
     super.dispose();
   }
 
@@ -188,7 +191,7 @@ class TermometroPageState extends State<TermometroPage> {
                 const SizedBox(height: 20),
                 buildText(text: 'Temperatura Actual:\n$actualTemp °C'),
                 const SizedBox(height: 20),
-                buildText(text: 'Offset:\n$offsetTemp °C'),
+                buildText(text: 'Temperatura ambiente:\n$offsetTemp °C'),
                 const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: () {
@@ -220,6 +223,31 @@ class TermometroPageState extends State<TermometroPage> {
                     recording ? Icons.pause : Icons.play_arrow,
                     size: 35,
                     color: color4,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                buildTextField(
+                  label: 'Temperatura ambiente',
+                  controller: offsetController,
+                  keyboard: TextInputType.number,
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      String p0 = offsetController.text.trim();
+                      setState(() {
+                        offsetTemp = p0;
+                      });
+                      String data =
+                          '${DeviceManager.getProductCode(deviceName)}[9]($p0)';
+                      printLog('Enviando: $data');
+                      myDevice.toolsUuid.write(data.codeUnits);
+                      showToast(
+                        'Temperatura ambiente enviada: $p0 °C',
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.send,
+                      color: color4,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -286,7 +314,7 @@ class TermometroPageState extends State<TermometroPage> {
                       style: TextStyle(
                           color: tempMap
                               ? Colors.green
-                              : const Color.fromARGB(255, 32, 21, 20),
+                              : Colors.red,
                           fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -305,6 +333,21 @@ class TermometroPageState extends State<TermometroPage> {
                     String data = '$pc[10](0)';
                     myDevice.toolsUuid.write(data.codeUnits);
                     showToast('Iniciando mapeo de temperatura');
+                  },
+                ),
+                const SizedBox(height: 5),
+                buildButton(
+                  text: 'Borrar mapeo temperatura',
+                  onPressed: () {
+                    String pc = DeviceManager.getProductCode(deviceName);
+                    registerActivity(
+                      pc,
+                      DeviceManager.extractSerialNumber(deviceName),
+                      'Se borro el mapeo de temperatura en el equipo',
+                    );
+                    String data = '$pc[10](1)';
+                    myDevice.toolsUuid.write(data.codeUnits);
+                    showToast('Borrando mapeo de temperatura');
                   },
                 ),
                 const SizedBox(height: 20),

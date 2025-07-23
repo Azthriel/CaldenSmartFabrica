@@ -61,23 +61,32 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/LogoApp.png
-    - assets/Foreground.png
+    # Assets principales
     - assets/Background.png
-    - assets/Loading.gif
     - assets/Dragon.png
-    - assets/eg/Mecha.gif
-    - assets/eg/cucaracha.gif
-    - assets/eg/Vaca.webp
-    - assets/eg/puto.jpeg
-    - assets/eg/DSC.gif
+    - assets/Foreground.png
+    - assets/Loading.gif
+    - assets/LogoApp.png
+    
+    # Directorio de ejemplos/avatares
+    - assets/eg/carpincho.webp
+    - assets/eg/cat.gif
+    - assets/eg/cateat.gif
     - assets/eg/Cristian.webp
-    - assets/eg/joaco.webp
-    - assets/eg/javi.webp
+    - assets/eg/cucaracha.gif
+    - assets/eg/DSC.gif
     - assets/eg/Gonzalo.webp
-    - assets/eg/Lautaro.webp
+    - assets/eg/goose.gif
+    - assets/eg/javi.webp
+    - assets/eg/joaco.webp
     - assets/eg/kiwi.webp
+    - assets/eg/Lautaro.webp
+    - assets/eg/Mecha.gif
     - assets/eg/Monito.webp
+    - assets/eg/puto.jpeg
+    - assets/eg/Vaca.webp
+    
+    # Directorio de extras
     - assets/extras/millenium.png
 
 

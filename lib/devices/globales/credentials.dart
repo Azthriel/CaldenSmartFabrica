@@ -25,7 +25,7 @@ class CredsTabState extends State<CredsTab> {
 
     // Verifica si el número de serie es igual al código de producto sin "_IOT" y con "00" al final
     final defaultSerial = '${pc.replaceAll('_IOT', '')}00';
-    if (sn == defaultSerial) {
+    if (sn == defaultSerial || sn == '57730810') {
       showToast(
           'El dispositivo tiene el número de serie por defecto ($defaultSerial).');
       setState(() {
@@ -116,20 +116,20 @@ class CredsTabState extends State<CredsTab> {
                     ),
                   ),
                   TextSpan(
-                    text: awsInit ? 'SI' : 'NO',
+                    text: (awsInit || isConnectedToAWS) ? 'SI' : 'NO',
                     style: TextStyle(
-                      color: awsInit ? color4 : const Color(0xffFF0000),
+                      color: (awsInit || isConnectedToAWS)
+                          ? color4
+                          : const Color(0xffFF0000),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
               buildText(
-                // text: '¿Thing cargada? ${awsInit ? 'SI' : 'NO'}',
                 text: '',
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                // color: awsInit ? color4 : const Color(0xffFF0000),
                 textSpans: [
                   const TextSpan(
                     text: '¿Está conectado al servidor?  ',

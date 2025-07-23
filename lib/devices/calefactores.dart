@@ -196,6 +196,8 @@ class CalefactoresPageState extends State<CalefactoresPage> {
   @override
   Widget build(BuildContext context) {
     double bottomBarHeight = kBottomNavigationBarHeight;
+    final String pc = DeviceManager.getProductCode(deviceName);
+    final String sn = DeviceManager.extractSerialNumber(deviceName);
 
     final List<Widget> pages = [
       //*- Página 1 TOOLS -*\\
@@ -261,8 +263,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                       inactiveTrackColor: color3,
                       thumbShape: IconThumbSlider(
                         iconData: trueStatus
-                            ? DeviceManager.getProductCode(deviceName) ==
-                                    '027000_IOT'
+                            ? pc == '027000_IOT'
                                 ? Icons.local_fire_department
                                 : Icons.flash_on_rounded
                             : Icons.check,
@@ -285,8 +286,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     ),
                   ),
                 ),
-                if (DeviceManager.getProductCode(deviceName) ==
-                    '027000_IOT') ...[
+                if (pc == '027000_IOT') ...[
                   const SizedBox(
                     height: 30,
                   ),
@@ -328,13 +328,8 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                         selected: hasSpark,
                         onSelected: (sel) async {
                           setState(() => hasSpark = true);
-                          await putHasSpark(
-                              DeviceManager.getProductCode(deviceName),
-                              DeviceManager.extractSerialNumber(deviceName),
-                              true);
-                          registerActivity(
-                              DeviceManager.getProductCode(deviceName),
-                              DeviceManager.extractSerialNumber(deviceName),
+                          await putHasSpark(pc, sn, true);
+                          registerActivity(pc, sn,
                               "Se selecciono que el equipo posee chispero");
                         },
                         selectedColor: color1,
@@ -349,13 +344,8 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                         selected: !hasSpark,
                         onSelected: (sel) async {
                           setState(() => hasSpark = false);
-                          await putHasSpark(
-                              DeviceManager.getProductCode(deviceName),
-                              DeviceManager.extractSerialNumber(deviceName),
-                              false);
-                          registerActivity(
-                              DeviceManager.getProductCode(deviceName),
-                              DeviceManager.extractSerialNumber(deviceName),
+                          await putHasSpark(pc, sn, false);
+                          registerActivity(pc, sn,
                               "Se selecciono que el equipo NO posee un chispero");
                         },
                         selectedColor: color1,
@@ -381,15 +371,13 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                             hint: '',
                             keyboard: TextInputType.number,
                             onSubmitted: (value) {
-                              registerActivity(
-                                  DeviceManager.getProductCode(deviceName),
-                                  DeviceManager.extractSerialNumber(deviceName),
+                              registerActivity(pc, sn,
                                   'Se cambió la temperatura ambiente de $actualTemp°C a $value°C');
                               sendRoomTemperature(value);
                               registerTemp(
-                                  DeviceManager.getProductCode(deviceName),
-                                  DeviceManager.extractSerialNumber(
-                                      deviceName));
+                                pc,
+                                sn,
+                              );
                               showToast('Temperatura ambiente seteada');
                               setState(() {
                                 roomTempSended = true;
@@ -518,29 +506,23 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     buildButton(
                       text: 'Iniciar mapeo temperatura',
                       onPressed: () {
-                        registerActivity(
-                            DeviceManager.getProductCode(deviceName),
-                            DeviceManager.extractSerialNumber(deviceName),
+                        registerActivity(pc, sn,
                             'Se inicio el mapeo de temperatura en el equipo');
                         startTempMap();
                         showToast('Iniciando mapeo de temperatura');
                       },
                     ),
                   },
-                  if (DeviceManager.getProductCode(deviceName) ==
-                      '027000_IOT') ...[
+                  if (pc == '027000_IOT') ...[
                     const SizedBox(
                       height: 10,
                     ),
                     buildButton(
                       text: 'Ciclado fijo',
                       onPressed: () {
-                        registerActivity(
-                            DeviceManager.getProductCode(deviceName),
-                            DeviceManager.extractSerialNumber(deviceName),
+                        registerActivity(pc, sn,
                             'Se mando el ciclado de la válvula de este equipo');
-                        String data =
-                            '${DeviceManager.getProductCode(deviceName)}[13](1000#5)';
+                        String data = '$pc[13](1000#5)';
                         myDevice.toolsUuid.write(data.codeUnits);
                       },
                     ),
@@ -630,14 +612,10 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                                   onPressed: () {
                                     int cicle =
                                         int.parse(cicleController.text) * 2;
-                                    registerActivity(
-                                        DeviceManager.getProductCode(
-                                            deviceName),
-                                        DeviceManager.extractSerialNumber(
-                                            deviceName),
+                                    registerActivity(pc, sn,
                                         'Se mando el ciclado de la válvula de este equipo\nMilisegundos: ${timeController.text}\nIteraciones:$cicle');
                                     String data =
-                                        '${DeviceManager.getProductCode(deviceName)}[13](${timeController.text}#$cicle)';
+                                        '$pc[13](${timeController.text}#$cicle)';
                                     myDevice.toolsUuid.write(data.codeUnits);
                                     navigatorKey.currentState!.pop();
                                   },
@@ -702,14 +680,10 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                                 ),
                                 TextButton(
                                   onPressed: () {
-                                    registerActivity(
-                                        DeviceManager.getProductCode(
-                                            deviceName),
-                                        DeviceManager.extractSerialNumber(
-                                            deviceName),
+                                    registerActivity(pc, sn,
                                         'Se mando el temporizado de apertura');
                                     String data =
-                                        '${DeviceManager.getProductCode(deviceName)}[14](${timeController.text.trim()})';
+                                        '$pc[14](${timeController.text.trim()})';
                                     myDevice.toolsUuid.write(data.codeUnits);
                                     navigatorKey.currentState!.pop();
                                   },
@@ -731,7 +705,9 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                       const TextSpan(
                         text: 'Distancias de control: ',
                         style: TextStyle(
-                            color: color4, fontWeight: FontWeight.bold),
+                          color: color4,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                     fontSize: 20.0,
@@ -746,13 +722,8 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                       if (int.parse(value) <= 5000 &&
                           int.parse(value) >= 3000) {
                         registerActivity(
-                            DeviceManager.getProductCode(deviceName),
-                            DeviceManager.extractSerialNumber(deviceName),
-                            'Se modifico la distancia de encendido');
-                        putDistanceOn(
-                            DeviceManager.getProductCode(deviceName),
-                            DeviceManager.extractSerialNumber(deviceName),
-                            value);
+                            pc, sn, 'Se modifico la distancia de encendido');
+                        putDistanceOn(pc, sn, value);
                       } else {
                         showToast('Parametros no permitidos');
                       }
@@ -769,13 +740,8 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     onSubmitted: (value) {
                       if (int.parse(value) <= 300 && int.parse(value) >= 100) {
                         registerActivity(
-                            DeviceManager.getProductCode(deviceName),
-                            DeviceManager.extractSerialNumber(deviceName),
-                            'Se modifico la distancia de apagado');
-                        putDistanceOff(
-                            DeviceManager.getProductCode(deviceName),
-                            DeviceManager.extractSerialNumber(deviceName),
-                            value);
+                            pc, sn, 'Se modifico la distancia de apagado');
+                        putDistanceOff(pc, sn, value);
                       } else {
                         showToast('Parametros no permitidos');
                       }
@@ -788,7 +754,9 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                       const TextSpan(
                         text: 'Mono manual:',
                         style: TextStyle(
-                            color: color4, fontWeight: FontWeight.bold),
+                          color: color4,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                     fontSize: 20.0,
@@ -801,12 +769,11 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     text: manualControl ? 'Desactivar' : 'Activar',
                     onPressed: () {
                       registerActivity(
-                        DeviceManager.getProductCode(deviceName),
-                        DeviceManager.extractSerialNumber(deviceName),
+                        pc,
+                        sn,
                         'Se activo el modo manual del equipo',
                       );
-                      String data =
-                          '${DeviceManager.getProductCode(deviceName)}[16](${manualControl ? '0' : '1'})';
+                      String data = '$pc[16](${manualControl ? '0' : '1'})';
                       myDevice.toolsUuid.write(data.codeUnits);
                       setState(() {
                         turnOn = false;

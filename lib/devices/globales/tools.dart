@@ -48,6 +48,10 @@ class ToolsPageState extends State<ToolsPage> {
     sendMessagemqtt(topic1, msg);
     sendMessagemqtt(topic2, msg);
 
+    if (pc == '022000_IOT' || pc == '027000_IOT' || pc == '041220_IOT') {
+      myDevice.toolsUuid.write('$pc[7](10)'.codeUnits);
+    }
+
     await putLabProcessFinished(pc, sn, true);
     showToast('Proceso de laboratorio finalizado correctamente.');
   }

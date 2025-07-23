@@ -17,7 +17,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.23';
+String appVersionNumber = '1.0.27';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -2975,6 +2975,8 @@ class EasterEggs {
     '1799',
     '1750',
     '1928',
+    '1982',
+    '1988',
   ];
 
   static Widget things(String legajo) {
@@ -2989,6 +2991,10 @@ class EasterEggs {
         return Image.asset('assets/eg/cucaracha.gif');
       case '1799':
         return Image.asset('assets/eg/puto.jpeg');
+      case '1982':
+        return Image.asset('assets/eg/cateat.gif');
+      case '1988':
+        return Image.asset('assets/eg/cat.gif');
       default:
         return const SizedBox.shrink();
     }
@@ -3020,9 +3026,13 @@ class EasterEggs {
       case '1865':
         return 'assets/eg/Vaca.webp';
       case '1750':
-        return 'assets/eg/cucaracha.gif';
+        return 'assets/eg/goose.gif';
       case '1799':
         return 'assets/eg/puto.jpeg';
+      case '1982':
+        return 'assets/eg/cateat.gif';
+      case '1988':
+        return 'assets/eg/cat.gif';
       default:
         return 'assets/Loading.gif';
     }

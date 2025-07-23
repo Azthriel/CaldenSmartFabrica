@@ -20,6 +20,9 @@ class WifiTestScreenState extends State<WifiTestScreen> {
   String toHear = '';
   bool _alert = false;
   bool _estado = false;
+  String _temperature = '';
+  bool _alertMax = false;
+  bool _alertMin = false;
   StreamSubscription<List<MqttReceivedMessage<MqttMessage>>>? sub;
   bool testing = false;
   bool created = false;
@@ -67,6 +70,15 @@ class WifiTestScreenState extends State<WifiTestScreen> {
                 : null;
             messageMap.keys.contains('w_status')
                 ? _estado = messageMap['w_status']
+                : null;
+            messageMap.keys.contains('actualTemp')
+                ? _temperature = messageMap['actualTemp'].toString()
+                : null;
+            messageMap.keys.contains('alert_maxflag')
+                ? _alertMax = messageMap['alert_maxflag']
+                : null;
+            messageMap.keys.contains('alert_minflag')
+                ? _alertMin = messageMap['alert_minflag']
                 : null;
 
             if (messageMap.keys.contains('index')) {
@@ -137,6 +149,51 @@ class WifiTestScreenState extends State<WifiTestScreen> {
                     color: Colors.green,
                     size: 80,
                   ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget termometro() {
+    return Card(
+      color: color0,
+      margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5.0),
+        child: Column(
+          children: [
+            Text(
+              _temperature.isNotEmpty ? 'Temperatura: $_temperature °C' : 'N/A',
+              style: const TextStyle(
+                color: color4,
+                fontSize: 45,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              isConnectedToAWS ? '● CONECTADO' : '● DESCONECTADO',
+              style: TextStyle(
+                color: isConnectedToAWS ? Colors.green : Colors.red,
+                fontSize: 15,
+              ),
+            ),
+            const SizedBox(height: 10),
+            if (_alertMax || _alertMin) ...[
+              const Icon(
+                Icons.warning,
+                color: Colors.orange,
+                size: 80,
+              )
+            ] else ...[
+              const Icon(
+                Icons.check_circle,
+                color: Colors.green,
+                size: 80,
+              ),
+            ],
             const SizedBox(height: 10),
           ],
         ),
@@ -596,7 +653,9 @@ class WifiTestScreenState extends State<WifiTestScreen> {
                   multipleOutputDevices()
                 ] else if (pc == '027170_IOT' || pc == '024011_IOT')
                   ...[]
-                else ...[
+                else if (pc == '023430_IOT') ...[
+                  termometro()
+                ] else ...[
                   otherDevices()
                 ],
               ] else ...[
