@@ -17,7 +17,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.27';
+String appVersionNumber = '1.0.28';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -48,6 +48,7 @@ bool connectionFlag = false;
 bool distanceControlActive = false;
 bool awsInit = false;
 String deviceResponseMqtt = '';
+bool labProcessFinished = false;
 //*-Datos del dispositivo al que te conectaste-*\\
 
 //*-Usuario conectado-*\\

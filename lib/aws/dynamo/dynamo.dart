@@ -31,6 +31,7 @@ Future<void> queryItems(String pc, String sn) async {
         isConnectedToAWS = item['cstate']?.boolValue ?? false;
         hasEntry = item['hasEntry']?.boolValue ?? false;
         hasSpark = item['hasSpark']?.boolValue ?? false;
+        labProcessFinished = item['LabProcessFinished']?.boolValue ?? false;
       }
     } else {
       printLog('Dispositivo no encontrado');

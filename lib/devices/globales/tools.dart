@@ -53,6 +53,10 @@ class ToolsPageState extends State<ToolsPage> {
     }
 
     await putLabProcessFinished(pc, sn, true);
+
+    setState(() {
+      labProcessFinished = true;
+    });
     showToast('Proceso de laboratorio finalizado correctamente.');
   }
 
@@ -143,6 +147,28 @@ class ToolsPageState extends State<ToolsPage> {
               ),
               const SizedBox(
                 height: 20,
+              ),
+              buildText(
+                text: '',
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                textSpans: [
+                  const TextSpan(
+                    text: '¿Se finalizó el proceso de laboratorio?  ',
+                    style: TextStyle(
+                      color: color4,
+                    ),
+                  ),
+                  TextSpan(
+                    text: labProcessFinished ? 'SI' : 'NO',
+                    style: TextStyle(
+                      color: labProcessFinished ? Colors.green : Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 10,
               ),
               buildButton(
                   text: 'Finalizar Proceso',

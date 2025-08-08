@@ -275,46 +275,94 @@ class PatitoPageState extends State<PatitoPage> {
 
       //*- Página 3 CONTROL -*\\
       Scaffold(
-        backgroundColor: color0,
-        body: SingleChildScrollView(
+        backgroundColor: color4,
+        body: SafeArea(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              IconButton(
-                onPressed: () {
-                  setState(() {
-                    recording = !recording;
-                  });
-                  if (!recording) {
-                    saveDataToCsv();
-                    recordedData.clear();
-                  }
-                },
-                icon: recording
-                    ? const Icon(
-                        Icons.pause,
-                        size: 35,
-                        color: color4,
-                      )
-                    : const Icon(
-                        Icons.play_arrow,
-                        size: 35,
-                        color: color4,
+              // Header con botón de grabación
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: color1,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: recording
+                            ? Colors.red.withValues(alpha: 0.2)
+                            : Colors.green.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(50),
+                        border: Border.all(
+                          color: recording ? Colors.red : Colors.green,
+                          width: 2,
+                        ),
                       ),
+                      child: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            recording = !recording;
+                          });
+                          if (!recording) {
+                            saveDataToCsv();
+                            recordedData.clear();
+                          }
+                        },
+                        icon: recording
+                            ? const Icon(
+                                Icons.pause,
+                                size: 30,
+                                color: Colors.red,
+                              )
+                            : const Icon(
+                                Icons.play_arrow,
+                                size: 30,
+                                color: Colors.green,
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      recording ? 'Grabando...' : 'Presiona para grabar',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: color4.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              createChart('Aceleración X', dates, aceleracionX),
-              createChart('Giro X', dates, giroX),
-              createChart('Aceleración Y', dates, aceleracionY),
-              createChart('Giro Y', dates, giroY),
-              createChart('Aceleración Z', dates, aceleracionZ),
-              createChart('Giro Z', dates, giroZ),
-              createChart('Suma Aceleración', dates, sumaAcc),
-              createChart('Promedio Aceleración', dates, promAcc),
-              createChart('Suma Giro', dates, sumaGiro),
-              createChart('Promedio Giro', dates, promGiro),
-              const SizedBox(height: 20),
-              Padding(
-                padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
+              // Lista de gráficos
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(8.0),
+                  children: [
+                    const SizedBox(height: 10),
+                    createChart('Aceleración X', dates, aceleracionX),
+                    createChart('Giro X', dates, giroX),
+                    createChart('Aceleración Y', dates, aceleracionY),
+                    createChart('Giro Y', dates, giroY),
+                    createChart('Aceleración Z', dates, aceleracionZ),
+                    createChart('Giro Z', dates, giroZ),
+                    createChart('Suma Aceleración', dates, sumaAcc),
+                    createChart('Promedio Aceleración', dates, promAcc),
+                    createChart('Suma Giro', dates, sumaGiro),
+                    createChart('Promedio Giro', dates, promGiro),
+                    SizedBox(height: bottomBarHeight + 20),
+                  ],
+                ),
               ),
             ],
           ),
@@ -478,113 +526,168 @@ class PatitoPageState extends State<PatitoPage> {
   }
 
   Widget createChart(String title, List<DateTime> dates, List<double> values) {
-    double width = MediaQuery.of(context).size.width;
-
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color4,
-            ),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: color1,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          SizedBox(
-            height: 200,
-            width: width - 20,
-            child: LineChart(
-              LineChartData(
-                minY: -15.0,
-                maxY: 15.0,
-                borderData: FlBorderData(
-                  border: const Border(
-                    top: BorderSide(
-                      color: color1,
-                    ),
-                    bottom: BorderSide(
-                      color: color1,
-                    ),
-                    right: BorderSide(
-                      color: color1,
-                    ),
-                    left: BorderSide(
-                      color: color1,
-                    ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF522B5B),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: color4,
                   ),
                 ),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        if (value == 0.0 || value == 15.0 || value == -15.0) {
-                          return Text(
-                            value.round().toString(),
-                            style: const TextStyle(
-                              color: color4,
-                              fontSize: 10,
-                            ),
-                          );
-                        } else {
-                          return const Text('');
-                        }
+              ),
+              // Indicador del valor actual
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF522B5B).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  values.isNotEmpty ? values.last.toStringAsFixed(2) : '0.00',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color.fromARGB(255, 255, 255, 255),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            height: 180,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.1),
+                width: 1,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: LineChart(
+                  LineChartData(
+                    minY: -30.0,
+                    maxY: 30.0,
+                    borderData: FlBorderData(show: false),
+                    titlesData: FlTitlesData(
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 35,
+                          interval: 5,
+                          getTitlesWidget: (value, meta) {
+                            return Container(
+                              margin: const EdgeInsets.only(right: 8),
+                              child: Text(
+                                value.round().toString(),
+                                style: TextStyle(
+                                  color: color4.withValues(alpha: 0.6),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      bottomTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                    ),
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      drawHorizontalLine: true,
+                      horizontalInterval: 5,
+                      getDrawingHorizontalLine: (value) {
+                        return FlLine(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          strokeWidth: 1,
+                        );
                       },
                     ),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: false,
-                      reservedSize: 30,
-                      getTitlesWidget: (value, meta) {
-                        int index = value.toInt();
-                        if (index >= 0 && index < dates.length) {
-                          return Text(
-                            '${dates[index].second}',
-                            style: const TextStyle(
-                              color: color4,
-                            ),
-                          );
-                        }
-                        return const Text('');
-                      },
-                    ),
+                    lineBarsData: [
+                      LineChartBarData(
+                        isCurved: true,
+                        curveSmoothness: 0.35,
+                        color: const Color(0xFF522B5B),
+                        spots: values
+                            .asMap()
+                            .entries
+                            .map(
+                              (e) => FlSpot(e.key.toDouble(), e.value),
+                            )
+                            .toList(),
+                        barWidth: 2.5,
+                        belowBarData: BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              const Color(0xFF522B5B).withValues(alpha: 0.3),
+                              const Color(0xFF522B5B).withValues(alpha: 0.05),
+                            ],
+                          ),
+                        ),
+                        dotData: FlDotData(
+                          show: values.isNotEmpty,
+                          checkToShowDot: (spot, barData) {
+                            return spot.x == values.length - 1;
+                          },
+                          getDotPainter: (spot, percent, barData, index) {
+                            return FlDotCirclePainter(
+                              radius: 4,
+                              color: const Color(0xFF522B5B),
+                              strokeWidth: 2,
+                              strokeColor: Colors.white,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                gridData: const FlGridData(
-                  show: false,
-                ),
-                lineBarsData: [
-                  LineChartBarData(
-                    isCurved: true,
-                    color: const Color(0xFF522B5B),
-                    spots: values
-                        .asMap()
-                        .entries
-                        .map(
-                          (e) => FlSpot(e.key.toDouble(), e.value),
-                        )
-                        .toList(),
-                    barWidth: 2,
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: const Color(0xFFFFFFFF),
-                    ),
-                    aboveBarData: BarAreaData(
-                      show: true,
-                      color: const Color(0xFFFFFFFF),
-                    ),
-                    dotData: const FlDotData(show: false),
-                  ),
-                ],
               ),
             ),
           ),
