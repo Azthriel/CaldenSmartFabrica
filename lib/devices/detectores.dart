@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
+import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
 import 'package:flutter/material.dart';
@@ -155,14 +156,14 @@ class DetectorPageState extends State<DetectorPage> {
 
   void subscribeToWifiStatus() async {
     printLog('Se subscribio a wifi');
-    await myDevice.toolsUuid.setNotifyValue(true);
+    await bluetoothManager.toolsUuid.setNotifyValue(true);
 
     final wifiSub =
-        myDevice.toolsUuid.onValueReceived.listen((List<int> status) {
+        bluetoothManager.toolsUuid.onValueReceived.listen((List<int> status) {
       updateWifiValues(status);
     });
 
-    myDevice.device.cancelWhenDisconnected(wifiSub);
+    bluetoothManager.device.cancelWhenDisconnected(wifiSub);
   }
 
   void _setVcc(String newValue) {
@@ -179,7 +180,7 @@ class DetectorPageState extends State<DetectorPage> {
     vccNewOffset[2] = 0; // calibration point: vcc
 
     try {
-      myDevice.calibrationUuid.write(vccNewOffset);
+      bluetoothManager.calibrationUuid.write(vccNewOffset);
     } catch (e, stackTrace) {
       printLog('Error al escribir vcc offset $e $stackTrace');
       showToast('Error al escribir vcc offset');
@@ -200,7 +201,7 @@ class DetectorPageState extends State<DetectorPage> {
     vrmsNewOffset[2] = 1; // calibration point: vrms
 
     try {
-      myDevice.calibrationUuid.write(vrmsNewOffset);
+      bluetoothManager.calibrationUuid.write(vrmsNewOffset);
     } catch (e, stackTrace) {
       printLog('Error al setear vrms offset $e $stackTrace');
       showToast('Error al setear vrms offset');
@@ -221,7 +222,7 @@ class DetectorPageState extends State<DetectorPage> {
     vrms02NewOffset[2] = 2; // calibration point: vrms02
 
     try {
-      myDevice.calibrationUuid.write(vrms02NewOffset);
+      bluetoothManager.calibrationUuid.write(vrms02NewOffset);
     } catch (e, stackTrace) {
       printLog('Error al setear vrms offset $e $stackTrace');
       showToast('Error al setear vrms02 offset');
@@ -323,31 +324,31 @@ class DetectorPageState extends State<DetectorPage> {
 
   void _subscribeToCalCharacteristic() async {
     if (!alreadySubCal) {
-      await myDevice.calibrationUuid.setNotifyValue(true);
+      await bluetoothManager.calibrationUuid.setNotifyValue(true);
       alreadySubCal = true;
     }
-    final calSub =
-        myDevice.calibrationUuid.onValueReceived.listen((List<int> status) {
+    final calSub = bluetoothManager.calibrationUuid.onValueReceived
+        .listen((List<int> status) {
       updateValuesCalibracion(status);
     });
 
-    myDevice.device.cancelWhenDisconnected(calSub);
+    bluetoothManager.device.cancelWhenDisconnected(calSub);
   }
 
   void _subscribeToWorkCharacteristic() async {
     if (!alreadySubWork) {
-      await myDevice.workUuid.setNotifyValue(true);
+      await bluetoothManager.workUuid.setNotifyValue(true);
       alreadySubWork = true;
     }
     final workSub =
-        myDevice.workUuid.onValueReceived.listen((List<int> status) {
+        bluetoothManager.workUuid.onValueReceived.listen((List<int> status) {
       setState(() {
         ppmCO = status[5] + (status[6] << 8);
         ppmCH4 = status[7] + (status[8] << 8);
       });
     });
 
-    myDevice.device.cancelWhenDisconnected(workSub);
+    bluetoothManager.device.cancelWhenDisconnected(workSub);
   }
 
   void _readValues() {
@@ -377,16 +378,16 @@ class DetectorPageState extends State<DetectorPage> {
 
   void _subscribeValue() async {
     if (!alreadySubReg) {
-      await myDevice.regulationUuid.setNotifyValue(true);
+      await bluetoothManager.regulationUuid.setNotifyValue(true);
       alreadySubReg = true;
     }
     printLog('Me turbosuscribi a regulacion');
-    final regSub =
-        myDevice.regulationUuid.onValueReceived.listen((List<int> status) {
+    final regSub = bluetoothManager.regulationUuid.onValueReceived
+        .listen((List<int> status) {
       updateValuesCalibracion(status);
     });
 
-    myDevice.device.cancelWhenDisconnected(regSub);
+    bluetoothManager.device.cancelWhenDisconnected(regSub);
   }
 
   void updateValuesRegulation(List<int> data) {
@@ -457,7 +458,7 @@ class DetectorPageState extends State<DetectorPage> {
   void _sendValueToBle(int value) async {
     try {
       final data = [value];
-      myDevice.lightUuid.write(data, withoutResponse: true);
+      bluetoothManager.lightUuid.write(data, withoutResponse: true);
     } catch (e, stackTrace) {
       printLog('Error al mandar el valor del brillo $e $stackTrace');
       // handleManualError(e, stackTrace);
@@ -497,19 +498,19 @@ class DetectorPageState extends State<DetectorPage> {
 
   void _subscribeDebug() async {
     if (!alreadySubDebug) {
-      await myDevice.debugUuid.setNotifyValue(true);
+      await bluetoothManager.debugUuid.setNotifyValue(true);
       alreadySubDebug = true;
     }
     printLog('Me turbosuscribi a regulacion');
     final debugSub =
-        myDevice.debugUuid.onValueReceived.listen((List<int> status) {
+        bluetoothManager.debugUuid.onValueReceived.listen((List<int> status) {
       updateDebugValues(status);
     });
 
-    myDevice.device.cancelWhenDisconnected(debugSub);
+    bluetoothManager.device.cancelWhenDisconnected(debugSub);
   }
 
-  String _textToShow(int num) {
+  String _textToShowADC(int num) {
     switch (num + 1) {
       case 1:
         return 'Gasout: ';
@@ -1146,7 +1147,7 @@ class DetectorPageState extends State<DetectorPage> {
                               children: [
                                 Row(
                                   children: [
-                                    Text(_textToShow(index - 1),
+                                    Text(_textToShowADC(index - 1),
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(
                                             color: color1,
@@ -1188,6 +1189,11 @@ class DetectorPageState extends State<DetectorPage> {
         const CredsTab(),
       ],
 
+      if (hasLoggerBle) ...[
+        //*- Página LOGGER -*\\
+        const LoggerBlePage(),
+      ],
+
       //*- Página 7 OTA -*\\
       const OtaTab(),
     ];
@@ -1222,7 +1228,7 @@ class DetectorPageState extends State<DetectorPage> {
           },
         );
         Future.delayed(const Duration(seconds: 2), () async {
-          await myDevice.device.disconnect();
+          await bluetoothManager.device.disconnect();
           if (context.mounted) {
             Navigator.pop(context);
             Navigator.pushReplacementNamed(context, '/menu');
@@ -1273,7 +1279,7 @@ class DetectorPageState extends State<DetectorPage> {
                 },
               );
               Future.delayed(const Duration(seconds: 2), () async {
-                await myDevice.device.disconnect();
+                await bluetoothManager.device.disconnect();
                 if (context.mounted) {
                   Navigator.pop(context);
                   Navigator.pushReplacementNamed(context, '/menu');
@@ -1326,6 +1332,9 @@ class DetectorPageState extends State<DetectorPage> {
                           size: 30, color: color4),
                     ],
                     const Icon(Icons.person, size: 30, color: color4),
+                  ],
+                  if (hasLoggerBle) ...[
+                    const Icon(Icons.receipt_long, size: 30, color: color4),
                   ],
                   const Icon(Icons.send, size: 30, color: color4),
                 ],

@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'package:caldensmartfabrica/master.dart';
 import 'package:flutter/material.dart';
 import '../aws/dynamo/dynamo.dart';
-import '../master.dart';
 
 class LoadingPage extends StatefulWidget {
   const LoadingPage({super.key});
@@ -11,7 +12,7 @@ class LoadingPage extends StatefulWidget {
 }
 
 class LoadState extends State<LoadingPage> {
-  MyDevice myDevice = MyDevice();
+  
   String _dots = '';
   int dot = 0;
   late Timer _dotTimer;
@@ -73,7 +74,7 @@ class LoadState extends State<LoadingPage> {
         }
       } else {
         showToast('Error en el dispositivo, intente nuevamente');
-        myDevice.device.disconnect();
+        bluetoothManager.device.disconnect();
       }
     });
   }
@@ -87,8 +88,10 @@ class LoadState extends State<LoadingPage> {
   Future<bool> precharge() async {
     try {
       printLog('Estoy precargando');
-      await myDevice.device.requestMtu(255);
-      toolsValues = await myDevice.toolsUuid.read();
+      printLog("🏳️‍🌈💥 ╾━╤デ╦︻ඞ");
+
+      Platform.isAndroid ? await bluetoothManager.device.requestMtu(255) : null;
+      toolsValues = await bluetoothManager.toolsUuid.read();
       printLog('Valores tools: $toolsValues || ${utf8.decode(toolsValues)}');
       printLog('Valores info: $infoValues || ${utf8.decode(infoValues)}');
 
@@ -102,24 +105,36 @@ class LoadState extends State<LoadingPage> {
               '050217_IOT' ||
               '028000_IOT' ||
               '027000_IOT':
-          varsValues = await myDevice.varsUuid.read();
+          varsValues = await bluetoothManager.varsUuid.read();
           var parts2 = utf8.decode(varsValues).split(':');
           printLog('Valores vars: $parts2');
-          distanceControlActive = parts2[0] == '1';
-          tempValue = double.parse(parts2[1]);
-          turnOn = parts2[2] == '1';
-          trueStatus = parts2[4] == '1';
-          nightMode = parts2[5] == '1';
-          actualTemp = parts2[6];
-          if (factoryMode) {
-            awsInit = parts2[7] == '1';
-            tempMap = parts2[8] == '1';
-          }
 
-          offsetTemp = factoryMode ? parts2[8] : parts2[7];
-
-          if (parts2.length > 9) {
-            manualControl = factoryMode ? parts2[9] == '1' : parts2[8] == '1';
+          if (parts2[0] == '0' || parts2[0] == '1') {
+            tempValue = double.parse(parts2[1]);
+            turnOn = parts2[2] == '1';
+            trueStatus = parts2[4] == '1';
+            nightMode = parts2[5] == '1';
+            actualTemp = parts2[6];
+            if (factoryMode) {
+              awsInit = parts2[7] == '1';
+              tempMap = parts2[8] == '1';
+              parts2.length > 8
+                  ? manualControl = parts2[9] == '1'
+                  : manualControl = false;
+            }
+            printLog('Estado: $turnOn');
+          } else {
+            tempValue = double.parse(parts2[0]);
+            turnOn = parts2[1] == '1';
+            trueStatus = parts2[3] == '1';
+            nightMode = parts2[4] == '1';
+            actualTemp = parts2[5];
+            if (factoryMode) {
+              awsInit = parts2[6] == '1';
+              tempMap = parts2[7] == '1';
+            }
+            manualControl = parts2.length > 8 ? parts2[8] == '1' : false;
+            printLog('Estado: $turnOn');
           }
 
           hasSensor = hasDallasSensor(pc, hardwareVersion);
@@ -134,11 +149,11 @@ class LoadState extends State<LoadingPage> {
           printLog('Estado: $turnOn');
           break;
         case '015773_IOT':
-          workValues = await myDevice.workUuid.read();
+          workValues = await bluetoothManager.workUuid.read();
           if (factoryMode) {
-            calibrationValues = await myDevice.calibrationUuid.read();
-            regulationValues = await myDevice.regulationUuid.read();
-            debugValues = await myDevice.debugUuid.read();
+            calibrationValues = await bluetoothManager.calibrationUuid.read();
+            regulationValues = await bluetoothManager.regulationUuid.read();
+            debugValues = await bluetoothManager.debugUuid.read();
             awsInit = workValues[23] == 1;
           }
           printLog('Valores calibracion: $calibrationValues');
@@ -148,9 +163,9 @@ class LoadState extends State<LoadingPage> {
           printLog('Valores work: $workValues');
           break;
         case '020010_IOT' || '020020_IOT':
-          ioValues = await myDevice.ioUuid.read();
+          ioValues = await bluetoothManager.ioUuid.read();
           printLog('Valores IO: $ioValues || ${utf8.decode(ioValues)}');
-          varsValues = await myDevice.varsUuid.read();
+          varsValues = await bluetoothManager.varsUuid.read();
           printLog('Valores VARS: $varsValues || ${utf8.decode(varsValues)}');
           var parts2 = utf8.decode(varsValues).split(':');
           distanceControlActive = parts2[0] == '1';
@@ -159,16 +174,16 @@ class LoadState extends State<LoadingPage> {
           break;
         case '027313_IOT':
           if (Versioner.isPosterior(hardwareVersion, '241220A')) {
-            ioValues = await myDevice.ioUuid.read();
+            ioValues = await bluetoothManager.ioUuid.read();
             printLog('Valores IO: $ioValues || ${utf8.decode(ioValues)}');
-            varsValues = await myDevice.varsUuid.read();
+            varsValues = await bluetoothManager.varsUuid.read();
             printLog('Valores VARS: $varsValues || ${utf8.decode(varsValues)}');
             var parts2 = utf8.decode(varsValues).split(':');
             distanceControlActive = parts2[0] == '1';
             awsInit = parts2[1] == '1';
             burneoDone = parts2[2] == '1';
           } else {
-            varsValues = await myDevice.varsUuid.read();
+            varsValues = await bluetoothManager.varsUuid.read();
             var parts2 = utf8.decode(varsValues).split(':');
             printLog('Valores vars: $parts2');
             distanceControlActive = parts2[0] == '1';
@@ -178,7 +193,7 @@ class LoadState extends State<LoadingPage> {
           }
           break;
         case '024011_IOT':
-          varsValues = await myDevice.varsUuid.read();
+          varsValues = await bluetoothManager.varsUuid.read();
           var partes = utf8.decode(varsValues).split(':');
           printLog('Valores VARS: $varsValues || ${utf8.decode(varsValues)}');
           distanceControlActive = partes[0] == '1';
@@ -200,7 +215,7 @@ class LoadState extends State<LoadingPage> {
           awsInit = partes[16] == '1';
           break;
         case '023430_IOT':
-          varsValues = await myDevice.varsUuid.read();
+          varsValues = await bluetoothManager.varsUuid.read();
           var partes = utf8.decode(varsValues).split(':');
           printLog('Valores VARS: $varsValues || ${utf8.decode(varsValues)}');
           actualTemp = partes[0];

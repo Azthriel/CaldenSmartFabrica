@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
+import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
 import 'package:caldensmartfabrica/devices/globales/params.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
@@ -110,14 +111,14 @@ class DomoticaPageState extends State<DomoticaPage> {
 
   void subscribeToWifiStatus() async {
     printLog('Se subscribio a wifi');
-    await myDevice.toolsUuid.setNotifyValue(true);
+    await bluetoothManager.toolsUuid.setNotifyValue(true);
 
     final wifiSub =
-        myDevice.toolsUuid.onValueReceived.listen((List<int> status) {
+        bluetoothManager.toolsUuid.onValueReceived.listen((List<int> status) {
       updateWifiValues(status);
     });
 
-    myDevice.device.cancelWhenDisconnected(wifiSub);
+    bluetoothManager.device.cancelWhenDisconnected(wifiSub);
   }
 
   void processValues(List<int> values) {
@@ -167,17 +168,17 @@ class DomoticaPageState extends State<DomoticaPage> {
 
   void subToIO() async {
     if (!alreadySubIO) {
-      await myDevice.ioUuid.setNotifyValue(true);
+      await bluetoothManager.ioUuid.setNotifyValue(true);
       printLog('Subscrito a IO');
       alreadySubIO = true;
     }
 
-    var ioSub = myDevice.ioUuid.onValueReceived.listen((event) {
+    var ioSub = bluetoothManager.ioUuid.onValueReceived.listen((event) {
       printLog('Cambio en IO');
       processValues(event);
     });
 
-    myDevice.device.cancelWhenDisconnected(ioSub);
+    bluetoothManager.device.cancelWhenDisconnected(ioSub);
   }
 
   void mandarBurneo() async {
@@ -286,7 +287,8 @@ class DomoticaPageState extends State<DomoticaPage> {
                               value: estado[index] == '1',
                               onChanged: (value) async {
                                 String fun = '$index#${value ? '1' : '0'}';
-                                await myDevice.ioUuid.write(fun.codeUnits);
+                                await bluetoothManager.ioUuid
+                                    .write(fun.codeUnits);
                               },
                             ),
                       const SizedBox(
@@ -320,7 +322,8 @@ class DomoticaPageState extends State<DomoticaPage> {
                                       String data =
                                           '${DeviceManager.getProductCode(deviceName)}[14]($index#${common[index]})';
                                       printLog(data);
-                                      myDevice.toolsUuid.write(data.codeUnits);
+                                      bluetoothManager.toolsUuid
+                                          .write(data.codeUnits);
                                     },
                                   ),
                                 ),
@@ -343,7 +346,8 @@ class DomoticaPageState extends State<DomoticaPage> {
                                       String data =
                                           '${DeviceManager.getProductCode(deviceName)}[14]($index#${common[index]})';
                                       printLog(data);
-                                      myDevice.toolsUuid.write(data.codeUnits);
+                                      bluetoothManager.toolsUuid
+                                          .write(data.codeUnits);
                                     },
                                   ),
                                 ),
@@ -399,7 +403,7 @@ class DomoticaPageState extends State<DomoticaPage> {
                                             String fun =
                                                 '${DeviceManager.getProductCode(deviceName)}[13]($index#${entrada ? '0' : '1'})';
                                             printLog(fun);
-                                            myDevice.toolsUuid
+                                            bluetoothManager.toolsUuid
                                                 .write(fun.codeUnits);
                                             Navigator.of(dialogContext).pop();
                                           },
@@ -482,7 +486,7 @@ class DomoticaPageState extends State<DomoticaPage> {
                       for (int index = 0; index < 4; index++) {
                         String fun =
                             '${DeviceManager.getProductCode(deviceName)}[13]($index#1)';
-                        myDevice.toolsUuid.write(fun.codeUnits);
+                        bluetoothManager.toolsUuid.write(fun.codeUnits);
                       }
                       printLog('Ya se cambiaron todos los pines a entrada');
                       setState(() {
@@ -545,12 +549,12 @@ class DomoticaPageState extends State<DomoticaPage> {
                         for (int index = 0; index < 4; index++) {
                           String fun =
                               '${DeviceManager.getProductCode(deviceName)}[13]($index#0)';
-                          myDevice.toolsUuid.write(fun.codeUnits);
+                          bluetoothManager.toolsUuid.write(fun.codeUnits);
                         }
                         printLog('Ya se cambiaron todos los pines a salida');
                         String fun1 =
                             '${DeviceManager.getProductCode(deviceName)}[15](0)';
-                        myDevice.toolsUuid.write(fun1.codeUnits);
+                        bluetoothManager.toolsUuid.write(fun1.codeUnits);
                         setState(() {
                           testingOUT = true;
                         });
@@ -617,7 +621,7 @@ class DomoticaPageState extends State<DomoticaPage> {
                         mandarBurneo();
                         String fun2 =
                             '${DeviceManager.getProductCode(deviceName)}[15](1)';
-                        myDevice.toolsUuid.write(fun2.codeUnits);
+                        bluetoothManager.toolsUuid.write(fun2.codeUnits);
                       } else {
                         showToast('Primero probar entradas y salidas');
                       }
@@ -634,6 +638,11 @@ class DomoticaPageState extends State<DomoticaPage> {
 
         //*- Página 5 CREDENTIAL -*\\
         const CredsTab(),
+      ],
+
+      if (hasLoggerBle) ...[
+        //*- Página LOGGER -*\\
+        const LoggerBlePage(),
       ],
 
       //*- Página 6 OTA -*\\
@@ -670,7 +679,7 @@ class DomoticaPageState extends State<DomoticaPage> {
           },
         );
         Future.delayed(const Duration(seconds: 2), () async {
-          await myDevice.device.disconnect();
+          await bluetoothManager.device.disconnect();
           if (context.mounted) {
             Navigator.pop(context);
             Navigator.pushReplacementNamed(context, '/menu');
@@ -721,7 +730,7 @@ class DomoticaPageState extends State<DomoticaPage> {
                 },
               );
               Future.delayed(const Duration(seconds: 2), () async {
-                await myDevice.device.disconnect();
+                await bluetoothManager.device.disconnect();
                 if (context.mounted) {
                   Navigator.pop(context);
                   Navigator.pushReplacementNamed(context, '/menu');
@@ -768,6 +777,9 @@ class DomoticaPageState extends State<DomoticaPage> {
                     const Icon(Icons.pending_actions_rounded,
                         size: 30, color: color4),
                     const Icon(Icons.person, size: 30, color: color4),
+                    if (hasLoggerBle) ...[
+                      const Icon(Icons.receipt_long, size: 30, color: color4),
+                    ],
                     const Icon(Icons.send, size: 30, color: color4),
                   ] else ...[
                     const Icon(Icons.settings_accessibility,

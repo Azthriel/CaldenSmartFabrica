@@ -44,10 +44,11 @@ class OtaTabState extends State<OtaTab> {
     printLog('Entre aquis mismito');
 
     printLog('Hice cosas');
-    await myDevice.otaUuid.setNotifyValue(true);
+    await bluetoothManager.otaUuid.setNotifyValue(true);
     printLog('Notif activated');
 
-    final otaSub = myDevice.otaUuid.onValueReceived.listen((List<int> event) {
+    final otaSub =
+        bluetoothManager.otaUuid.onValueReceived.listen((List<int> event) {
       try {
         var fun = utf8.decode(event);
         fun = fun.replaceAll(RegExp(r'[^\x20-\x7E]'), '');
@@ -111,7 +112,7 @@ class OtaTabState extends State<OtaTab> {
         // showToast('Error al actualizar progreso');
       }
     });
-    myDevice.device.cancelWhenDisconnected(otaSub);
+    bluetoothManager.device.cancelWhenDisconnected(otaSub);
   }
 
   void sendAutoOTA({
@@ -133,7 +134,7 @@ class OtaTabState extends State<OtaTab> {
         printLog('Si mandé ota Wifi');
         printLog('url: $url');
         String data = '${DeviceManager.getProductCode(deviceName)}[2]($url)';
-        await myDevice.toolsUuid.write(data.codeUnits);
+        await bluetoothManager.toolsUuid.write(data.codeUnits);
       } else {
         printLog('Arranca por la derecha la OTA BLE');
         String dir = (await getApplicationDocumentsDirectory()).path;
@@ -154,7 +155,7 @@ class OtaTabState extends State<OtaTab> {
         String data =
             '${DeviceManager.getProductCode(deviceName)}[3](${bytes.length})';
         printLog(data);
-        await myDevice.toolsUuid.write(data.codeUnits);
+        await bluetoothManager.toolsUuid.write(data.codeUnits);
         printLog("Arranco OTA");
         try {
           int chunk = 255 - 3;
@@ -163,7 +164,8 @@ class OtaTabState extends State<OtaTab> {
               i,
               min(i + chunk, firmware.length),
             );
-            await myDevice.infoUuid.write(subvalue, withoutResponse: false);
+            await bluetoothManager.infoUuid
+                .write(subvalue, withoutResponse: false);
           }
           printLog('Acabe');
         } catch (e, stackTrace) {
@@ -206,7 +208,7 @@ class OtaTabState extends State<OtaTab> {
         printLog('Si mandé ota Wifi');
         printLog('url: $url');
         String data = '${DeviceManager.getProductCode(deviceName)}[2]($url)';
-        await myDevice.toolsUuid.write(data.codeUnits);
+        await bluetoothManager.toolsUuid.write(data.codeUnits);
       } else {
         printLog('Arranca por la derecha la OTA BLE');
         String dir = (await getApplicationDocumentsDirectory()).path;
@@ -227,7 +229,7 @@ class OtaTabState extends State<OtaTab> {
         String data =
             '${DeviceManager.getProductCode(deviceName)}[3](${bytes.length})';
         printLog(data);
-        await myDevice.toolsUuid.write(data.codeUnits);
+        await bluetoothManager.toolsUuid.write(data.codeUnits);
         printLog("Arranco OTA");
         try {
           int chunk = 255 - 3;
@@ -236,7 +238,8 @@ class OtaTabState extends State<OtaTab> {
               i,
               min(i + chunk, firmware.length),
             );
-            await myDevice.infoUuid.write(subvalue, withoutResponse: false);
+            await bluetoothManager.infoUuid
+                .write(subvalue, withoutResponse: false);
           }
           printLog('Acabe');
         } catch (e, stackTrace) {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
+import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
 import 'package:caldensmartfabrica/devices/globales/params.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
@@ -71,10 +72,10 @@ class HeladeraPageState extends State<HeladeraPage> {
 
   void subscribeTrueStatus() async {
     printLog('Me subscribo a vars');
-    await myDevice.varsUuid.setNotifyValue(true);
+    await bluetoothManager.varsUuid.setNotifyValue(true);
 
     final trueStatusSub =
-        myDevice.varsUuid.onValueReceived.listen((List<int> status) {
+        bluetoothManager.varsUuid.onValueReceived.listen((List<int> status) {
       var parts = utf8.decode(status).split(':');
       // printLog(parts);
       setState(() {
@@ -83,7 +84,7 @@ class HeladeraPageState extends State<HeladeraPage> {
       });
     });
 
-    myDevice.device.cancelWhenDisconnected(trueStatusSub);
+    bluetoothManager.device.cancelWhenDisconnected(trueStatusSub);
   }
 
   void updateWifiValues(List<int> data) {
@@ -139,35 +140,35 @@ class HeladeraPageState extends State<HeladeraPage> {
 
   void subscribeToWifiStatus() async {
     printLog('Se subscribio a wifi');
-    await myDevice.toolsUuid.setNotifyValue(true);
+    await bluetoothManager.toolsUuid.setNotifyValue(true);
 
     final wifiSub =
-        myDevice.toolsUuid.onValueReceived.listen((List<int> status) {
+        bluetoothManager.toolsUuid.onValueReceived.listen((List<int> status) {
       updateWifiValues(status);
     });
 
-    myDevice.device.cancelWhenDisconnected(wifiSub);
+    bluetoothManager.device.cancelWhenDisconnected(wifiSub);
   }
 
   void sendTemperature(int temp) {
     String data = '${DeviceManager.getProductCode(deviceName)}[7]($temp)';
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void turnDeviceOn(bool on) {
     int fun = on ? 1 : 0;
     String data = '${DeviceManager.getProductCode(deviceName)}[11]($fun)';
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void sendRoomTemperature(String temp) {
     String data = '${DeviceManager.getProductCode(deviceName)}[8]($temp)';
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void startTempMap() {
     String data = '${DeviceManager.getProductCode(deviceName)}[12](0)';
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void saveDataToCsv() async {
@@ -404,7 +405,7 @@ class HeladeraPageState extends State<HeladeraPage> {
                         'Se mando el ciclado de la válvula de este equipo');
                     String data =
                         '${DeviceManager.getProductCode(deviceName)}[13](1000#5)';
-                    myDevice.toolsUuid.write(data.codeUnits);
+                    bluetoothManager.toolsUuid.write(data.codeUnits);
                   },
                 ),
                 const SizedBox(
@@ -494,7 +495,8 @@ class HeladeraPageState extends State<HeladeraPage> {
                                     'Se mando el ciclado de la válvula de este equipo\nMilisegundos: ${timeController.text}\nIteraciones:$cicle');
                                 String data =
                                     '${DeviceManager.getProductCode(deviceName)}[13](${timeController.text}#$cicle)';
-                                myDevice.toolsUuid.write(data.codeUnits);
+                                bluetoothManager.toolsUuid
+                                    .write(data.codeUnits);
                                 navigatorKey.currentState!.pop();
                               },
                               child: const Text('Iniciar proceso',
@@ -575,6 +577,11 @@ class HeladeraPageState extends State<HeladeraPage> {
         const CredsTab(),
       ],
 
+      if (hasLoggerBle) ...[
+        //*- Página LOGGER -*\\
+        const LoggerBlePage(),
+      ],
+
       //*- Página 5 OTA -*\\
       const OtaTab(),
     ];
@@ -609,7 +616,7 @@ class HeladeraPageState extends State<HeladeraPage> {
           },
         );
         Future.delayed(const Duration(seconds: 2), () async {
-          await myDevice.device.disconnect();
+          await bluetoothManager.device.disconnect();
           if (context.mounted) {
             Navigator.pop(context);
             Navigator.pushReplacementNamed(context, '/menu');
@@ -666,7 +673,7 @@ class HeladeraPageState extends State<HeladeraPage> {
                 },
               );
               Future.delayed(const Duration(seconds: 2), () async {
-                await myDevice.device.disconnect();
+                await bluetoothManager.device.disconnect();
                 if (context.mounted) {
                   Navigator.pop(context);
                   Navigator.pushReplacementNamed(context, '/menu');
@@ -715,6 +722,9 @@ class HeladeraPageState extends State<HeladeraPage> {
                   const Icon(Icons.thermostat, size: 30, color: color4),
                   if (accessLevel > 1) ...[
                     const Icon(Icons.person, size: 30, color: color4),
+                  ],
+                  if (hasLoggerBle) ...[
+                    const Icon(Icons.receipt_long, size: 30, color: color4),
                   ],
                   const Icon(Icons.send, size: 30, color: color4),
                 ],

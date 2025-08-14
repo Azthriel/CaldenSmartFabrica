@@ -71,14 +71,13 @@ class ScanPageState extends State<ScanPage> {
     try {
       // Reset connection flag before attempting connection
       connectionFlag = false;
-      
+
       await device.connect(timeout: const Duration(seconds: 6));
       deviceName = device.platformName;
-      myDeviceid = device.remoteId.toString();
 
       printLog('Teoricamente estoy conectado');
 
-      MyDevice myDevice = MyDevice();
+      
       var conenctionSub = device.connectionState.listen(
         (BluetoothConnectionState state) {
           printLog('Estado de conexión: $state');
@@ -99,8 +98,9 @@ class ScanPageState extends State<ScanPage> {
                 alreadySubWork = false;
                 alreadySubIO = false;
                 werror = false;
+                hasLoggerBle = false;
                 printLog(
-                    'Razon: ${myDevice.device.disconnectReason?.description}');
+                    'Razon: ${bluetoothManager.device.disconnectReason?.description}');
                 registerActivity(
                     DeviceManager.getProductCode(device.platformName),
                     DeviceManager.extractSerialNumber(device.platformName),
@@ -113,7 +113,7 @@ class ScanPageState extends State<ScanPage> {
                 if (!connectionFlag) {
                   connectionFlag = true;
                   FlutterBluePlus.stopScan();
-                  myDevice.setup(device).then((valor) {
+                  bluetoothManager.setup(device).then((valor) {
                     printLog('RETORNASHE $valor');
                     if (valor) {
                       navigatorKey.currentState
@@ -122,7 +122,7 @@ class ScanPageState extends State<ScanPage> {
                       connectionFlag = false;
                       printLog('Fallo en el setup');
                       showToast('Error en el dispositivo, intente nuevamente');
-                      myDevice.device.disconnect();
+                      bluetoothManager.device.disconnect();
                     }
                   });
                 } else {

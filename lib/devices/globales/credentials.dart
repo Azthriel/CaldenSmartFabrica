@@ -11,6 +11,7 @@ class CredsTab extends StatefulWidget {
 
 class CredsTabState extends State<CredsTab> {
   bool sending = false;
+  
 
   Future<void> createAndSendThings() async {
     setState(() {
@@ -62,7 +63,7 @@ class CredsTabState extends State<CredsTab> {
         if (line.isEmpty || line == ' ') break;
         printLog(line, "Cyan");
         String datatoSend = '$pc[6](0#$line)';
-        await myDevice.toolsUuid
+        await bluetoothManager.toolsUuid
             .write(datatoSend.codeUnits, withoutResponse: false);
         // await Future.delayed(const Duration(milliseconds: 200));
       }
@@ -70,7 +71,7 @@ class CredsTabState extends State<CredsTab> {
         if (line.isEmpty || line == ' ') break;
         printLog(line, "Cyan");
         String datatoSend = '$pc[6](1#$line)';
-        await myDevice.toolsUuid
+        await bluetoothManager.toolsUuid
             .write(datatoSend.codeUnits, withoutResponse: false);
         // await Future.delayed(const Duration(milliseconds: 200));
       }
@@ -78,7 +79,7 @@ class CredsTabState extends State<CredsTab> {
         if (line.isEmpty || line == ' ') break;
         printLog(line, "Cyan");
         String datatoSend = '$pc[6](2#$line)';
-        await myDevice.toolsUuid
+        await bluetoothManager.toolsUuid
             .write(datatoSend.codeUnits, withoutResponse: false);
         // await Future.delayed(const Duration(milliseconds: 200));
       }
@@ -165,7 +166,7 @@ class CredsTabState extends State<CredsTab> {
                           setState(() {
                             sending = false;
                           });
-                          myDevice.toolsUuid.write(
+                          bluetoothManager.toolsUuid.write(
                               '${DeviceManager.getProductCode(deviceName)}[0](0)'
                                   .codeUnits);
                         },

@@ -17,7 +17,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.28';
+String appVersionNumber = '1.0.29';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -43,7 +43,6 @@ String deviceName = '';
 String softwareVersion = '';
 String hardwareVersion = '';
 bool userConnected = false;
-String myDeviceid = '';
 bool connectionFlag = false;
 bool distanceControlActive = false;
 bool awsInit = false;
@@ -78,7 +77,7 @@ bool isConnectedToAWS = false;
 //*-Relacionado al wifi-*\\
 
 //*-Relacionado al ble-*\\
-MyDevice myDevice = MyDevice();
+BluetoothManager bluetoothManager = BluetoothManager();
 late bool factoryMode;
 List<int> calibrationValues = [];
 List<int> regulationValues = [];
@@ -96,6 +95,7 @@ bool alreadySubDebug = false;
 bool alreadySubWork = false;
 bool alreadySubIO = false;
 List<String> keywords = [];
+bool hasLoggerBle = false;
 //*-Relacionado al ble-*\\
 
 //*-Monitoreo Localizacion y Bluetooth*-\\
@@ -367,14 +367,13 @@ void sendReportOnWhatsApp(String filePath) async {
 
 //*-Wifi, menú y scanner-*\\
 Future<void> sendWifitoBle(String ssid, String pass) async {
-  MyDevice myDevice = MyDevice();
   String value = '$ssid#$pass';
   String deviceCommand = DeviceManager.getProductCode(deviceName);
   printLog(deviceCommand);
   String dataToSend = '$deviceCommand[1]($value)';
   printLog(dataToSend);
   try {
-    await myDevice.toolsUuid.write(dataToSend.codeUnits);
+    await bluetoothManager.toolsUuid.write(dataToSend.codeUnits);
     printLog('Se mando el wifi ANASHE');
   } catch (e) {
     printLog('Error al conectarse a Wifi $e');
@@ -1685,14 +1684,14 @@ class DeviceManager {
 //*- Funciones relacionadas a los equipos*-\\
 
 //*-BLE, configuraciones del equipo-*\\
-class MyDevice {
-  static final MyDevice _singleton = MyDevice._internal();
+class BluetoothManager {
+  static final BluetoothManager _singleton = BluetoothManager._internal();
 
-  factory MyDevice() {
+  factory BluetoothManager() {
     return _singleton;
   }
 
-  MyDevice._internal();
+  BluetoothManager._internal();
 
   late BluetoothDevice device;
   late BluetoothCharacteristic infoUuid;
@@ -1708,6 +1707,8 @@ class MyDevice {
   late BluetoothCharacteristic patitoUuid;
   late BluetoothCharacteristic wifiAvailableUuid;
   late BluetoothCharacteristic wifiStoredUuid;
+  late BluetoothCharacteristic liveLoggerUuid;
+  late BluetoothCharacteristic registerLoggerUuid;
 
   Future<bool> setup(BluetoothDevice connectedDevice) async {
     try {
@@ -1743,6 +1744,17 @@ class MyDevice {
 
       printLog("Software Version: $softwareVersion");
 
+      if (Versioner.isPosterior(softwareVersion, '250814A') ||
+          Versioner.isPosterior(softwareVersion, '250814A_F')) {
+        BluetoothService loggerService = services.firstWhere(
+            (s) => s.uuid == Guid('ad04c0c7-6a98-4ab7-a29c-4c59ef1d0077'));
+        liveLoggerUuid = loggerService.characteristics.firstWhere(
+            (c) => c.uuid == Guid('e3375cd1-c0d2-4d8b-823d-2a7536cad48d'));
+        registerLoggerUuid = loggerService.characteristics.firstWhere(
+            (c) => c.uuid == Guid('b6abd12d-9b1c-452e-875d-28f99421e17a'));
+        hasLoggerBle = true;
+      }
+
       switch (pc) {
         case '022000_IOT' ||
               '027000_IOT' ||
@@ -1762,15 +1774,16 @@ class MyDevice {
               Guid(
                   'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
 
-          // if (pc == '027000_IOT') {
-          //   BluetoothService wifiService = services.firstWhere(
-          //       (s) => s.uuid == Guid('312ccb9a-72aa-4b30-bfbd-2157050e2e43'));
+          if (pc == '028000_IOT' &&
+              Versioner.isPosterior(hardwareVersion, '250811A')) {
+            BluetoothService wifiService = services.firstWhere(
+                (s) => s.uuid == Guid('312ccb9a-72aa-4b30-bfbd-2157050e2e43'));
 
-          //   wifiAvailableUuid = wifiService.characteristics.firstWhere(
-          //       (c) => c.uuid == Guid('238297b6-1ca1-423d-a2c0-739871488c4a'));
-          //   wifiStoredUuid = wifiService.characteristics.firstWhere(
-          //       (c) => c.uuid == Guid('bcbb4443-78a8-47cc-bb75-b9728847d5c4'));
-          // }
+            wifiAvailableUuid = wifiService.characteristics.firstWhere(
+                (c) => c.uuid == Guid('238297b6-1ca1-423d-a2c0-739871488c4a'));
+            wifiStoredUuid = wifiService.characteristics.firstWhere(
+                (c) => c.uuid == Guid('bcbb4443-78a8-47cc-bb75-b9728847d5c4'));
+          }
           break;
 
         case '015773_IOT':

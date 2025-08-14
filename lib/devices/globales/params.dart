@@ -46,7 +46,7 @@ class ParamsTabState extends State<ParamsTab> {
                   onPressed: () {
                     String mailData =
                         '${DeviceManager.getProductCode(deviceName)}[5](0)';
-                    myDevice.toolsUuid.write(mailData.codeUnits);
+                    bluetoothManager.toolsUuid.write(mailData.codeUnits);
                     registerActivity(
                       DeviceManager.getProductCode(deviceName),
                       DeviceManager.extractSerialNumber(deviceName),

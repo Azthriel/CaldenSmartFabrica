@@ -32,6 +32,8 @@ Future<void> queryItems(String pc, String sn) async {
         hasEntry = item['hasEntry']?.boolValue ?? false;
         hasSpark = item['hasSpark']?.boolValue ?? false;
         labProcessFinished = item['LabProcessFinished']?.boolValue ?? false;
+        distanceControlActive =
+            item['distanceControlActive']?.boolValue ?? false;
       }
     } else {
       printLog('Dispositivo no encontrado');
@@ -182,6 +184,22 @@ Future<void> putHasSpark(String pc, String sn, bool data) async {
       'device_id': AttributeValue(s: sn),
     }, attributeUpdates: {
       'hasSpark': AttributeValueUpdate(value: AttributeValue(boolValue: data)),
+    });
+
+    printLog('Item escrito perfectamente $response');
+  } catch (e) {
+    printLog('Error inserting item: $e');
+  }
+}
+
+Future<void> putDistanceControl(String pc, String sn, bool data) async {
+  try {
+    final response = await service.updateItem(tableName: 'sime-domotica', key: {
+      'product_code': AttributeValue(s: pc),
+      'device_id': AttributeValue(s: sn),
+    }, attributeUpdates: {
+      'distanceControlActive':
+          AttributeValueUpdate(value: AttributeValue(boolValue: data)),
     });
 
     printLog('Item escrito perfectamente $response');

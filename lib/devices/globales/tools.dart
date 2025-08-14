@@ -25,7 +25,7 @@ class ToolsPageState extends State<ToolsPage> {
     String dataToSend = textController.text;
     String data = '${DeviceManager.getProductCode(deviceName)}[4]($dataToSend)';
     try {
-      await myDevice.toolsUuid.write(data.codeUnits);
+      await bluetoothManager.toolsUuid.write(data.codeUnits);
     } catch (e) {
       printLog(e);
     }
@@ -49,7 +49,7 @@ class ToolsPageState extends State<ToolsPage> {
     sendMessagemqtt(topic2, msg);
 
     if (pc == '022000_IOT' || pc == '027000_IOT' || pc == '041220_IOT') {
-      myDevice.toolsUuid.write('$pc[7](10)'.codeUnits);
+      bluetoothManager.toolsUuid.write('$pc[7](10)'.codeUnits);
     }
 
     await putLabProcessFinished(pc, sn, true);
@@ -142,7 +142,7 @@ class ToolsPageState extends State<ToolsPage> {
                   );
                   String data =
                       '${DeviceManager.getProductCode(deviceName)}[0](1)';
-                  myDevice.toolsUuid.write(data.codeUnits);
+                  bluetoothManager.toolsUuid.write(data.codeUnits);
                 },
               ),
               const SizedBox(

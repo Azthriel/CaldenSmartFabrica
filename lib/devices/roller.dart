@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
+import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
 import 'package:caldensmartfabrica/devices/globales/params.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
@@ -109,22 +110,22 @@ class RollerPageState extends State<RollerPage> {
 
   void subscribeToWifiStatus() async {
     printLog('Se subscribio a wifi');
-    await myDevice.toolsUuid.setNotifyValue(true);
+    await bluetoothManager.toolsUuid.setNotifyValue(true);
 
     final wifiSub =
-        myDevice.toolsUuid.onValueReceived.listen((List<int> status) {
+        bluetoothManager.toolsUuid.onValueReceived.listen((List<int> status) {
       updateWifiValues(status);
     });
 
-    myDevice.device.cancelWhenDisconnected(wifiSub);
+    bluetoothManager.device.cancelWhenDisconnected(wifiSub);
   }
 
   void subToVars() async {
     printLog('Me subscribo a vars');
-    await myDevice.varsUuid.setNotifyValue(true);
+    await bluetoothManager.varsUuid.setNotifyValue(true);
 
     final varsSub =
-        myDevice.varsUuid.onValueReceived.listen((List<int> status) {
+        bluetoothManager.varsUuid.onValueReceived.listen((List<int> status) {
       var parts = utf8.decode(status).split(':');
       // printLog(parts);
       if (context.mounted) {
@@ -135,69 +136,69 @@ class RollerPageState extends State<RollerPage> {
       }
     });
 
-    myDevice.device.cancelWhenDisconnected(varsSub);
+    bluetoothManager.device.cancelWhenDisconnected(varsSub);
   }
 
   void setRange(int mm) {
     String data = '${DeviceManager.getProductCode(deviceName)}[7]($mm)';
     printLog(data);
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void setDistance(int pc) {
     String data = '${DeviceManager.getProductCode(deviceName)}[7]($pc%)';
     printLog(data);
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void setRollerConfig(int type) {
     String data = '${DeviceManager.getProductCode(deviceName)}[8]($type)';
     printLog(data);
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void setMotorSpeed(String rpm) {
     String data = '${DeviceManager.getProductCode(deviceName)}[10]($rpm)';
     printLog(data);
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void setMicroStep(String uStep) {
     String data = '${DeviceManager.getProductCode(deviceName)}[11]($uStep)';
     printLog(data);
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void setMotorCurrent(bool run, String value) {
     String data =
         '${DeviceManager.getProductCode(deviceName)}[12](${run ? '1' : '0'}#$value)';
     printLog(data);
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void setFreeWheeling(bool active) {
     String data =
         '${DeviceManager.getProductCode(deviceName)}[14](${active ? '1' : '0'})';
     printLog(data);
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void setTPWMTHRS(String value) {
     String data = '${DeviceManager.getProductCode(deviceName)}[15]($value)';
     printLog(data);
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void setTCOOLTHRS(String value) {
     String data = '${DeviceManager.getProductCode(deviceName)}[16]($value)';
     printLog(data);
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void setSGTHRS(String value) {
     String data = '${DeviceManager.getProductCode(deviceName)}[17]($value)';
     printLog(data);
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   //! VISUAL
@@ -371,7 +372,7 @@ class RollerPageState extends State<RollerPage> {
                       onLongPressStart: (LongPressStartDetails a) {
                         String data =
                             '${DeviceManager.getProductCode(deviceName)}[7](0%)';
-                        myDevice.toolsUuid.write(data.codeUnits);
+                        bluetoothManager.toolsUuid.write(data.codeUnits);
                         setState(() {
                           workingPosition = 0;
                         });
@@ -380,7 +381,7 @@ class RollerPageState extends State<RollerPage> {
                       onLongPressEnd: (LongPressEndDetails a) {
                         String data =
                             '${DeviceManager.getProductCode(deviceName)}[7]($actualPosition%)';
-                        myDevice.toolsUuid.write(data.codeUnits);
+                        bluetoothManager.toolsUuid.write(data.codeUnits);
                         setState(() {
                           workingPosition = actualPosition;
                         });
@@ -398,7 +399,7 @@ class RollerPageState extends State<RollerPage> {
                       onLongPressStart: (LongPressStartDetails a) {
                         String data =
                             '${DeviceManager.getProductCode(deviceName)}[7](100%)';
-                        myDevice.toolsUuid.write(data.codeUnits);
+                        bluetoothManager.toolsUuid.write(data.codeUnits);
                         setState(() {
                           workingPosition = 100;
                         });
@@ -407,7 +408,7 @@ class RollerPageState extends State<RollerPage> {
                       onLongPressEnd: (LongPressEndDetails a) {
                         String data =
                             '${DeviceManager.getProductCode(deviceName)}[7]($actualPosition%)';
-                        myDevice.toolsUuid.write(data.codeUnits);
+                        bluetoothManager.toolsUuid.write(data.codeUnits);
                         setState(() {
                           workingPosition = actualPosition;
                         });
@@ -1189,7 +1190,8 @@ class RollerPageState extends State<RollerPage> {
                                     'Se mando el ciclado de este equipo');
                                 String data =
                                     '${DeviceManager.getProductCode(deviceName)}[13](${int.parse(cicleController.text)})';
-                                myDevice.toolsUuid.write(data.codeUnits);
+                                bluetoothManager.toolsUuid
+                                    .write(data.codeUnits);
                                 navigatorKey.currentState!.pop();
                               },
                               child: const Text(
@@ -1226,6 +1228,11 @@ class RollerPageState extends State<RollerPage> {
         const CredsTab(),
       ],
 
+      if (hasLoggerBle) ...[
+        //*- Página LOGGER -*\\
+        const LoggerBlePage(),
+      ],
+
       //*- Página 5 OTA -*\\
       const OtaTab(),
     ];
@@ -1260,7 +1267,7 @@ class RollerPageState extends State<RollerPage> {
           },
         );
         Future.delayed(const Duration(seconds: 2), () async {
-          await myDevice.device.disconnect();
+          await bluetoothManager.device.disconnect();
           if (context.mounted) {
             Navigator.pop(context);
             Navigator.pushReplacementNamed(context, '/menu');
@@ -1311,7 +1318,7 @@ class RollerPageState extends State<RollerPage> {
                 },
               );
               Future.delayed(const Duration(seconds: 2), () async {
-                await myDevice.device.disconnect();
+                await bluetoothManager.device.disconnect();
                 if (context.mounted) {
                   Navigator.pop(context);
                   Navigator.pushReplacementNamed(context, '/menu');
@@ -1358,6 +1365,9 @@ class RollerPageState extends State<RollerPage> {
                       size: 30, color: color4),
                   if (accessLevel > 1) ...[
                     const Icon(Icons.person, size: 30, color: color4),
+                  ],
+                  if (hasLoggerBle) ...[
+                    const Icon(Icons.receipt_long, size: 30, color: color4),
                   ],
                   const Icon(Icons.send, size: 30, color: color4),
                 ],

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
+import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
 import 'package:caldensmartfabrica/devices/globales/params.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
@@ -123,19 +124,20 @@ class PatitoPageState extends State<PatitoPage> {
 
   void subscribeToWifiStatus() async {
     printLog('Se subscribio a wifi');
-    await myDevice.toolsUuid.setNotifyValue(true);
+    await bluetoothManager.toolsUuid.setNotifyValue(true);
 
     final wifiSub =
-        myDevice.toolsUuid.onValueReceived.listen((List<int> status) {
+        bluetoothManager.toolsUuid.onValueReceived.listen((List<int> status) {
       updateWifiValues(status);
     });
 
-    myDevice.device.cancelWhenDisconnected(wifiSub);
+    bluetoothManager.device.cancelWhenDisconnected(wifiSub);
   }
 
   void subToPatito() {
-    myDevice.patitoUuid.setNotifyValue(true);
-    final patitoSub = myDevice.patitoUuid.onValueReceived.listen((event) {
+    bluetoothManager.patitoUuid.setNotifyValue(true);
+    final patitoSub =
+        bluetoothManager.patitoUuid.onValueReceived.listen((event) {
       if (context.mounted) {
         setState(() {
           addData(aceleracionX, transformToDouble(event.sublist(0, 4)),
@@ -185,7 +187,7 @@ class PatitoPageState extends State<PatitoPage> {
         ]);
       }
     });
-    myDevice.device.cancelWhenDisconnected(patitoSub);
+    bluetoothManager.device.cancelWhenDisconnected(patitoSub);
   }
 
   void addData(List<double> list, double value, {int windowSize = 5}) {
@@ -374,6 +376,11 @@ class PatitoPageState extends State<PatitoPage> {
         const CredsTab(),
       ],
 
+      if (hasLoggerBle) ...[
+        //*- Página LOGGER -*\\
+        const LoggerBlePage(),
+      ],
+
       //*- Página 5 OTA -*\\
       const OtaTab(),
     ];
@@ -408,7 +415,7 @@ class PatitoPageState extends State<PatitoPage> {
           },
         );
         Future.delayed(const Duration(seconds: 2), () async {
-          await myDevice.device.disconnect();
+          await bluetoothManager.device.disconnect();
           if (context.mounted) {
             Navigator.pop(context);
             Navigator.pushReplacementNamed(context, '/menu');
@@ -459,7 +466,7 @@ class PatitoPageState extends State<PatitoPage> {
                 },
               );
               Future.delayed(const Duration(seconds: 2), () async {
-                await myDevice.device.disconnect();
+                await bluetoothManager.device.disconnect();
                 if (context.mounted) {
                   Navigator.pop(context);
                   Navigator.pushReplacementNamed(context, '/menu');
@@ -505,6 +512,9 @@ class PatitoPageState extends State<PatitoPage> {
                   const Icon(Icons.list, size: 30, color: color4),
                   if (accessLevel > 1) ...[
                     const Icon(Icons.person, size: 30, color: color4),
+                  ],
+                  if (hasLoggerBle) ...[
+                    const Icon(Icons.receipt_long, size: 30, color: color4),
                   ],
                   const Icon(Icons.send, size: 30, color: color4),
                 ],

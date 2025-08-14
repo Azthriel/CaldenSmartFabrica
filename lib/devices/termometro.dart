@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
+import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
 import 'package:caldensmartfabrica/devices/globales/params.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
@@ -56,10 +57,10 @@ class TermometroPageState extends State<TermometroPage> {
 
   void subscribeToVars() async {
     printLog('Me subscribo a vars');
-    await myDevice.varsUuid.setNotifyValue(true);
+    await bluetoothManager.varsUuid.setNotifyValue(true);
 
     final trueStatusSub =
-        myDevice.varsUuid.onValueReceived.listen((List<int> status) {
+        bluetoothManager.varsUuid.onValueReceived.listen((List<int> status) {
       var parts = utf8.decode(status).split(':');
 
       if (parts.length == 4) {
@@ -72,7 +73,7 @@ class TermometroPageState extends State<TermometroPage> {
       }
     });
 
-    myDevice.device.cancelWhenDisconnected(trueStatusSub);
+    bluetoothManager.device.cancelWhenDisconnected(trueStatusSub);
   }
 
   void updateWifiValues(List<int> data) {
@@ -128,14 +129,14 @@ class TermometroPageState extends State<TermometroPage> {
 
   void subscribeToWifiStatus() async {
     printLog('Se subscribio a wifi');
-    await myDevice.toolsUuid.setNotifyValue(true);
+    await bluetoothManager.toolsUuid.setNotifyValue(true);
 
     final wifiSub =
-        myDevice.toolsUuid.onValueReceived.listen((List<int> status) {
+        bluetoothManager.toolsUuid.onValueReceived.listen((List<int> status) {
       updateWifiValues(status);
     });
 
-    myDevice.device.cancelWhenDisconnected(wifiSub);
+    bluetoothManager.device.cancelWhenDisconnected(wifiSub);
   }
 
   void saveDataToCsv() async {
@@ -239,7 +240,7 @@ class TermometroPageState extends State<TermometroPage> {
                       String data =
                           '${DeviceManager.getProductCode(deviceName)}[9]($p0)';
                       printLog('Enviando: $data');
-                      myDevice.toolsUuid.write(data.codeUnits);
+                      bluetoothManager.toolsUuid.write(data.codeUnits);
                       showToast(
                         'Temperatura ambiente enviada: $p0 °C',
                       );
@@ -265,7 +266,7 @@ class TermometroPageState extends State<TermometroPage> {
                         String data =
                             '${DeviceManager.getProductCode(deviceName)}[7]($p0)';
                         printLog('Enviando: $data');
-                        myDevice.toolsUuid.write(data.codeUnits);
+                        bluetoothManager.toolsUuid.write(data.codeUnits);
                         showToast(
                           'Temperatura máxima de alerta enviada: $p0 °C',
                         );
@@ -290,7 +291,7 @@ class TermometroPageState extends State<TermometroPage> {
                         String data =
                             '${DeviceManager.getProductCode(deviceName)}[8]($p0)';
                         printLog('Enviando: $data');
-                        myDevice.toolsUuid.write(data.codeUnits);
+                        bluetoothManager.toolsUuid.write(data.codeUnits);
                         showToast(
                           'Temperatura mínima de alerta enviada: $p0 °C',
                         );
@@ -312,9 +313,7 @@ class TermometroPageState extends State<TermometroPage> {
                     TextSpan(
                       text: tempMap ? 'REALIZADO' : 'NO REALIZADO',
                       style: TextStyle(
-                          color: tempMap
-                              ? Colors.green
-                              : Colors.red,
+                          color: tempMap ? Colors.green : Colors.red,
                           fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -331,7 +330,7 @@ class TermometroPageState extends State<TermometroPage> {
                         DeviceManager.extractSerialNumber(deviceName),
                         'Se inicio el mapeo de temperatura en el equipo');
                     String data = '$pc[10](0)';
-                    myDevice.toolsUuid.write(data.codeUnits);
+                    bluetoothManager.toolsUuid.write(data.codeUnits);
                     showToast('Iniciando mapeo de temperatura');
                   },
                 ),
@@ -346,7 +345,7 @@ class TermometroPageState extends State<TermometroPage> {
                       'Se borro el mapeo de temperatura en el equipo',
                     );
                     String data = '$pc[10](1)';
-                    myDevice.toolsUuid.write(data.codeUnits);
+                    bluetoothManager.toolsUuid.write(data.codeUnits);
                     showToast('Borrando mapeo de temperatura');
                   },
                 ),
@@ -363,6 +362,11 @@ class TermometroPageState extends State<TermometroPage> {
       if (accessLevel > 1) ...[
         //*- Página 4 CREDENTIAL -*\\
         const CredsTab(),
+      ],
+
+      if (hasLoggerBle) ...[
+        //*- Página LOGGER -*\\
+        const LoggerBlePage(),
       ],
 
       //*- Página 5 OTA -*\\
@@ -399,7 +403,7 @@ class TermometroPageState extends State<TermometroPage> {
           },
         );
         Future.delayed(const Duration(seconds: 2), () async {
-          await myDevice.device.disconnect();
+          await bluetoothManager.device.disconnect();
           if (context.mounted) {
             Navigator.pop(context);
             Navigator.pushReplacementNamed(context, '/menu');
@@ -456,7 +460,7 @@ class TermometroPageState extends State<TermometroPage> {
                 },
               );
               Future.delayed(const Duration(seconds: 2), () async {
-                await myDevice.device.disconnect();
+                await bluetoothManager.device.disconnect();
                 if (context.mounted) {
                   Navigator.pop(context);
                   Navigator.pushReplacementNamed(context, '/menu');
@@ -505,6 +509,9 @@ class TermometroPageState extends State<TermometroPage> {
                   const Icon(Icons.thermostat, size: 30, color: color4),
                   if (accessLevel > 1) ...[
                     const Icon(Icons.person, size: 30, color: color4),
+                  ],
+                  if (hasLoggerBle) ...[
+                    const Icon(Icons.receipt_long, size: 30, color: color4),
                   ],
                   const Icon(Icons.send, size: 30, color: color4),
                 ],

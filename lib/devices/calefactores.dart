@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
+import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
 import 'package:caldensmartfabrica/devices/globales/params.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
@@ -71,10 +72,10 @@ class CalefactoresPageState extends State<CalefactoresPage> {
 
   void subscribeTrueStatus() async {
     printLog('Me subscribo a vars');
-    await myDevice.varsUuid.setNotifyValue(true);
+    await bluetoothManager.varsUuid.setNotifyValue(true);
 
     final trueStatusSub =
-        myDevice.varsUuid.onValueReceived.listen((List<int> status) {
+        bluetoothManager.varsUuid.onValueReceived.listen((List<int> status) {
       var parts = utf8.decode(status).split(':');
       printLog(parts);
       setState(() {
@@ -86,7 +87,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
       });
     });
 
-    myDevice.device.cancelWhenDisconnected(trueStatusSub);
+    bluetoothManager.device.cancelWhenDisconnected(trueStatusSub);
   }
 
   void updateWifiValues(List<int> data) {
@@ -142,35 +143,35 @@ class CalefactoresPageState extends State<CalefactoresPage> {
 
   void subscribeToWifiStatus() async {
     printLog('Se subscribio a wifi');
-    await myDevice.toolsUuid.setNotifyValue(true);
+    await bluetoothManager.toolsUuid.setNotifyValue(true);
 
     final wifiSub =
-        myDevice.toolsUuid.onValueReceived.listen((List<int> status) {
+        bluetoothManager.toolsUuid.onValueReceived.listen((List<int> status) {
       updateWifiValues(status);
     });
 
-    myDevice.device.cancelWhenDisconnected(wifiSub);
+    bluetoothManager.device.cancelWhenDisconnected(wifiSub);
   }
 
   void sendTemperature(int temp) {
     String data = '${DeviceManager.getProductCode(deviceName)}[7]($temp)';
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void turnDeviceOn(bool on) {
     int fun = on ? 1 : 0;
     String data = '${DeviceManager.getProductCode(deviceName)}[11]($fun)';
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void sendRoomTemperature(String temp) {
     String data = '${DeviceManager.getProductCode(deviceName)}[8]($temp)';
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void startTempMap() {
     String data = '${DeviceManager.getProductCode(deviceName)}[12](0)';
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void saveDataToCsv() async {
@@ -299,7 +300,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                         await Future.delayed(const Duration(milliseconds: 500));
                         if (!ignite) break;
                         String data = '027000_IOT[15](1)';
-                        myDevice.toolsUuid.write(data.codeUnits);
+                        bluetoothManager.toolsUuid.write(data.codeUnits);
                         printLog(data);
                       }
                     },
@@ -308,7 +309,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                         ignite = false;
                       });
                       String data = '027000_IOT[15](0)';
-                      myDevice.toolsUuid.write(data.codeUnits);
+                      bluetoothManager.toolsUuid.write(data.codeUnits);
                       printLog(data);
                     },
                     child: buildButton(onPressed: () {}, text: 'Chispero'),
@@ -523,7 +524,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                         registerActivity(pc, sn,
                             'Se mando el ciclado de la válvula de este equipo');
                         String data = '$pc[13](1000#5)';
-                        myDevice.toolsUuid.write(data.codeUnits);
+                        bluetoothManager.toolsUuid.write(data.codeUnits);
                       },
                     ),
                     const SizedBox(
@@ -616,7 +617,8 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                                         'Se mando el ciclado de la válvula de este equipo\nMilisegundos: ${timeController.text}\nIteraciones:$cicle');
                                     String data =
                                         '$pc[13](${timeController.text}#$cicle)';
-                                    myDevice.toolsUuid.write(data.codeUnits);
+                                    bluetoothManager.toolsUuid
+                                        .write(data.codeUnits);
                                     navigatorKey.currentState!.pop();
                                   },
                                   child: const Text(
@@ -684,7 +686,8 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                                         'Se mando el temporizado de apertura');
                                     String data =
                                         '$pc[14](${timeController.text.trim()})';
-                                    myDevice.toolsUuid.write(data.codeUnits);
+                                    bluetoothManager.toolsUuid
+                                        .write(data.codeUnits);
                                     navigatorKey.currentState!.pop();
                                   },
                                   child: const Text('Iniciar proceso'),
@@ -774,7 +777,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                         'Se activo el modo manual del equipo',
                       );
                       String data = '$pc[16](${manualControl ? '0' : '1'})';
-                      myDevice.toolsUuid.write(data.codeUnits);
+                      bluetoothManager.toolsUuid.write(data.codeUnits);
                       setState(() {
                         turnOn = false;
                         manualControl = !manualControl;
@@ -797,6 +800,11 @@ class CalefactoresPageState extends State<CalefactoresPage> {
       if (accessLevel > 1) ...[
         //*- Página 4 CREDENTIAL -*\\
         const CredsTab(),
+      ],
+
+      if (hasLoggerBle) ...[
+        //*- Página LOGGER -*\\
+        const LoggerBlePage(),
       ],
 
       //*- Página 5 OTA -*\\
@@ -833,7 +841,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
           },
         );
         Future.delayed(const Duration(seconds: 2), () async {
-          await myDevice.device.disconnect();
+          await bluetoothManager.device.disconnect();
           if (context.mounted) {
             Navigator.pop(context);
             Navigator.pushReplacementNamed(context, '/menu');
@@ -890,7 +898,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                 },
               );
               Future.delayed(const Duration(seconds: 2), () async {
-                await myDevice.device.disconnect();
+                await bluetoothManager.device.disconnect();
                 if (context.mounted) {
                   Navigator.pop(context);
                   Navigator.pushReplacementNamed(context, '/menu');
@@ -939,6 +947,9 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                   const Icon(Icons.thermostat, size: 30, color: color4),
                   if (accessLevel > 1) ...[
                     const Icon(Icons.person, size: 30, color: color4),
+                  ],
+                  if (hasLoggerBle) ...[
+                    const Icon(Icons.receipt_long, size: 30, color: color4),
                   ],
                   const Icon(Icons.send, size: 30, color: color4),
                 ],

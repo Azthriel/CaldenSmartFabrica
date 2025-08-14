@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
+import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
 import 'package:caldensmartfabrica/devices/globales/params.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
@@ -71,10 +72,10 @@ class MilleniumPageState extends State<MilleniumPage> {
 
   void subscribeTrueStatus() async {
     printLog('Me subscribo a vars', "rojo");
-    await myDevice.varsUuid.setNotifyValue(true);
+    await bluetoothManager.varsUuid.setNotifyValue(true);
 
     final trueStatusSub =
-        myDevice.varsUuid.onValueReceived.listen((List<int> status) {
+        bluetoothManager.varsUuid.onValueReceived.listen((List<int> status) {
       var parts = utf8.decode(status).split(':');
       setState(() {
         trueStatus = parts[0] == '1';
@@ -82,7 +83,7 @@ class MilleniumPageState extends State<MilleniumPage> {
       });
     });
 
-    myDevice.device.cancelWhenDisconnected(trueStatusSub);
+    bluetoothManager.device.cancelWhenDisconnected(trueStatusSub);
   }
 
   void updateWifiValues(List<int> data) {
@@ -138,36 +139,36 @@ class MilleniumPageState extends State<MilleniumPage> {
 
   void subscribeToWifiStatus() async {
     printLog('Se subscribio a wifi');
-    await myDevice.toolsUuid.setNotifyValue(true);
+    await bluetoothManager.toolsUuid.setNotifyValue(true);
 
     final wifiSub =
-        myDevice.toolsUuid.onValueReceived.listen((List<int> status) {
+        bluetoothManager.toolsUuid.onValueReceived.listen((List<int> status) {
       updateWifiValues(status);
     });
 
-    myDevice.device.cancelWhenDisconnected(wifiSub);
+    bluetoothManager.device.cancelWhenDisconnected(wifiSub);
   }
 
   void sendTemperature(int temp) {
     String data = '${DeviceManager.getProductCode(deviceName)}[7]($temp)';
     printLog(data);
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void turnDeviceOn(bool on) {
     int fun = on ? 1 : 0;
     String data = '${DeviceManager.getProductCode(deviceName)}[11]($fun)';
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void sendRoomTemperature(String temp) {
     String data = '${DeviceManager.getProductCode(deviceName)}[8]($temp)';
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void startTempMap() {
     String data = '${DeviceManager.getProductCode(deviceName)}[12](0)';
-    myDevice.toolsUuid.write(data.codeUnits);
+    bluetoothManager.toolsUuid.write(data.codeUnits);
   }
 
   void saveDataToCsv() async {
@@ -500,6 +501,11 @@ class MilleniumPageState extends State<MilleniumPage> {
         const CredsTab(),
       ],
 
+      if (hasLoggerBle) ...[
+        //*- Página LOGGER -*\\
+        const LoggerBlePage(),
+      ],
+
       //*- Página 5 OTA -*\\
       const OtaTab(),
     ];
@@ -537,7 +543,7 @@ class MilleniumPageState extends State<MilleniumPage> {
           },
         );
         Future.delayed(const Duration(seconds: 2), () async {
-          await myDevice.device.disconnect();
+          await bluetoothManager.device.disconnect();
           if (context.mounted) {
             Navigator.pop(context);
             Navigator.pushReplacementNamed(context, '/menu');
@@ -595,7 +601,7 @@ class MilleniumPageState extends State<MilleniumPage> {
                 },
               );
               Future.delayed(const Duration(seconds: 2), () async {
-                await myDevice.device.disconnect();
+                await bluetoothManager.device.disconnect();
                 if (context.mounted) {
                   Navigator.pop(context);
                   Navigator.pushReplacementNamed(context, '/menu');
@@ -660,6 +666,9 @@ class MilleniumPageState extends State<MilleniumPage> {
                       size: 30,
                       color: color4,
                     ),
+                  ],
+                  if (hasLoggerBle) ...[
+                    const Icon(Icons.receipt_long, size: 30, color: color4),
                   ],
                   const Icon(
                     Icons.send,
