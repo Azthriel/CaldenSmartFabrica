@@ -173,30 +173,35 @@ class ToolsPageState extends State<ToolsPage> {
               buildButton(
                   text: 'Finalizar Proceso',
                   onPressed: () {
-                    showAlertDialog(
-                        context,
-                        false,
-                        const Text(
-                          '¡ESTE BOTÓN DEBE SER PRESIONADO UNICAMENTE POR LABORATORIO!',
-                          textAlign: TextAlign.center,
-                        ),
-                        const Text(
-                            'Este botón marcará como finalizado el procedimiento de laboratorio.\nAl hacer esto, certificarás que el equipo cumplió todos sus pasos de manera correcta y sin fallos.\nEl mal uso o incumplimiento de este procedimiento causará una sanción a la persona correspondiente.\n'),
-                        [
-                          TextButton(
-                            child: const Text('Cancelar'),
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
+                    if (isConnectedToAWS) {
+                      showAlertDialog(
+                          context,
+                          false,
+                          const Text(
+                            '¡ESTE BOTÓN DEBE SER PRESIONADO UNICAMENTE POR LABORATORIO!',
+                            textAlign: TextAlign.center,
                           ),
-                          TextButton(
-                            child: const Text('Aceptar'),
-                            onPressed: () {
-                              _finalizeProcess();
-                              Navigator.pop(context);
-                            },
-                          ),
-                        ]);
+                          const Text(
+                              'Este botón marcará como finalizado el procedimiento de laboratorio.\nAl hacer esto, certificarás que el equipo cumplió todos sus pasos de manera correcta y sin fallos.\nEl mal uso o incumplimiento de este procedimiento causará una sanción a la persona correspondiente.\n'),
+                          [
+                            TextButton(
+                              child: const Text('Cancelar'),
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                            ),
+                            TextButton(
+                              child: const Text('Aceptar'),
+                              onPressed: () {
+                                _finalizeProcess();
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ]);
+                    } else {
+                      showToast(
+                          "Si el equipo no tiene conexión al servidor, no puede finalizarse el proceso");
+                    }
                   }),
             },
             const SizedBox(

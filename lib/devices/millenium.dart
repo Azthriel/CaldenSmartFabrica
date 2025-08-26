@@ -90,7 +90,7 @@ class MilleniumPageState extends State<MilleniumPage> {
     var fun =
         utf8.decode(data); //Wifi status | wifi ssid | ble status | nickname
     fun = fun.replaceAll(RegExp(r'[^\x20-\x7E]'), '');
-    printLog(fun);
+    // printLog(fun);
     var parts = fun.split(':');
     if (parts[0] == 'WCS_CONNECTED') {
       nameOfWifi = parts[1];

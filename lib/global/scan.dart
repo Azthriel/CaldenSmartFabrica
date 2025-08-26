@@ -16,6 +16,7 @@ class ScanPageState extends State<ScanPage> {
   TextEditingController searchController = TextEditingController();
   late EasyRefreshController _controller;
   final FocusNode searchFocusNode = FocusNode();
+  Map<String, int> deviceRssi = {};
 
   @override
   void initState() {
@@ -45,10 +46,11 @@ class ScanPageState extends State<ScanPage> {
           withKeywords: keywords,
           timeout: const Duration(seconds: 30),
           androidUsesFineLocation: true,
-          continuousUpdates: false,
+          continuousUpdates: true,
         );
         FlutterBluePlus.scanResults.listen((results) {
           for (ScanResult result in results) {
+            deviceRssi[result.device.remoteId.toString()] = result.rssi;
             if (!devices
                 .any((device) => device.remoteId == result.device.remoteId)) {
               setState(() {
@@ -77,7 +79,6 @@ class ScanPageState extends State<ScanPage> {
 
       printLog('Teoricamente estoy conectado');
 
-      
       var conenctionSub = device.connectionState.listen(
         (BluetoothConnectionState state) {
           printLog('Estado de conexión: $state');
@@ -145,6 +146,21 @@ class ScanPageState extends State<ScanPage> {
         showToast('Error al conectar, intentelo nuevamente');
         // handleManualError(e, stackTrace);
       }
+    }
+  }
+
+  Icon _signalIcon(int rssi) {
+    if (rssi >= -60) {
+      // Mejor señal: Full bars
+      return const Icon(Icons.signal_cellular_alt_rounded, color: Colors.white);
+    } else if (rssi >= -75) {
+      // Señal media: Medium bars
+      return const Icon(Icons.signal_cellular_alt_2_bar_rounded,
+          color: Colors.white);
+    } else {
+      // Señal baja: Low bars
+      return const Icon(Icons.signal_cellular_alt_1_bar_rounded,
+          color: Colors.white);
     }
   }
 
@@ -246,6 +262,9 @@ class ScanPageState extends State<ScanPage> {
                       child: ListView.builder(
                         itemCount: filteredDevices.length,
                         itemBuilder: (context, index) {
+                          final rssi = deviceRssi[
+                                  filteredDevices[index].remoteId.toString()] ??
+                              0;
                           return Padding(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16.0, vertical: 10.0),
@@ -265,12 +284,21 @@ class ScanPageState extends State<ScanPage> {
                                 ),
                               ),
                               subtitle: Text(
-                                '${filteredDevices[index].remoteId}',
+                                filteredDevices[index].remoteId.toString(),
                                 style: const TextStyle(
                                     color: color4, fontSize: 14),
                               ),
-                              trailing: const Icon(Icons.chevron_right,
-                                  color: color4),
+                              trailing: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  _signalIcon(rssi),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '$rssi dBm',
+                                    style: const TextStyle(color: color4),
+                                  ),
+                                ],
+                              ),
                               onTap: () =>
                                   connectToDevice(filteredDevices[index]),
                             ),

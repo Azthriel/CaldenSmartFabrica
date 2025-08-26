@@ -44,12 +44,12 @@ class ParamsTabState extends State<ParamsTab> {
                 buildButton(
                   text: 'Desactivar control por distancia',
                   onPressed: () {
-                    String mailData =
-                        '${DeviceManager.getProductCode(deviceName)}[5](0)';
-                    bluetoothManager.toolsUuid.write(mailData.codeUnits);
+                    String pc = DeviceManager.getProductCode(deviceName);
+                    String sn = DeviceManager.extractSerialNumber(deviceName);
+                    putDistanceControl(pc, sn, false);
                     registerActivity(
-                      DeviceManager.getProductCode(deviceName),
-                      DeviceManager.extractSerialNumber(deviceName),
+                      pc,
+                      sn,
                       'Se desactivo el control por distancia',
                     );
                     setState(() {

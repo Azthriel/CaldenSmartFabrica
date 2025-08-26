@@ -790,6 +790,30 @@ class ToolsAWSState extends State<ToolsAWS> {
                                       elevation: 3,
                                     ),
                                   ),
+                                  if (distanceControlActive) ...[
+                                    const SizedBox(height: 10),
+                                    buildButton(
+                                      text: 'Desactivar control por distancia',
+                                      onPressed: () {
+                                        String pc =
+                                            DeviceManager.getProductCode(
+                                                deviceName);
+                                        String sn =
+                                            DeviceManager.extractSerialNumber(
+                                                deviceName);
+                                        putDistanceControl(pc, sn, false);
+                                        registerActivity(
+                                          pc,
+                                          sn,
+                                          'Se desactivo el control por distancia',
+                                        );
+                                        setState(() {
+                                          distanceControlActive = false;
+                                        });
+                                      },
+                                    ),
+                                    const SizedBox(height: 20),
+                                  ],
                                 ],
                               ),
                             ),
