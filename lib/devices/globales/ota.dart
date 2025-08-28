@@ -41,11 +41,7 @@ class OtaTabState extends State<OtaTab> {
   }
 
   void subToProgress() async {
-    printLog('Entre aquis mismito');
-
-    printLog('Hice cosas');
     await bluetoothManager.otaUuid.setNotifyValue(true);
-    printLog('Notif activated');
 
     final otaSub =
         bluetoothManager.otaUuid.onValueReceived.listen((List<int> event) {

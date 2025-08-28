@@ -5,6 +5,7 @@ import 'package:caldensmartfabrica/devices/globales/credentials.dart';
 import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
 import 'package:caldensmartfabrica/devices/globales/params.dart';
+import 'package:caldensmartfabrica/devices/globales/resmon.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -506,6 +507,11 @@ class MilleniumPageState extends State<MilleniumPage> {
         const LoggerBlePage(),
       ],
 
+      if (hasResourceMonitor) ...[
+        //*- Página RESOURCE MONITOR -*\\
+        const ResourceMonitorPage(),
+      ],
+
       //*- Página 5 OTA -*\\
       const OtaTab(),
     ];
@@ -669,6 +675,9 @@ class MilleniumPageState extends State<MilleniumPage> {
                   ],
                   if (hasLoggerBle) ...[
                     const Icon(Icons.receipt_long, size: 30, color: color4),
+                  ],
+                  if (hasResourceMonitor) ...[
+                    const Icon(Icons.monitor, size: 30, color: color4),
                   ],
                   const Icon(
                     Icons.send,

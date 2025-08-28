@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
 import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
+import 'package:caldensmartfabrica/devices/globales/resmon.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
 import 'package:flutter/material.dart';
 import '../master.dart';
@@ -1194,6 +1195,11 @@ class DetectorPageState extends State<DetectorPage> {
         const LoggerBlePage(),
       ],
 
+      if (hasResourceMonitor) ...[
+        //*- Página RESOURCE MONITOR -*\\
+        const ResourceMonitorPage(),
+      ],
+
       //*- Página 7 OTA -*\\
       const OtaTab(),
     ];
@@ -1335,6 +1341,9 @@ class DetectorPageState extends State<DetectorPage> {
                   ],
                   if (hasLoggerBle) ...[
                     const Icon(Icons.receipt_long, size: 30, color: color4),
+                  ],
+                  if (hasResourceMonitor) ...[
+                    const Icon(Icons.monitor, size: 30, color: color4),
                   ],
                   const Icon(Icons.send, size: 30, color: color4),
                 ],

@@ -5,6 +5,7 @@ import 'package:caldensmartfabrica/devices/globales/credentials.dart';
 import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
 import 'package:caldensmartfabrica/devices/globales/params.dart';
+import 'package:caldensmartfabrica/devices/globales/resmon.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -630,6 +631,11 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
         const LoggerBlePage(),
       ],
 
+      if (hasResourceMonitor) ...[
+        //*- Página RESOURCE MONITOR -*\\
+        const ResourceMonitorPage(),
+      ],
+
       //*- Página 6 OTA -*\\
       const OtaTab(),
     ];
@@ -765,6 +771,9 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
                     const Icon(Icons.person, size: 30, color: color4),
                     if (hasLoggerBle) ...[
                       const Icon(Icons.receipt_long, size: 30, color: color4),
+                    ],
+                    if (hasResourceMonitor) ...[
+                      const Icon(Icons.monitor, size: 30, color: color4),
                     ],
                     const Icon(Icons.send, size: 30, color: color4),
                   ] else ...[

@@ -11,7 +11,6 @@ class CredsTab extends StatefulWidget {
 
 class CredsTabState extends State<CredsTab> {
   bool sending = false;
-  
 
   Future<void> createAndSendThings() async {
     setState(() {
@@ -150,7 +149,31 @@ class CredsTabState extends State<CredsTab> {
               const SizedBox(
                 height: 10,
               ),
-              if (!isConnectedToAWS) ...[
+              if (!isConnectedToAWS && accessLevel < 3) ...[
+                sending
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          EasterEggs.things(legajoConectado),
+                          const LinearProgressIndicator(),
+                        ],
+                      )
+                    : buildButton(
+                        text: 'Crear y enviar Thing',
+                        onPressed: () async {
+                          await createAndSendThings();
+                          setState(() {
+                            sending = false;
+                          });
+                          bluetoothManager.toolsUuid.write(
+                              '${DeviceManager.getProductCode(deviceName)}[0](0)'
+                                  .codeUnits);
+                        },
+                      ),
+                const SizedBox(
+                  height: 20,
+                ),
+              ] else if (accessLevel == 3) ...[
                 sending
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
