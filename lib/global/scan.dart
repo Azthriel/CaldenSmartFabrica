@@ -100,6 +100,7 @@ class ScanPageState extends State<ScanPage> {
                 alreadySubIO = false;
                 werror = false;
                 hasLoggerBle = false;
+                hasResourceMonitor = false;
                 printLog(
                     'Razon: ${bluetoothManager.device.disconnectReason?.description}');
                 registerActivity(

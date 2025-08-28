@@ -36,18 +36,217 @@ class MilleniumPageState extends State<MilleniumPage> {
   List<List<dynamic>> recordedData = [];
   Timer? recordTimer;
 
-  void _onItemTapped(int index) {
-    if ((index - _selectedIndex).abs() > 1) {
-      _pageController.jumpToPage(index);
+  // Calcular el número de pestañas activas
+  int _getActiveTabCount() {
+    int count = 1; // Tools page (siempre presente)
+    if (accessLevel > 1) count++; // Params page
+    count++; // Control page (siempre presente)
+    if (accessLevel > 1) count++; // Creds page
+    if (hasLoggerBle) count++; // Logger page
+    if (hasResourceMonitor) count++; // Resource Monitor page
+    count++; // OTA page (siempre presente)
+    return count;
+  }
+
+  // Obtener los íconos para la navigation bar
+  List<Widget> _getNavigationBarItems() {
+    List<Widget> items = [
+      const Icon(Icons.settings, size: 30, color: color4),
+    ];
+
+    if (accessLevel > 1) {
+      items.add(const Icon(Icons.star, size: 30, color: color4));
+    }
+
+    items.add(const Icon(Icons.thermostat, size: 30, color: color4));
+
+    if (accessLevel > 1) {
+      items.add(const Icon(Icons.person, size: 30, color: color4));
+    }
+
+    if (hasLoggerBle) {
+      items.add(const Icon(Icons.receipt_long, size: 30, color: color4));
+    }
+
+    if (hasResourceMonitor) {
+      items.add(const Icon(Icons.monitor, size: 30, color: color4));
+    }
+
+    items.add(const Icon(Icons.send, size: 30, color: color4));
+
+    return items;
+  }
+
+  // Mapear índice de navigation bar a índice de página
+  int _mapNavIndexToPageIndex(int navIndex) {
+    int pageIndex = 0;
+    int currentNavIndex = 0;
+
+    // Tools page
+    if (currentNavIndex == navIndex) return pageIndex;
+    pageIndex++;
+    currentNavIndex++;
+
+    // Params page
+    if (accessLevel > 1) {
+      if (currentNavIndex == navIndex) return pageIndex;
+      pageIndex++;
+      currentNavIndex++;
+    }
+
+    // Control page
+    if (currentNavIndex == navIndex) return pageIndex;
+    pageIndex++;
+    currentNavIndex++;
+
+    // Creds page
+    if (accessLevel > 1) {
+      if (currentNavIndex == navIndex) return pageIndex;
+      pageIndex++;
+      currentNavIndex++;
+    }
+
+    // Logger page
+    if (hasLoggerBle) {
+      if (currentNavIndex == navIndex) return pageIndex;
+      pageIndex++;
+      currentNavIndex++;
+    }
+
+    // Resource Monitor page
+    if (hasResourceMonitor) {
+      if (currentNavIndex == navIndex) return pageIndex;
+      pageIndex++;
+      currentNavIndex++;
+    }
+
+    // OTA page
+    return pageIndex;
+  }
+
+  void _showCompleteMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: color1,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true, // Permite controlar el tamaño del BottomSheet
+      builder: (BuildContext context) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8, // Máximo 80% de la pantalla
+          ),
+          padding: const EdgeInsets.all(20),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Menú de navegación',
+                  style: TextStyle(
+                    color: color4,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Tools page (siempre disponible)
+                ListTile(
+                  leading: const Icon(Icons.settings, color: color4),
+                  title: const Text('Herramientas', style: TextStyle(color: color4)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _navigateToTab(0);
+                  },
+                ),
+                // Params page (solo si accessLevel > 1)
+                if (accessLevel > 1)
+                  ListTile(
+                    leading: const Icon(Icons.star, color: color4),
+                    title: const Text('Parámetros', style: TextStyle(color: color4)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _navigateToTab(1);
+                    },
+                  ),
+                // Control page (siempre disponible)
+                ListTile(
+                  leading: const Icon(Icons.thermostat, color: color4),
+                  title: const Text('Control', style: TextStyle(color: color4)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    int controlIndex = accessLevel > 1 ? 2 : 1;
+                    _navigateToTab(controlIndex);
+                  },
+                ),
+                // Creds page (solo si accessLevel > 1)
+                if (accessLevel > 1)
+                  ListTile(
+                    leading: const Icon(Icons.person, color: color4),
+                    title: const Text('Credenciales', style: TextStyle(color: color4)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _navigateToTab(3);
+                    },
+                  ),
+                // Logger BLE page (si disponible)
+                if (hasLoggerBle)
+                  ListTile(
+                    leading: const Icon(Icons.receipt_long, color: color4),
+                    title: const Text('Logger BLE', style: TextStyle(color: color4)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      int loggerIndex = 4;
+                      if (accessLevel <= 1) loggerIndex = 2;
+                      if (!hasLoggerBle && !hasResourceMonitor) loggerIndex = 1;
+                      _navigateToTab(loggerIndex);
+                    },
+                  ),
+                // Resource Monitor page (si disponible)
+                if (hasResourceMonitor)
+                  ListTile(
+                    leading: const Icon(Icons.monitor, color: color4),
+                    title: const Text('Resource Monitor', style: TextStyle(color: color4)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      int monitorIndex = 4;
+                      if (accessLevel <= 1) monitorIndex = 2;
+                      if (hasLoggerBle) monitorIndex = 5;
+                      _navigateToTab(monitorIndex);
+                    },
+                  ),
+                // OTA page (siempre disponible)
+                ListTile(
+                  leading: const Icon(Icons.send, color: color4),
+                  title: const Text('OTA', style: TextStyle(color: color4)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _navigateToTab(_getActiveTabCount() - 1);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Navegar a una pestaña específica
+  void _navigateToTab(int targetIndex) {
+    printLog('=== NAVIGATING TO TAB: $targetIndex ===');
+    if ((targetIndex - _selectedIndex).abs() > 1) {
+      _pageController.jumpToPage(targetIndex);
     } else {
       _pageController.animateToPage(
-        index,
+        targetIndex,
         duration: const Duration(milliseconds: 600),
         curve: Curves.easeInOut,
       );
     }
     setState(() {
-      _selectedIndex = index;
+      _selectedIndex = targetIndex;
     });
   }
 
@@ -193,8 +392,6 @@ class MilleniumPageState extends State<MilleniumPage> {
   //! VISUAL
   @override
   Widget build(BuildContext context) {
-    double bottomBarHeight = kBottomNavigationBarHeight;
-
     final List<Widget> pages = [
       //*- Página 1 TOOLS -*\\
       const ToolsPage(),
@@ -641,61 +838,40 @@ class MilleniumPageState extends State<MilleniumPage> {
               },
               children: pages,
             ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: CurvedNavigationBar(
-                index: _selectedIndex,
-                height: 75.0,
-                items: <Widget>[
-                  const Icon(
-                    Icons.settings,
-                    size: 30,
-                    color: color4,
-                  ),
-                  if (accessLevel > 1) ...[
-                    const Icon(
-                      Icons.star,
-                      size: 30,
-                      color: color4,
-                    ),
-                  ],
-                  const Icon(
-                    Icons.thermostat,
-                    size: 30,
-                    color: color4,
-                  ),
-                  if (accessLevel > 1) ...[
-                    const Icon(
-                      Icons.person,
-                      size: 30,
-                      color: color4,
-                    ),
-                  ],
-                  if (hasLoggerBle) ...[
-                    const Icon(Icons.receipt_long, size: 30, color: color4),
-                  ],
-                  if (hasResourceMonitor) ...[
-                    const Icon(Icons.monitor, size: 30, color: color4),
-                  ],
-                  const Icon(
-                    Icons.send,
-                    size: 30,
-                    color: color4,
-                  ),
-                ],
-                color: color1,
-                buttonBackgroundColor: color1,
-                backgroundColor: Colors.transparent,
-                animationCurve: Curves.easeInOut,
-                animationDuration: const Duration(milliseconds: 600),
-                onTap: (index) {
-                  _onItemTapped(index);
-                },
-                letIndexChange: (index) => true,
+            // Mostrar FAB si hay más de 4 pestañas, navigation bar si hay 4 o menos
+            if (_getActiveTabCount() > 4) ...[
+              // FAB para acceso a todas las pestañas cuando hay más de 4
+              Positioned(
+                right: 20,
+                bottom: 20,
+                child: FloatingActionButton(
+                  onPressed: _showCompleteMenu,
+                  backgroundColor: color2,
+                  child: const Icon(Icons.menu, color: color4),
+                ),
               ),
-            ),
+            ] else ...[
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: CurvedNavigationBar(
+                  index: _selectedIndex,
+                  height: 75.0,
+                  items: _getNavigationBarItems(),
+                  color: color1,
+                  buttonBackgroundColor: color1,
+                  backgroundColor: Colors.transparent,
+                  animationCurve: Curves.easeInOut,
+                  animationDuration: const Duration(milliseconds: 600),
+                  onTap: (index) {
+                    int pageIndex = _mapNavIndexToPageIndex(index);
+                    _navigateToTab(pageIndex);
+                  },
+                  letIndexChange: (index) => true,
+                ),
+              ),
+            ],
           ],
         ),
       ),
