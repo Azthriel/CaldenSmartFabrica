@@ -17,7 +17,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.31';
+String appVersionNumber = '1.0.33';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -1746,30 +1746,27 @@ class BluetoothManager {
 
       printLog("Software Version: $softwareVersion");
 
-      if (Versioner.isPosterior(softwareVersion, '250814A') ||
-          Versioner.isPosterior(softwareVersion, '250814A_F')) {
-        try {
-          BluetoothService loggerService = services.firstWhere(
-              (s) => s.uuid == Guid('ad04c0c7-6a98-4ab7-a29c-4c59ef1d0077'));
-          liveLoggerUuid = loggerService.characteristics.firstWhere(
-              (c) => c.uuid == Guid('e3375cd1-c0d2-4d8b-823d-2a7536cad48d'));
-          registerLoggerUuid = loggerService.characteristics.firstWhere(
-              (c) => c.uuid == Guid('b6abd12d-9b1c-452e-875d-28f99421e17a'));
-          hasLoggerBle = true;
-        } catch (e) {
-          printLog("Error al configurar los loggers: $e");
-          hasLoggerBle = false;
-        }
-        try {
-          BluetoothService resourceService = services.firstWhere(
-              (s) => s.uuid == Guid('a7bda260-17f0-4fea-923a-d7e98555b592'));
-          resourceMonitorUuid = resourceService.characteristics.firstWhere(
-              (c) => c.uuid == Guid('86728aa9-624b-4346-8c34-9eda0408bc1f'));
-          hasResourceMonitor = true;
-        } catch (e) {
-          printLog("Error al configurar el monitor de recursos: $e");
-          hasResourceMonitor = false;
-        }
+      try {
+        BluetoothService loggerService = services.firstWhere(
+            (s) => s.uuid == Guid('ad04c0c7-6a98-4ab7-a29c-4c59ef1d0077'));
+        liveLoggerUuid = loggerService.characteristics.firstWhere(
+            (c) => c.uuid == Guid('e3375cd1-c0d2-4d8b-823d-2a7536cad48d'));
+        registerLoggerUuid = loggerService.characteristics.firstWhere(
+            (c) => c.uuid == Guid('b6abd12d-9b1c-452e-875d-28f99421e17a'));
+        hasLoggerBle = true;
+      } catch (e) {
+        printLog("Error al configurar los loggers: $e");
+        hasLoggerBle = false;
+      }
+      try {
+        BluetoothService resourceService = services.firstWhere(
+            (s) => s.uuid == Guid('a7bda260-17f0-4fea-923a-d7e98555b592'));
+        resourceMonitorUuid = resourceService.characteristics.firstWhere(
+            (c) => c.uuid == Guid('86728aa9-624b-4346-8c34-9eda0408bc1f'));
+        hasResourceMonitor = true;
+      } catch (e) {
+        printLog("Error al configurar el monitor de recursos: $e");
+        hasResourceMonitor = false;
       }
 
       printLog("¿Tiene logger ble? $hasLoggerBle");

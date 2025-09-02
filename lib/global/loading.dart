@@ -12,7 +12,6 @@ class LoadingPage extends StatefulWidget {
 }
 
 class LoadState extends State<LoadingPage> {
-  
   String _dots = '';
   int dot = 0;
   late Timer _dotTimer;
@@ -117,8 +116,9 @@ class LoadState extends State<LoadingPage> {
             actualTemp = parts2[6];
             if (factoryMode) {
               awsInit = parts2[7] == '1';
-              tempMap = parts2[8] == '1';
-              parts2.length > 8
+              // tempMap = parts2[8] == '1';
+              offsetTemp = parts2[8];
+              parts2.length > 9
                   ? manualControl = parts2[9] == '1'
                   : manualControl = false;
             }
@@ -131,7 +131,8 @@ class LoadState extends State<LoadingPage> {
             actualTemp = parts2[5];
             if (factoryMode) {
               awsInit = parts2[6] == '1';
-              tempMap = parts2[7] == '1';
+              // tempMap = parts2[7] == '1';
+              offsetTemp = parts2[7];
             }
             manualControl = parts2.length > 8 ? parts2[8] == '1' : false;
             printLog('Estado: $turnOn');
