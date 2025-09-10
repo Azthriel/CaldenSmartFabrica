@@ -48,6 +48,8 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
 
     // Creds page (solo si accessLevel > 1)
     if (accessLevel > 1) {
+      if (pageType == 'burneo') return index; // página de burneo/control
+      index++;
       if (pageType == 'creds') return index;
       index++;
     }
@@ -128,6 +130,17 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
                     _navigateToTab(_getPageIndex('control'));
                   },
                 ),
+                // Burneo page (solo si accessLevel > 1)
+                if (accessLevel > 1)
+                  ListTile(
+                    leading: const Icon(Icons.build, color: color4),
+                    title:
+                        const Text('Burneo', style: TextStyle(color: color4)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _navigateToTab(_getPageIndex('burneo'));
+                    },
+                  ),
                 // Creds page (solo si accessLevel > 1)
                 if (accessLevel > 1)
                   ListTile(

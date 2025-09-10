@@ -59,6 +59,7 @@ class DetectorPageState extends State<DetectorPage> {
   //*-Light-*\\
   double _sliderValue = 100.0;
   //*-Light-*\\
+  bool deviceEBBR = false;
 
   // Obtener el índice correcto para cada página
   int _getPageIndex(String pageType) {
@@ -105,6 +106,12 @@ class DetectorPageState extends State<DetectorPage> {
     // Resource Monitor page (si disponible)
     if (hasResourceMonitor) {
       if (pageType == 'monitor') return index;
+      index++;
+    }
+
+    // Vars page (si disponible)
+    if (hasVars) {
+      if (pageType == 'vars') return index;
       index++;
     }
 
@@ -156,8 +163,8 @@ class DetectorPageState extends State<DetectorPage> {
                 if (accessLevel > 1 && factoryMode)
                   ListTile(
                     leading: const Icon(Icons.numbers, color: color4),
-                    title:
-                        const Text('Números', style: TextStyle(color: color4)),
+                    title: const Text('Carácteristicas',
+                        style: TextStyle(color: color4)),
                     onTap: () {
                       Navigator.pop(context);
                       _navigateToTab(_getPageIndex('numbers'));
@@ -167,8 +174,8 @@ class DetectorPageState extends State<DetectorPage> {
                 if (accessLevel > 1 && factoryMode)
                   ListTile(
                     leading: const Icon(Icons.tune, color: color4),
-                    title:
-                        const Text('Ajustes', style: TextStyle(color: color4)),
+                    title: const Text('Regulación',
+                        style: TextStyle(color: color4)),
                     onTap: () {
                       Navigator.pop(context);
                       _navigateToTab(_getPageIndex('tune'));
@@ -187,7 +194,7 @@ class DetectorPageState extends State<DetectorPage> {
                 if (accessLevel > 1 && factoryMode)
                   ListTile(
                     leading: const Icon(Icons.catching_pokemon, color: color4),
-                    title: const Text('Regulación',
+                    title: const Text('PIC Debug',
                         style: TextStyle(color: color4)),
                     onTap: () {
                       Navigator.pop(context);
@@ -225,6 +232,16 @@ class DetectorPageState extends State<DetectorPage> {
                     onTap: () {
                       Navigator.pop(context);
                       _navigateToTab(_getPageIndex('monitor'));
+                    },
+                  ),
+                if (hasVars)
+                  ListTile(
+                    leading: const Icon(Icons.vibration_sharp, color: color4),
+                    title: const Text('Variables',
+                        style: TextStyle(color: color4)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _navigateToTab(_getPageIndex('vars'));
                     },
                   ),
                 // OTA page (siempre disponible)
@@ -724,6 +741,20 @@ class DetectorPageState extends State<DetectorPage> {
       default:
         return 'Error';
     }
+  }
+
+  void _cambiarTipoDeDispositivo(){
+    String data = '${DeviceManager.getProductCode(deviceName)}[11](${deviceEBBR ? 0 : 1})';
+
+    bluetoothManager.toolsUuid.write(data.codeUnits);
+  }
+
+  void readVars() async {
+    varsValues = await bluetoothManager.varsUuid.read();
+    var parts2 = utf8.decode(varsValues).split(':');
+    printLog('Valores vars: $parts2');
+
+    deviceEBBR = parts2[0] == '1';
   }
 
   //! VISUAL
@@ -1384,6 +1415,38 @@ class DetectorPageState extends State<DetectorPage> {
       if (hasResourceMonitor) ...[
         //*- Página RESOURCE MONITOR -*\\
         const ResourceMonitorPage(),
+      ],
+
+      if (hasVars) ...[
+        Scaffold(
+          backgroundColor: color4,
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                buildText(
+                  text: '',
+                  textSpans: [
+                    const TextSpan(
+                      text: 'Tipo de dispositivo:\n',
+                      style:
+                          TextStyle(color: color4, fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text: deviceEBBR ? '1' : '0',
+                      style: TextStyle(
+                          color: deviceEBBR ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                buildButton(text: 'Cambiar tipo', onPressed: _cambiarTipoDeDispositivo),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        ),
       ],
 
       //*- Página 7 OTA -*\\

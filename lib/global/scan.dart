@@ -101,6 +101,12 @@ class ScanPageState extends State<ScanPage> {
                 werror = false;
                 hasLoggerBle = false;
                 hasResourceMonitor = false;
+                hasVars = false;
+                hasWifiVariables = false;
+                alreadySubWifi = false;
+                // Limpiar datos WiFi al desconectarse
+                wifiDataNotifier.clearWifiData();
+                wifiStoredNotifier.clearStoredNetworks();
                 printLog(
                     'Razon: ${bluetoothManager.device.disconnectReason?.description}');
                 registerActivity(
@@ -118,6 +124,11 @@ class ScanPageState extends State<ScanPage> {
                   bluetoothManager.setup(device).then((valor) {
                     printLog('RETORNASHE $valor');
                     if (valor) {
+                      // Si el setup fue exitoso y tiene variables WiFi, 
+                      // configurar la suscripción inicial
+                      if (hasWifiVariables) {
+                        subscribeToWifiData();
+                      }
                       navigatorKey.currentState
                           ?.pushReplacementNamed('/loading');
                     } else {

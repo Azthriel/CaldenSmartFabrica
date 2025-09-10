@@ -157,6 +157,7 @@ class LoadState extends State<LoadingPage> {
             debugValues = await bluetoothManager.debugUuid.read();
             awsInit = workValues[23] == 1;
           }
+
           printLog('Valores calibracion: $calibrationValues');
           printLog('Valores regulacion: $regulationValues');
           printLog('Valores debug: $debugValues');

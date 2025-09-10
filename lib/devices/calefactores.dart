@@ -666,191 +666,6 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                       },
                     ),
                   },
-                  if (pc == '027000_IOT') ...[
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    buildButton(
-                      text: 'Ciclado fijo',
-                      onPressed: () {
-                        registerActivity(pc, sn,
-                            'Se mando el ciclado de la válvula de este equipo');
-                        String data = '$pc[13](1000#5)';
-                        bluetoothManager.toolsUuid.write(data.codeUnits);
-                      },
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    buildButton(
-                      text: 'Configurar ciclado',
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            final TextEditingController cicleController =
-                                TextEditingController();
-                            final TextEditingController timeController =
-                                TextEditingController();
-                            return AlertDialog(
-                              backgroundColor: color1,
-                              title: const Center(
-                                child: Text(
-                                  'Especificar parametros del ciclador:',
-                                  style: TextStyle(
-                                    color: color4,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SizedBox(
-                                    width: 300,
-                                    child: TextField(
-                                      style: const TextStyle(color: color4),
-                                      controller: cicleController,
-                                      keyboardType: TextInputType.number,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Ingrese cantidad de ciclos',
-                                        hintText: 'Certificación: 1000',
-                                        labelStyle: TextStyle(color: color4),
-                                        hintStyle: TextStyle(color: color4),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(
-                                    height: 20,
-                                  ),
-                                  SizedBox(
-                                    width: 300,
-                                    child: TextField(
-                                      style: const TextStyle(color: color4),
-                                      controller: timeController,
-                                      keyboardType: TextInputType.number,
-                                      decoration: const InputDecoration(
-                                        labelText:
-                                            'Ingrese duración de los ciclos',
-                                        hintText: 'Recomendado: 1000',
-                                        suffixText: '(mS)',
-                                        suffixStyle: TextStyle(
-                                          color: color4,
-                                        ),
-                                        labelStyle: TextStyle(
-                                          color: color4,
-                                        ),
-                                        hintStyle: TextStyle(
-                                          color: color4,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    navigatorKey.currentState!.pop();
-                                  },
-                                  child: const Text(
-                                    'Cancelar',
-                                    style: TextStyle(
-                                      color: color4,
-                                    ),
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    int cicle =
-                                        int.parse(cicleController.text) * 2;
-                                    registerActivity(pc, sn,
-                                        'Se mando el ciclado de la válvula de este equipo\nMilisegundos: ${timeController.text}\nIteraciones:$cicle');
-                                    String data =
-                                        '$pc[13](${timeController.text}#$cicle)';
-                                    bluetoothManager.toolsUuid
-                                        .write(data.codeUnits);
-                                    navigatorKey.currentState!.pop();
-                                  },
-                                  child: const Text(
-                                    'Iniciar proceso',
-                                    style: TextStyle(color: color4),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    buildButton(
-                      text: 'Configurar Apertura\nTemporizada',
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            final TextEditingController timeController =
-                                TextEditingController();
-                            return AlertDialog(
-                              title: const Center(
-                                child: Text(
-                                  'Especificar parametros de la apertura temporizada:',
-                                  style: TextStyle(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SizedBox(
-                                    width: 300,
-                                    child: TextField(
-                                      style:
-                                          const TextStyle(color: Colors.black),
-                                      controller: timeController,
-                                      keyboardType: TextInputType.number,
-                                      decoration: const InputDecoration(
-                                        labelText:
-                                            'Ingrese cantidad de milisegundos',
-                                        labelStyle:
-                                            TextStyle(color: Colors.black),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    navigatorKey.currentState!.pop();
-                                  },
-                                  child: const Text('Cancelar'),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    registerActivity(pc, sn,
-                                        'Se mando el temporizado de apertura');
-                                    String data =
-                                        '$pc[14](${timeController.text.trim()})';
-                                    bluetoothManager.toolsUuid
-                                        .write(data.codeUnits);
-                                    navigatorKey.currentState!.pop();
-                                  },
-                                  child: const Text('Iniciar proceso'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                    )
-                  ],
                   const SizedBox(
                     height: 20,
                   ),
@@ -936,9 +751,190 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                       });
                     },
                   ),
+                ],
+                if (pc == '027000_IOT') ...[
                   const SizedBox(
-                    height: 50,
+                    height: 10,
                   ),
+                  buildButton(
+                    text: 'Ciclado fijo',
+                    onPressed: () {
+                      registerActivity(pc, sn,
+                          'Se mando el ciclado de la válvula de este equipo');
+                      String data = '$pc[13](1000#5)';
+                      bluetoothManager.toolsUuid.write(data.codeUnits);
+                    },
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  buildButton(
+                    text: 'Configurar ciclado',
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          final TextEditingController cicleController =
+                              TextEditingController();
+                          final TextEditingController timeController =
+                              TextEditingController();
+                          return AlertDialog(
+                            backgroundColor: color1,
+                            title: const Center(
+                              child: Text(
+                                'Especificar parametros del ciclador:',
+                                style: TextStyle(
+                                  color: color4,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 300,
+                                  child: TextField(
+                                    style: const TextStyle(color: color4),
+                                    controller: cicleController,
+                                    keyboardType: TextInputType.number,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Ingrese cantidad de ciclos',
+                                      hintText: 'Certificación: 1000',
+                                      labelStyle: TextStyle(color: color4),
+                                      hintStyle: TextStyle(color: color4),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(
+                                  height: 20,
+                                ),
+                                SizedBox(
+                                  width: 300,
+                                  child: TextField(
+                                    style: const TextStyle(color: color4),
+                                    controller: timeController,
+                                    keyboardType: TextInputType.number,
+                                    decoration: const InputDecoration(
+                                      labelText:
+                                          'Ingrese duración de los ciclos',
+                                      hintText: 'Recomendado: 1000',
+                                      suffixText: '(mS)',
+                                      suffixStyle: TextStyle(
+                                        color: color4,
+                                      ),
+                                      labelStyle: TextStyle(
+                                        color: color4,
+                                      ),
+                                      hintStyle: TextStyle(
+                                        color: color4,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  navigatorKey.currentState!.pop();
+                                },
+                                child: const Text(
+                                  'Cancelar',
+                                  style: TextStyle(
+                                    color: color4,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  int cicle =
+                                      int.parse(cicleController.text) * 2;
+                                  registerActivity(pc, sn,
+                                      'Se mando el ciclado de la válvula de este equipo\nMilisegundos: ${timeController.text}\nIteraciones:$cicle');
+                                  String data =
+                                      '$pc[13](${timeController.text}#$cicle)';
+                                  bluetoothManager.toolsUuid
+                                      .write(data.codeUnits);
+                                  navigatorKey.currentState!.pop();
+                                },
+                                child: const Text(
+                                  'Iniciar proceso',
+                                  style: TextStyle(color: color4),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  buildButton(
+                    text: 'Configurar Apertura\nTemporizada',
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          final TextEditingController timeController =
+                              TextEditingController();
+                          return AlertDialog(
+                            title: const Center(
+                              child: Text(
+                                'Especificar parametros de la apertura temporizada:',
+                                style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 300,
+                                  child: TextField(
+                                    style: const TextStyle(color: Colors.black),
+                                    controller: timeController,
+                                    keyboardType: TextInputType.number,
+                                    decoration: const InputDecoration(
+                                      labelText:
+                                          'Ingrese cantidad de milisegundos',
+                                      labelStyle:
+                                          TextStyle(color: Colors.black),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  navigatorKey.currentState!.pop();
+                                },
+                                child: const Text('Cancelar'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  registerActivity(pc, sn,
+                                      'Se mando el temporizado de apertura');
+                                  String data =
+                                      '$pc[14](${timeController.text.trim()})';
+                                  bluetoothManager.toolsUuid
+                                      .write(data.codeUnits);
+                                  navigatorKey.currentState!.pop();
+                                },
+                                child: const Text('Iniciar proceso'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  )
                 ],
                 Padding(
                   padding: EdgeInsets.only(bottom: bottomBarHeight + 20),

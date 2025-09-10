@@ -292,15 +292,17 @@ class HeladeraPageState extends State<HeladeraPage> {
   }
 
   void subscribeToWifiStatus() async {
-    printLog('Se subscribio a wifi');
-    await bluetoothManager.toolsUuid.setNotifyValue(true);
+    if (!hasWifiVariables) {
+      printLog('Se subscribio a wifi');
+      await bluetoothManager.toolsUuid.setNotifyValue(true);
 
-    final wifiSub =
-        bluetoothManager.toolsUuid.onValueReceived.listen((List<int> status) {
-      updateWifiValues(status);
-    });
+      final wifiSub =
+          bluetoothManager.toolsUuid.onValueReceived.listen((List<int> status) {
+        updateWifiValues(status);
+      });
 
-    bluetoothManager.device.cancelWhenDisconnected(wifiSub);
+      bluetoothManager.device.cancelWhenDisconnected(wifiSub);
+    }
   }
 
   void sendTemperature(int temp) {
