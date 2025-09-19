@@ -18,7 +18,7 @@ import 'package:msgpack_dart/msgpack_dart.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.34';
+String appVersionNumber = '1.0.35';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -96,10 +96,6 @@ bool alreadySubDebug = false;
 bool alreadySubWork = false;
 bool alreadySubIO = false;
 List<String> keywords = [];
-bool hasLoggerBle = false;
-bool hasResourceMonitor = false;
-bool hasVars = false;
-bool hasWifiVariables = false;
 bool alreadySubWifi = false;
 Map<String, Map<String, dynamic>> wifiAvailableData = {};
 //*-Relacionado al ble-*\\
@@ -384,7 +380,7 @@ List<Map<String, dynamic>> _buildWifiListFromBLE() {
       "Construyendo lista WiFi desde datos BLE. Total redes: ${wifiAvailableData.length}");
 
   wifiAvailableData.forEach((ssid, data) {
-    printLog("Procesando red: $ssid con datos: $data");
+    // printLog("Procesando red: $ssid con datos: $data");
     if (data.containsKey('rssi')) {
       int rssi = data['rssi'] as int;
       // Si no tiene 'enc', asumir que tiene contraseña (enc = 3 por defecto)
@@ -398,12 +394,12 @@ List<Map<String, dynamic>> _buildWifiListFromBLE() {
           'encryption': encryption,
           'hasPassword': encryption > 0,
         });
-        printLog("Red agregada: $ssid, RSSI: $rssi, Enc: $encryption");
+        // printLog("Red agregada: $ssid, RSSI: $rssi, Enc: $encryption");
       } else {
-        printLog("Red descartada por señal débil: $ssid, RSSI: $rssi");
+        // printLog("Red descartada por señal débil: $ssid, RSSI: $rssi");
       }
     } else {
-      printLog("Red descartada por falta de RSSI: $ssid");
+      // printLog("Red descartada por falta de RSSI: $ssid");
     }
   });
 
@@ -416,16 +412,26 @@ List<Map<String, dynamic>> _buildWifiListFromBLE() {
 }
 
 Future<void> sendWifitoBle(String ssid, String pass) async {
-  String value = '$ssid#$pass';
-  String deviceCommand = DeviceManager.getProductCode(deviceName);
-  printLog(deviceCommand);
-  String dataToSend = '$deviceCommand[1]($value)';
-  printLog(dataToSend);
-  try {
-    await bluetoothManager.toolsUuid.write(dataToSend.codeUnits);
-    printLog('Se mando el wifi ANASHE');
-  } catch (e) {
-    printLog('Error al conectarse a Wifi $e');
+  if (bluetoothManager.newGeneration) {
+    var data = {
+      "connect": {"ssid": ssid, "pass": pass}
+    };
+
+    List<int> messagePackData = serialize(data);
+    printLog("Enviando datos WiFi via BLE: $data");
+    await bluetoothManager.wifiDataUuid.write(messagePackData);
+  } else {
+    String value = '$ssid#$pass';
+    String deviceCommand = DeviceManager.getProductCode(deviceName);
+    printLog(deviceCommand);
+    String dataToSend = '$deviceCommand[1]($value)';
+    printLog(dataToSend);
+    try {
+      await bluetoothManager.toolsUuid.write(dataToSend.codeUnits);
+      printLog('Se mando el wifi ANASHE');
+    } catch (e) {
+      printLog('Error al conectarse a Wifi $e');
+    }
   }
   ssid != 'DSC' ? atemp = true : null;
 }
@@ -478,11 +484,10 @@ void wifiText(BuildContext context) {
   bool obscureText = true;
 
   // Si tiene variables WiFi, leer datos iniciales y luego suscribirse
-  if (hasWifiVariables) {
+  if (bluetoothManager.hasWifiService) {
+    readInitialWifiData();
     if (!alreadySubWifi) {
-      readInitialWifiData().then((_) {
-        subscribeToWifiData();
-      });
+      subscribeToWifiData();
     }
     // Leer también las redes guardadas
     readStoredWifiNetworks();
@@ -496,335 +501,347 @@ void wifiText(BuildContext context) {
         builder: (BuildContext context, StateSetter setState) {
           // Widget para construir la pestaña de redes disponibles
           Widget buildAvailableNetworksTab() {
-            if (!_scanInProgress &&
-                _wifiNetworksList.isEmpty &&
-                Platform.isAndroid) {
-              _fetchWiFiNetworks().then((wifiNetworks) {
-                setState(() {
-                  _wifiNetworksList = wifiNetworks;
-                });
-              });
-            }
+            // Si tiene variables WiFi, usar datos BLE en cualquier plataforma
+            if (bluetoothManager.hasWifiService) {
+              return ListenableBuilder(
+                listenable: wifiDataNotifier,
+                builder: (context, child) {
+                  final wifiListFromBLE = _buildWifiListFromBLE();
+                  final hasData = wifiDataNotifier.hasData();
 
-            if (Platform.isAndroid) {
-              // Usar datos BLE si está disponible, sino usar escaneo normal
-              return hasWifiVariables
-                  ? ListenableBuilder(
-                      listenable: wifiDataNotifier,
-                      builder: (context, child) {
-                        final wifiListFromBLE = _buildWifiListFromBLE();
-                        final hasData = wifiDataNotifier.hasData();
-
-                        if (!hasData) {
-                          return const SizedBox(
-                            height: 200,
-                            child: Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  CircularProgressIndicator(color: color4),
-                                  SizedBox(height: 10),
-                                  Text(
-                                    'Cargando redes WiFi...',
-                                    style:
-                                        TextStyle(color: color4, fontSize: 12),
-                                  ),
-                                ],
-                              ),
+                  if (!hasData) {
+                    return const SizedBox(
+                      height: 200,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircularProgressIndicator(color: color4),
+                            SizedBox(height: 10),
+                            Text(
+                              'Cargando redes WiFi...',
+                              style: TextStyle(color: color4, fontSize: 12),
                             ),
-                          );
-                        }
+                          ],
+                        ),
+                      ),
+                    );
+                  }
 
-                        if (wifiListFromBLE.isEmpty) {
-                          return const SizedBox(
-                            height: 200,
-                            child: Center(
-                              child: Text(
-                                'No se encontraron redes WiFi',
-                                style: TextStyle(color: color4, fontSize: 14),
-                              ),
-                            ),
-                          );
-                        }
+                  if (wifiListFromBLE.isEmpty) {
+                    return const SizedBox(
+                      height: 200,
+                      child: Center(
+                        child: Text(
+                          'No se encontraron redes WiFi',
+                          style: TextStyle(color: color4, fontSize: 14),
+                        ),
+                      ),
+                    );
+                  }
 
-                        return SizedBox(
-                          width: double.maxFinite,
-                          height: 200.0,
-                          child: ListView.builder(
-                            itemCount: wifiListFromBLE.length,
-                            itemBuilder: (context, index) {
-                              final networkData = wifiListFromBLE[index];
-                              String ssid = networkData['ssid'];
-                              int rssi = networkData['rssi'];
-                              bool hasPassword = networkData['hasPassword'];
+                  return SizedBox(
+                    width: double.maxFinite,
+                    height: 200.0,
+                    child: ListView.builder(
+                      itemCount: wifiListFromBLE.length,
+                      itemBuilder: (context, index) {
+                        final networkData = wifiListFromBLE[index];
+                        String ssid = networkData['ssid'];
+                        int rssi = networkData['rssi'];
+                        bool hasPassword = networkData['hasPassword'];
 
-                              return ExpansionTile(
-                                initiallyExpanded: _expandedIndex == index,
-                                onExpansionChanged: (bool open) {
-                                  if (open) {
-                                    wifiPassNode.requestFocus();
-                                    setState(() {
-                                      _expandedIndex = index;
-                                    });
-                                  } else {
-                                    setState(() {
-                                      _expandedIndex = null;
-                                    });
-                                  }
-                                },
-                                leading: Icon(
-                                  rssi >= -30
-                                      ? Icons.signal_wifi_4_bar
-                                      : rssi >= -67
-                                          ? Icons.signal_wifi_4_bar
-                                          : rssi >= -70
-                                              ? Icons.network_wifi_3_bar
-                                              : rssi >= -80
-                                                  ? Icons.network_wifi_2_bar
-                                                  : Icons.signal_wifi_0_bar,
-                                  color: color4,
-                                ),
-                                title: Text(
-                                  ssid,
-                                  style: const TextStyle(color: color4),
-                                ),
-                                backgroundColor: color1,
-                                collapsedBackgroundColor: color1,
-                                textColor: color4,
-                                iconColor: color4,
-                                collapsedIconColor: color4,
-                                children: hasPassword
-                                    ? [
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16.0,
-                                            vertical: 8.0,
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.lock,
-                                                color: color4,
-                                                size: 20,
-                                              ),
-                                              const SizedBox(width: 8.0),
-                                              Expanded(
-                                                child: TextField(
-                                                  focusNode: wifiPassNode,
-                                                  style: const TextStyle(
-                                                      color: color4),
-                                                  decoration: InputDecoration(
-                                                    hintText:
-                                                        'Escribir contraseña',
-                                                    hintStyle: const TextStyle(
-                                                        color: color3),
-                                                    enabledBorder:
-                                                        const UnderlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                          color: color4),
-                                                    ),
-                                                    focusedBorder:
-                                                        const UnderlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                          color: color4),
-                                                    ),
-                                                    border:
-                                                        const UnderlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                          color: color4),
-                                                    ),
-                                                    suffixIcon: IconButton(
-                                                      icon: Icon(
-                                                        obscureText
-                                                            ? Icons.visibility
-                                                            : Icons
-                                                                .visibility_off,
-                                                        color: color4,
-                                                      ),
-                                                      onPressed: () {
-                                                        setState(() {
-                                                          obscureText =
-                                                              !obscureText;
-                                                        });
-                                                      },
-                                                    ),
-                                                  ),
-                                                  obscureText: obscureText,
-                                                  onChanged: (value) {
-                                                    setState(() {
-                                                      _currentlySelectedSSID =
-                                                          ssid;
-                                                      _wifiPasswordsMap[ssid] =
-                                                          value;
-                                                    });
-                                                  },
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                        return ExpansionTile(
+                          initiallyExpanded: _expandedIndex == index,
+                          onExpansionChanged: (bool open) {
+                            if (open) {
+                              wifiPassNode.requestFocus();
+                              setState(() {
+                                _expandedIndex = index;
+                              });
+                            } else {
+                              setState(() {
+                                _expandedIndex = null;
+                              });
+                            }
+                          },
+                          leading: Icon(
+                            rssi >= -30
+                                ? Icons.signal_wifi_4_bar
+                                : rssi >= -67
+                                    ? Icons.signal_wifi_4_bar
+                                    : rssi >= -70
+                                        ? Icons.network_wifi_3_bar
+                                        : rssi >= -80
+                                            ? Icons.network_wifi_2_bar
+                                            : Icons.signal_wifi_0_bar,
+                            color: color4,
+                          ),
+                          title: Text(
+                            ssid,
+                            style: const TextStyle(color: color4),
+                          ),
+                          backgroundColor: color1,
+                          collapsedBackgroundColor: color1,
+                          textColor: color4,
+                          iconColor: color4,
+                          collapsedIconColor: color4,
+                          children: hasPassword
+                              ? [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16.0,
+                                      vertical: 8.0,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.lock,
+                                          color: color4,
+                                          size: 20,
                                         ),
-                                      ]
-                                    : [
-                                        Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: TextButton(
-                                            onPressed: () {
+                                        const SizedBox(width: 8.0),
+                                        Expanded(
+                                          child: TextField(
+                                            focusNode: wifiPassNode,
+                                            style:
+                                                const TextStyle(color: color4),
+                                            decoration: InputDecoration(
+                                              hintText: 'Escribir contraseña',
+                                              hintStyle: const TextStyle(
+                                                  color: color3),
+                                              enabledBorder:
+                                                  const UnderlineInputBorder(
+                                                borderSide:
+                                                    BorderSide(color: color4),
+                                              ),
+                                              focusedBorder:
+                                                  const UnderlineInputBorder(
+                                                borderSide:
+                                                    BorderSide(color: color4),
+                                              ),
+                                              border:
+                                                  const UnderlineInputBorder(
+                                                borderSide:
+                                                    BorderSide(color: color4),
+                                              ),
+                                              suffixIcon: IconButton(
+                                                icon: Icon(
+                                                  obscureText
+                                                      ? Icons.visibility
+                                                      : Icons.visibility_off,
+                                                  color: color4,
+                                                ),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    obscureText = !obscureText;
+                                                  });
+                                                },
+                                              ),
+                                            ),
+                                            obscureText: obscureText,
+                                            onChanged: (value) {
                                               setState(() {
                                                 _currentlySelectedSSID = ssid;
-                                                _wifiPasswordsMap[ssid] = '';
+                                                _wifiPasswordsMap[ssid] = value;
                                               });
-                                              sendWifitoBle(ssid, '');
-                                              Navigator.of(context).pop();
                                             },
-                                            child: const Text(
-                                              'Conectar (Red abierta)',
-                                              style: TextStyle(color: color4),
-                                            ),
                                           ),
                                         ),
                                       ],
-                              );
-                            },
-                          ),
+                                    ),
+                                  ),
+                                ]
+                              : [
+                                  Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: TextButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _currentlySelectedSSID = ssid;
+                                          _wifiPasswordsMap[ssid] = '';
+                                        });
+                                        sendWifitoBle(ssid, '');
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: const Text(
+                                        'Conectar (Red abierta)',
+                                        style: TextStyle(color: color4),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                         );
                       },
+                    ),
+                  );
+                },
+              );
+            }
+
+            // Si NO tiene variables WiFi
+            if (Platform.isAndroid) {
+              // Android: usar la librería de escaneo WiFi
+              if (!_scanInProgress && _wifiNetworksList.isEmpty) {
+                _fetchWiFiNetworks().then((wifiNetworks) {
+                  setState(() {
+                    _wifiNetworksList = wifiNetworks;
+                  });
+                });
+              }
+
+              return _wifiNetworksList.isEmpty && _scanInProgress
+                  ? const SizedBox(
+                      height: 200,
+                      child: Center(
+                        child: CircularProgressIndicator(color: color4),
+                      ),
                     )
-                  : _wifiNetworksList.isEmpty && _scanInProgress
-                      ? const SizedBox(
-                          height: 200,
-                          child: Center(
-                            child: CircularProgressIndicator(color: color4),
-                          ),
-                        )
-                      : SizedBox(
-                          width: double.maxFinite,
-                          height: 200.0,
-                          child: ListView.builder(
-                            itemCount: _wifiNetworksList.length,
-                            itemBuilder: (context, index) {
-                              final network = _wifiNetworksList[index];
-                              int nivel = network.level;
-                              return nivel >= -80
-                                  ? ExpansionTile(
-                                      initiallyExpanded:
-                                          _expandedIndex == index,
-                                      onExpansionChanged: (bool open) {
-                                        if (open) {
-                                          wifiPassNode.requestFocus();
-                                          setState(() {
-                                            _expandedIndex = index;
-                                          });
-                                        } else {
-                                          setState(() {
-                                            _expandedIndex = null;
-                                          });
-                                        }
-                                      },
-                                      leading: Icon(
-                                        nivel >= -30
+                  : SizedBox(
+                      width: double.maxFinite,
+                      height: 200.0,
+                      child: ListView.builder(
+                        itemCount: _wifiNetworksList.length,
+                        itemBuilder: (context, index) {
+                          final network = _wifiNetworksList[index];
+                          int nivel = network.level;
+                          return nivel >= -80
+                              ? ExpansionTile(
+                                  initiallyExpanded: _expandedIndex == index,
+                                  onExpansionChanged: (bool open) {
+                                    if (open) {
+                                      wifiPassNode.requestFocus();
+                                      setState(() {
+                                        _expandedIndex = index;
+                                      });
+                                    } else {
+                                      setState(() {
+                                        _expandedIndex = null;
+                                      });
+                                    }
+                                  },
+                                  leading: Icon(
+                                    nivel >= -30
+                                        ? Icons.signal_wifi_4_bar
+                                        : nivel >= -67
                                             ? Icons.signal_wifi_4_bar
-                                            : nivel >= -67
-                                                ? Icons.signal_wifi_4_bar
-                                                : nivel >= -70
-                                                    ? Icons.network_wifi_3_bar
-                                                    : nivel >= -80
-                                                        ? Icons
-                                                            .network_wifi_2_bar
-                                                        : Icons
-                                                            .signal_wifi_0_bar,
-                                        color: color4,
+                                            : nivel >= -70
+                                                ? Icons.network_wifi_3_bar
+                                                : nivel >= -80
+                                                    ? Icons.network_wifi_2_bar
+                                                    : Icons.signal_wifi_0_bar,
+                                    color: color4,
+                                  ),
+                                  title: Text(
+                                    network.ssid,
+                                    style: const TextStyle(color: color4),
+                                  ),
+                                  backgroundColor: color1,
+                                  collapsedBackgroundColor: color1,
+                                  textColor: color4,
+                                  iconColor: color4,
+                                  collapsedIconColor: color4,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16.0,
+                                        vertical: 8.0,
                                       ),
-                                      title: Text(
-                                        network.ssid,
-                                        style: const TextStyle(color: color4),
-                                      ),
-                                      backgroundColor: color1,
-                                      collapsedBackgroundColor: color1,
-                                      textColor: color4,
-                                      iconColor: color4,
-                                      collapsedIconColor: color4,
-                                      children: [
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16.0,
-                                            vertical: 8.0,
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.lock,
+                                            color: color4,
+                                            size: 20,
                                           ),
-                                          child: Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.lock,
-                                                color: color4,
-                                                size: 20,
-                                              ),
-                                              const SizedBox(width: 8.0),
-                                              Expanded(
-                                                child: TextField(
-                                                  focusNode: wifiPassNode,
-                                                  style: const TextStyle(
-                                                      color: color4),
-                                                  decoration: InputDecoration(
-                                                    hintText:
-                                                        'Escribir contraseña',
-                                                    hintStyle: const TextStyle(
-                                                        color: color3),
-                                                    enabledBorder:
-                                                        const UnderlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                          color: color4),
-                                                    ),
-                                                    focusedBorder:
-                                                        const UnderlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                          color: color4),
-                                                    ),
-                                                    border:
-                                                        const UnderlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                          color: color4),
-                                                    ),
-                                                    suffixIcon: IconButton(
-                                                      icon: Icon(
-                                                        obscureText
-                                                            ? Icons.visibility
-                                                            : Icons
-                                                                .visibility_off,
-                                                        color: color4,
-                                                      ),
-                                                      onPressed: () {
-                                                        setState(() {
-                                                          obscureText =
-                                                              !obscureText;
-                                                        });
-                                                      },
-                                                    ),
+                                          const SizedBox(width: 8.0),
+                                          Expanded(
+                                            child: TextField(
+                                              focusNode: wifiPassNode,
+                                              style: const TextStyle(
+                                                  color: color4),
+                                              decoration: InputDecoration(
+                                                hintText: 'Escribir contraseña',
+                                                hintStyle: const TextStyle(
+                                                    color: color3),
+                                                enabledBorder:
+                                                    const UnderlineInputBorder(
+                                                  borderSide:
+                                                      BorderSide(color: color4),
+                                                ),
+                                                focusedBorder:
+                                                    const UnderlineInputBorder(
+                                                  borderSide:
+                                                      BorderSide(color: color4),
+                                                ),
+                                                border:
+                                                    const UnderlineInputBorder(
+                                                  borderSide:
+                                                      BorderSide(color: color4),
+                                                ),
+                                                suffixIcon: IconButton(
+                                                  icon: Icon(
+                                                    obscureText
+                                                        ? Icons.visibility
+                                                        : Icons.visibility_off,
+                                                    color: color4,
                                                   ),
-                                                  obscureText: obscureText,
-                                                  onChanged: (value) {
+                                                  onPressed: () {
                                                     setState(() {
-                                                      _currentlySelectedSSID =
-                                                          network.ssid;
-                                                      _wifiPasswordsMap[
-                                                          network.ssid] = value;
+                                                      obscureText =
+                                                          !obscureText;
                                                     });
                                                   },
                                                 ),
                                               ),
-                                            ],
+                                              obscureText: obscureText,
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  _currentlySelectedSSID =
+                                                      network.ssid;
+                                                  _wifiPasswordsMap[
+                                                      network.ssid] = value;
+                                                });
+                                              },
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    )
-                                  : const SizedBox.shrink();
-                            },
-                          ),
-                        );
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : const SizedBox.shrink();
+                        },
+                      ),
+                    );
             } else {
+              // iOS sin variables WiFi: solo mostrar mensaje para agregar manualmente
               return const SizedBox(
                 height: 200,
                 child: Center(
-                  child: Text(
-                    'WiFi no disponible en esta plataforma',
-                    style: TextStyle(color: color4, fontSize: 14),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.wifi_off,
+                        color: color3,
+                        size: 48,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Escaneo WiFi no disponible en iOS',
+                        style: TextStyle(
+                            color: color4,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Usa "Agregar Red" para conectar manualmente',
+                        style: TextStyle(color: color3, fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -858,77 +875,181 @@ void wifiText(BuildContext context) {
                       String ssid = storedNetworks.keys.elementAt(index);
                       String password = storedNetworks[ssid]!;
 
-                      return Card(
-                        color: color1,
-                        child: ListTile(
-                          leading: const Icon(
-                            Icons.wifi_lock,
-                            color: color4,
+                      return Container(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 8.0,
+                          vertical: 4.0,
+                        ),
+                        decoration: BoxDecoration(
+                          color: color1,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: color2,
+                            width: 1.5,
                           ),
-                          title: Text(
-                            ssid,
-                            style: const TextStyle(color: color4),
-                          ),
-                          subtitle: const Text(
-                            'Contraseña guardada',
-                            style: TextStyle(color: color3, fontSize: 10),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
+                          boxShadow: [
+                            BoxShadow(
+                              color: color0.withValues(alpha: 0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.wifi,
-                                  color: Colors.green,
-                                ),
-                                onPressed: () {
-                                  sendWifitoBle(ssid, password);
-                                  Navigator.of(context).pop();
-                                },
-                                tooltip: 'Conectar',
+                              // Información de la red
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.wifi_lock,
+                                    color: color4,
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          ssid,
+                                          style: const TextStyle(
+                                            color: color4,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        const Text(
+                                          'Contraseña guardada',
+                                          style: TextStyle(
+                                            color: color3,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () {
-                                  showAlertDialog(
-                                    context,
-                                    false,
-                                    const Text(
-                                      'Confirmar eliminación',
-                                      style: TextStyle(color: color4),
-                                    ),
-                                    Text(
-                                      '¿Estás seguro de que quieres eliminar la red "$ssid"?',
-                                      style: const TextStyle(color: color4),
-                                    ),
-                                    [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: const Text(
-                                          'Cancelar',
-                                          style: TextStyle(color: color4),
+                              const SizedBox(height: 12),
+                              // Botones en la parte inferior
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            Colors.green.withValues(alpha: 0.2),
+                                        foregroundColor: Colors.green,
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 8),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          side: const BorderSide(
+                                            color: Colors.green,
+                                            width: 1,
+                                          ),
+                                        ),
+                                        elevation: 0,
+                                      ),
+                                      icon: const Icon(
+                                        Icons.wifi,
+                                        size: 18,
+                                      ),
+                                      label: const Text(
+                                        'Conectar',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
-                                      TextButton(
-                                        onPressed: () {
-                                          deleteStoredWifiNetwork(ssid);
-                                          Navigator.of(context).pop();
-                                          showToast('Red eliminada: $ssid');
-                                        },
-                                        child: const Text(
-                                          'Eliminar',
-                                          style: TextStyle(color: Colors.red),
+                                      onPressed: () {
+                                        sendWifitoBle(ssid, password);
+                                        Navigator.of(context).pop();
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            Colors.red.withValues(alpha: 0.2),
+                                        foregroundColor: Colors.red,
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 8),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          side: const BorderSide(
+                                            color: Colors.red,
+                                            width: 1,
+                                          ),
+                                        ),
+                                        elevation: 0,
+                                      ),
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        size: 18,
+                                      ),
+                                      label: const Text(
+                                        'Eliminar',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
-                                    ],
-                                  );
-                                },
-                                tooltip: 'Eliminar',
+                                      onPressed: () {
+                                        showAlertDialog(
+                                          context,
+                                          false,
+                                          const Text(
+                                            'Confirmar eliminación',
+                                            style:
+                                                TextStyle(color: Colors.black),
+                                          ),
+                                          Text(
+                                            '¿Estás seguro de que quieres eliminar la red "$ssid"?',
+                                            style: const TextStyle(
+                                                color: Colors.black),
+                                          ),
+                                          [
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                              child: const Text(
+                                                'Cancelar',
+                                                style: TextStyle(
+                                                    color: Colors.black),
+                                              ),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                deleteStoredWifiNetwork(ssid);
+                                                Navigator.of(context).pop();
+                                                showToast(
+                                                    'Red eliminada: $ssid');
+                                              },
+                                              child: const Text(
+                                                'Eliminar',
+                                                style: TextStyle(
+                                                    color: Colors.black),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -943,8 +1064,26 @@ void wifiText(BuildContext context) {
 
           // Función para construir la vista principal con TabBar
           Widget buildMainView() {
+            // Determinar el número de tabs basado en bluetoothManager.hasWifiService
+            final int tabCount = bluetoothManager.hasWifiService ? 2 : 1;
+            final List<Tab> tabs = [
+              const Tab(
+                icon: Icon(Icons.wifi_find),
+                text: 'Disponibles',
+              ),
+              if (bluetoothManager.hasWifiService)
+                const Tab(
+                  icon: Icon(Icons.wifi_lock),
+                  text: 'Guardadas',
+                ),
+            ];
+            final List<Widget> tabViews = [
+              buildAvailableNetworksTab(),
+              if (bluetoothManager.hasWifiService) buildStoredNetworksTab(),
+            ];
+
             return DefaultTabController(
-              length: 2,
+              length: tabCount,
               child: AlertDialog(
                 backgroundColor: color1,
                 title: Column(
@@ -1046,35 +1185,25 @@ void wifiText(BuildContext context) {
                         ),
                       ),
                     ],
-                    // TabBar
-                    const SizedBox(height: 15),
-                    const TabBar(
-                      labelColor: color4,
-                      unselectedLabelColor: color3,
-                      indicatorColor: color4,
-                      indicatorWeight: 2,
-                      tabs: [
-                        Tab(
-                          icon: Icon(Icons.wifi),
-                          text: 'Disponibles',
-                        ),
-                        Tab(
-                          icon: Icon(Icons.wifi_lock),
-                          text: 'Guardadas',
-                        ),
-                      ],
-                    ),
+                    // TabBar - Solo mostrar si hay más de una tab
+                    if (tabCount > 1) ...[
+                      const SizedBox(height: 15),
+                      TabBar(
+                        labelColor: color4,
+                        unselectedLabelColor: color3,
+                        indicatorColor: color4,
+                        indicatorWeight: 2,
+                        tabs: tabs,
+                      ),
+                    ],
                   ],
                 ),
                 content: SizedBox(
                   width: double.maxFinite,
                   height: 250,
-                  child: TabBarView(
-                    children: [
-                      buildAvailableNetworksTab(),
-                      buildStoredNetworksTab(),
-                    ],
-                  ),
+                  child: tabCount > 1
+                      ? TabBarView(children: tabViews)
+                      : tabViews.first,
                 ),
                 actions: [
                   Row(
@@ -1391,6 +1520,104 @@ String getWifiErrorSintax(int errorCode) {
   }
 }
 //*-Wifi, menú y scanner-*\\
+
+//*-Suscripción a datos WiFi desde BLE-*\\
+Future<void> readInitialWifiData() async {
+  if (bluetoothManager.hasWifiService) {
+    try {
+      // Leer la característica una vez para obtener datos iniciales
+      List<int> initialData = await bluetoothManager.wifiAvailableUuid.read();
+      // printLog("Datos WiFi iniciales leídos: $initialData");
+      // printLog(
+      //     "Datos en hex Available: ${initialData.map((e) => e.toRadixString(16).padLeft(2, '0')).join(' ')}");
+      wifiDataNotifier.updateWifiData(initialData);
+    } catch (e) {
+      printLog("Error al leer datos WiFi iniciales: $e", "rojo");
+    }
+  }
+}
+
+void subscribeToWifiData() async {
+  if (bluetoothManager.hasWifiService && !alreadySubWifi) {
+    try {
+      // IMPORTANTE: Configurar el listener ANTES de suscribirse
+      // porque el dispositivo envía datos inmediatamente
+      bluetoothManager.wifiAvailableUuid.onValueReceived
+          .listen((List<int> data) {
+        // printLog("Nuevos datos WiFi recibidos: $data");
+        // Agregar nuevos datos al final de la lista existente
+        wifiDataNotifier.appendWifiData(data);
+      });
+      printLog("Listener WiFi configurado");
+
+      // Ahora sí, suscribirse a las notificaciones
+      await bluetoothManager.wifiAvailableUuid.setNotifyValue(true);
+      alreadySubWifi = true;
+      printLog("Suscrito a datos WiFi BLE");
+    } catch (e) {
+      printLog("Error al suscribirse a datos WiFi: $e", "rojo");
+    }
+  }
+}
+
+void unsubscribeFromWifiData() async {
+  if (bluetoothManager.hasWifiService && alreadySubWifi) {
+    try {
+      await bluetoothManager.wifiAvailableUuid.setNotifyValue(false);
+      alreadySubWifi = false;
+      wifiDataNotifier.clearWifiData();
+      printLog("Desuscrito de datos WiFi BLE");
+    } catch (e) {
+      printLog("Error al desuscribirse de datos WiFi: $e", "rojo");
+    }
+  }
+}
+
+//*-Gestión de redes WiFi guardadas-*\\
+Future<void> readStoredWifiNetworks() async {
+  if (bluetoothManager.hasWifiService) {
+    try {
+      printLog("Intentando leer redes guardadas...");
+      // Leer la característica de redes guardadas
+      List<int> storedData = await bluetoothManager.wifiStoredUuid.read();
+      printLog("Redes guardadas leídas: $storedData");
+      printLog(
+          "Datos en hex Stored: ${storedData.map((e) => e.toRadixString(16).padLeft(2, '0')).join(' ')}");
+      wifiStoredNotifier.updateStoredNetworks(storedData);
+    } catch (e) {
+      printLog("Error al leer redes guardadas: $e", "rojo");
+    }
+  } else {
+    printLog(
+        "No se puede leer redes guardadas. bluetoothManager.hasWifiService: $bluetoothManager.hasWifiService");
+  }
+}
+
+Future<void> deleteStoredWifiNetwork(String ssid) async {
+  if (bluetoothManager.hasWifiService) {
+    try {
+      // Crear comando para borrar red
+      Map<String, dynamic> deleteCommand = {"cmd": 0, "content": ssid};
+
+      // Serializar a MessagePack
+      List<int> messagePackData = serialize(deleteCommand);
+
+      // Enviar comando
+      await bluetoothManager.wifiStoredUuid.write(messagePackData);
+      printLog("Comando de borrar red enviado para: $ssid");
+
+      // Actualizar la lista después de un pequeño delay
+      Future.delayed(const Duration(milliseconds: 500), () {
+        readStoredWifiNetworks();
+      });
+    } catch (e) {
+      printLog("Error al borrar red guardada: $e", "rojo");
+    }
+  }
+}
+//*-Gestión de redes WiFi guardadas-*\\
+
+//*-Suscripción a datos WiFi desde BLE-*\\
 
 //*-Qr scanner-*\\
 Future<void> openQRScanner(BuildContext context) async {
@@ -1941,7 +2168,39 @@ class BluetoothManager {
 
   BluetoothManager._internal();
 
+  // Variables de manejo global
   late BluetoothDevice device;
+  bool newGeneration = false;
+  Map<String, dynamic> data = {};
+
+  // Variables de nueva generación
+  bool hasLoggerBle = false;
+  bool hasResourceMonitor = false;
+  bool hasWifiService = false;
+  bool hasAppService = false;
+  bool hasTemperatureService = false;
+  bool hasOtaService = false;
+  bool hasAwsService = false;
+  bool hasBluetoothService = false;
+
+  // Variables de antigua generación
+  bool hasVars = false;
+
+  // Características generación nueva
+  late BluetoothCharacteristic wifiAvailableUuid;
+  late BluetoothCharacteristic wifiStoredUuid;
+  late BluetoothCharacteristic wifiDataUuid;
+  late BluetoothCharacteristic liveLoggerUuid;
+  late BluetoothCharacteristic registerLoggerUuid;
+  late BluetoothCharacteristic resourceMonitorUuid;
+  late BluetoothCharacteristic appDataUuid;
+  late BluetoothCharacteristic temperatureUuid;
+  late BluetoothCharacteristic awsUuid;
+  late BluetoothCharacteristic bleDataUuid;
+  late BluetoothCharacteristic otaBleUuid;
+  late BluetoothCharacteristic otaWifiUuid;
+
+  // Características generación antigua
   late BluetoothCharacteristic infoUuid;
   late BluetoothCharacteristic toolsUuid;
   late BluetoothCharacteristic varsUuid;
@@ -1953,158 +2212,234 @@ class BluetoothManager {
   late BluetoothCharacteristic debugUuid;
   late BluetoothCharacteristic ioUuid;
   late BluetoothCharacteristic patitoUuid;
-  late BluetoothCharacteristic wifiAvailableUuid;
-  late BluetoothCharacteristic wifiStoredUuid;
-  late BluetoothCharacteristic liveLoggerUuid;
-  late BluetoothCharacteristic registerLoggerUuid;
-  late BluetoothCharacteristic resourceMonitorUuid;
 
   Future<bool> setup(BluetoothDevice connectedDevice) async {
     try {
       device = connectedDevice;
+      deviceName = connectedDevice.platformName;
 
       List<BluetoothService> services =
           await device.discoverServices(timeout: 3);
 
-      BluetoothService infoService = services.firstWhere(
-          (s) => s.uuid == Guid('6a3253b4-48bc-4e97-bacd-325a1d142038'));
-      infoUuid = infoService.characteristics.firstWhere((c) =>
-          c.uuid ==
-          Guid(
-              'fc5c01f9-18de-4a75-848b-d99a198da9be')); //ProductType:SerialNumber:SoftVer:HardVer:Owner
-      toolsUuid = infoService.characteristics.firstWhere((c) =>
-          c.uuid ==
-          Guid(
-              '89925840-3d11-4676-bf9b-62961456b570')); //WifiStatus:WifiSSID/WifiError:BleStatus(users)
+      services.any((s) => s.uuid == Guid('180A'))
+          ? newGeneration = true
+          : newGeneration = false;
 
-      infoValues = await infoUuid.read();
-      String str = utf8.decode(infoValues);
-      var partes = str.split(':');
-      softwareVersion = partes[2];
-      hardwareVersion = partes[3];
-      factoryMode = softwareVersion.contains('_F');
-      String pc = partes[0];
-      printLog(
-          'Product code: ${DeviceManager.getProductCode(device.platformName)}');
-      printLog(
-          'Serial number: ${DeviceManager.extractSerialNumber(device.platformName)}');
+      printLog("Generación nueva: $newGeneration");
 
-      printLog("Hardware Version: $hardwareVersion");
+      //!División de setups
 
-      printLog("Software Version: $softwareVersion");
+      if (newGeneration) {
+        BluetoothService deviceInfoService =
+            services.firstWhere((s) => s.uuid == Guid('180A'));
 
-      try {
-        BluetoothService loggerService = services.firstWhere(
-            (s) => s.uuid == Guid('ad04c0c7-6a98-4ab7-a29c-4c59ef1d0077'));
-        liveLoggerUuid = loggerService.characteristics.firstWhere(
-            (c) => c.uuid == Guid('e3375cd1-c0d2-4d8b-823d-2a7536cad48d'));
-        registerLoggerUuid = loggerService.characteristics.firstWhere(
-            (c) => c.uuid == Guid('b6abd12d-9b1c-452e-875d-28f99421e17a'));
-        hasLoggerBle = true;
-      } catch (e) {
-        printLog("Error al configurar los loggers: $e");
-        hasLoggerBle = false;
-      }
-      try {
-        BluetoothService resourceService = services.firstWhere(
-            (s) => s.uuid == Guid('a7bda260-17f0-4fea-923a-d7e98555b592'));
-        resourceMonitorUuid = resourceService.characteristics.firstWhere(
-            (c) => c.uuid == Guid('86728aa9-624b-4346-8c34-9eda0408bc1f'));
-        hasResourceMonitor = true;
-      } catch (e) {
-        printLog("Error al configurar el monitor de recursos: $e");
-        hasResourceMonitor = false;
-      }
-      try {
-        BluetoothService wifiService = services.firstWhere(
-            (s) => s.uuid == Guid('312ccb9a-72aa-4b30-bfbd-2157050e2e43'));
+        // deviceName = utf8.decode(await deviceInfoService.characteristics
+        //     .firstWhere((c) => c.uuid == Guid('2A00'))
+        //     .read());
+        softwareVersion = utf8.decode(await deviceInfoService.characteristics
+            .firstWhere((c) => c.uuid == Guid('2A28'))
+            .read());
+        hardwareVersion = utf8.decode(await deviceInfoService.characteristics
+            .firstWhere((c) => c.uuid == Guid('2A27'))
+            .read());
+        factoryMode = softwareVersion.contains('_F');
 
-        wifiAvailableUuid = wifiService.characteristics.firstWhere(
-            (c) => c.uuid == Guid('238297b6-1ca1-423d-a2c0-739871488c4a'));
-        wifiStoredUuid = wifiService.characteristics.firstWhere(
-            (c) => c.uuid == Guid('bcbb4443-78a8-47cc-bb75-b9728847d5c4'));
-        hasWifiVariables = true;
-      } catch (e) {
-        printLog("Error al configurar las variables de wifi: $e");
-        hasWifiVariables = false;
-      }
+        printLog("Device Name: $deviceName");
+        printLog("Hardware Version: $hardwareVersion");
+        printLog("Software Version: $softwareVersion");
+        printLog("Factory Mode: $factoryMode");
 
-      printLog("¿Tiene logger ble? $hasLoggerBle");
-      printLog("¿Tiene monitor de recursos? $hasResourceMonitor");
-      printLog("¿Tiene variables de wifi? $hasWifiVariables");
+        try {
+          BluetoothService loggerService = services.firstWhere(
+              (s) => s.uuid == Guid('ad04c0c7-6a98-4ab7-a29c-4c59ef1d0077'));
+          liveLoggerUuid = loggerService.characteristics.firstWhere(
+              (c) => c.uuid == Guid('e3375cd1-c0d2-4d8b-823d-2a7536cad48d'));
+          registerLoggerUuid = loggerService.characteristics.firstWhere(
+              (c) => c.uuid == Guid('b6abd12d-9b1c-452e-875d-28f99421e17a'));
+          hasLoggerBle = true;
+        } catch (e) {
+          printLog("Error al configurar los loggers: $e");
+          hasLoggerBle = false;
+        }
 
-      switch (pc) {
-        case '022000_IOT' ||
-              '027000_IOT' ||
-              '041220_IOT' ||
-              '050217_IOT' ||
-              '028000_IOT' ||
-              '023430_IOT':
-          BluetoothService espService = services.firstWhere(
-              (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
+        try {
+          BluetoothService resourceService = services.firstWhere(
+              (s) => s.uuid == Guid('a7bda260-17f0-4fea-923a-d7e98555b592'));
+          resourceMonitorUuid = resourceService.characteristics.firstWhere(
+              (c) => c.uuid == Guid('86728aa9-624b-4346-8c34-9eda0408bc1f'));
+          hasResourceMonitor = true;
+        } catch (e) {
+          printLog("Error al configurar el monitor de recursos: $e");
+          hasResourceMonitor = false;
+        }
 
-          varsUuid = espService.characteristics.firstWhere((c) =>
-              c.uuid ==
-              Guid(
-                  '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //WorkingTemp:WorkingStatus:EnergyTimer:HeaterOn:NightMode
-          otaUuid = espService.characteristics.firstWhere((c) =>
-              c.uuid ==
-              Guid(
-                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
+        try {
+          BluetoothService wifiService = services.firstWhere(
+              (s) => s.uuid == Guid('312ccb9a-72aa-4b30-bfbd-2157050e2e43'));
+          wifiAvailableUuid = wifiService.characteristics.firstWhere(
+              (c) => c.uuid == Guid('238297b6-1ca1-423d-a2c0-739871488c4a'));
+          wifiStoredUuid = wifiService.characteristics.firstWhere(
+              (c) => c.uuid == Guid('bcbb4443-78a8-47cc-bb75-b9728847d5c4'));
+          wifiDataUuid = wifiService.characteristics.firstWhere(
+              (c) => c.uuid == Guid('2470f494-f405-44ce-8e31-266090b79bd4'));
+          hasWifiService = true;
+        } catch (e) {
+          printLog("Error al configurar las variables de wifi: $e");
+          hasWifiService = false;
+        }
 
-          break;
+        try {
+          BluetoothService appService = services.firstWhere(
+              (s) => s.uuid == Guid('c3e7737a-46c0-434a-9d80-9acbff52cfc9'));
+          appDataUuid = appService.characteristics.firstWhere(
+              (c) => c.uuid == Guid('1726c56f-8f91-4020-a54a-fc04d233edee'));
+          hasAppService = true;
+        } catch (e) {
+          printLog("Error al configurar el servicio de app: $e");
+          hasAppService = false;
+        }
 
-        case '015773_IOT':
-          BluetoothService service = services.firstWhere(
-              (s) => s.uuid == Guid('dd249079-0ce8-4d11-8aa9-53de4040aec6'));
+        try {
+          BluetoothService tempService = services.firstWhere(
+              (s) => s.uuid == Guid('f0eff885-8e19-4e39-af05-8bf44570dd25'));
+          temperatureUuid = tempService.characteristics.firstWhere(
+              (c) => c.uuid == Guid('e6793e60-7326-4894-9bed-0984174778c0'));
+          hasTemperatureService = true;
+        } catch (e) {
+          printLog("Error al configurar el servicio de temperatura: $e");
+          hasTemperatureService = false;
+        }
 
-          if (factoryMode) {
-            calibrationUuid = service.characteristics.firstWhere(
-                (c) => c.uuid == Guid('0147ab2a-3987-4bb8-802b-315a664eadd6'));
-            regulationUuid = service.characteristics.firstWhere(
-                (c) => c.uuid == Guid('961d1cdd-028f-47d0-aa2a-e0095e387f55'));
-            debugUuid = service.characteristics.firstWhere(
-                (c) => c.uuid == Guid('838335a1-ff5a-4344-bfdf-38bf6730de26'));
-            BluetoothService otaService = services.firstWhere(
-                (s) => s.uuid == Guid('33e3a05a-c397-4bed-81b0-30deb11495c7'));
-            otaUuid = otaService.characteristics.firstWhere((c) =>
+        try {
+          BluetoothService otaService = services.firstWhere(
+              (s) => s.uuid == Guid('1d16c562-f0e3-484f-ac35-02294691dcd7'));
+          otaBleUuid = otaService.characteristics.firstWhere(
+              (c) => c.uuid == Guid('6af793f0-efc2-42f7-ad70-1b9ad5df5d98'));
+          otaWifiUuid = otaService.characteristics.firstWhere(
+              (c) => c.uuid == Guid('8562865a-deff-49aa-ab96-010ea2d20b0b'));
+          hasOtaService = true;
+        } catch (e) {
+          printLog("Error al configurar el servicio OTA: $e");
+          hasOtaService = false;
+        }
+
+        try {
+          BluetoothService awsService = services.firstWhere(
+              (s) => s.uuid == Guid('7148ba3e-9d37-4f16-9f86-2be696350a97'));
+          awsUuid = awsService.characteristics.firstWhere(
+              (c) => c.uuid == Guid('1387ef2f-ce09-4cfc-bb0e-80dd82d391de'));
+          hasAwsService = true;
+        } catch (e) {
+          printLog("Error al configurar el servicio AWS: $e");
+          hasAwsService = false;
+        }
+
+        try {
+          BluetoothService bluetoothService = services.firstWhere(
+              (s) => s.uuid == Guid('57a3a83d-0771-4bc6-801a-82516517f088'));
+          bleDataUuid = bluetoothService.characteristics.firstWhere(
+              (c) => c.uuid == Guid('6d698617-4d87-4400-8ff7-eb256ed17cef'));
+          hasBluetoothService = true;
+        } catch (e) {
+          printLog("Error al configurar el servicio Bluetooth: $e");
+          hasBluetoothService = false;
+        }
+
+        printLog("¿Tiene logger ble? $hasLoggerBle");
+        printLog("¿Tiene monitor de recursos? $hasResourceMonitor");
+        printLog("¿Tiene variables de wifi? $hasWifiService");
+        printLog("¿Tiene servicio de app? $hasAppService");
+        printLog("¿Tiene servicio de temperatura? $hasTemperatureService");
+        printLog("¿Tiene servicio OTA? $hasOtaService");
+        printLog("¿Tiene servicio AWS? $hasAwsService");
+        printLog("¿Tiene servicio Bluetooth? $hasBluetoothService");
+      } else {
+        BluetoothService infoService = services.firstWhere(
+            (s) => s.uuid == Guid('6a3253b4-48bc-4e97-bacd-325a1d142038'));
+        infoUuid = infoService.characteristics.firstWhere((c) =>
+            c.uuid ==
+            Guid(
+                'fc5c01f9-18de-4a75-848b-d99a198da9be')); //ProductType:SerialNumber:SoftVer:HardVer:Owner
+        toolsUuid = infoService.characteristics.firstWhere((c) =>
+            c.uuid ==
+            Guid(
+                '89925840-3d11-4676-bf9b-62961456b570')); //WifiStatus:WifiSSID/WifiError:BleStatus(users)
+
+        infoValues = await infoUuid.read();
+        String str = utf8.decode(infoValues);
+        var partes = str.split(':');
+        softwareVersion = partes[2];
+        hardwareVersion = partes[3];
+        factoryMode = softwareVersion.contains('_F');
+        String pc = partes[0];
+        printLog(
+            'Product code: ${DeviceManager.getProductCode(device.platformName)}');
+        printLog(
+            'Serial number: ${DeviceManager.extractSerialNumber(device.platformName)}');
+
+        printLog("Hardware Version: $hardwareVersion");
+
+        printLog("Software Version: $softwareVersion");
+
+        switch (pc) {
+          case '022000_IOT' ||
+                '027000_IOT' ||
+                '041220_IOT' ||
+                '050217_IOT' ||
+                '028000_IOT' ||
+                '023430_IOT':
+            BluetoothService espService = services.firstWhere(
+                (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
+
+            varsUuid = espService.characteristics.firstWhere((c) =>
+                c.uuid ==
+                Guid(
+                    '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //WorkingTemp:WorkingStatus:EnergyTimer:HeaterOn:NightMode
+            otaUuid = espService.characteristics.firstWhere((c) =>
                 c.uuid ==
                 Guid(
                     'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
-          }
 
-          workUuid = service.characteristics.firstWhere((c) =>
-              c.uuid ==
-              Guid(
-                  '6869fe94-c4a2-422a-ac41-b2a7a82803e9')); //Array de datos (ppm,etc)
-          lightUuid = service.characteristics.firstWhere((c) =>
-              c.uuid == Guid('12d3c6a1-f86e-4d5b-89b5-22dc3f5c831f')); //No leo
+            break;
 
-          try {
-            varsUuid = service.characteristics.firstWhere(
-                (c) => c.uuid == Guid('52a2f121-a8e3-468c-a5de-45dca9a2a207'));
-            hasVars = true;
-          } catch (e) {
-            printLog("No tiene vars ble: $e");
-            hasVars = false;
-          }
+          case '015773_IOT':
+            BluetoothService service = services.firstWhere(
+                (s) => s.uuid == Guid('dd249079-0ce8-4d11-8aa9-53de4040aec6'));
 
-          break;
-        case '020010_IOT' || '020020_IOT':
-          BluetoothService service = services.firstWhere(
-              (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
-          ioUuid = service.characteristics.firstWhere(
-              (c) => c.uuid == Guid('03b1c5d9-534a-4980-aed3-f59615205216'));
-          otaUuid = service.characteristics.firstWhere((c) =>
-              c.uuid ==
-              Guid(
-                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
-          varsUuid = service.characteristics.firstWhere(
-              (c) => c.uuid == Guid('52a2f121-a8e3-468c-a5de-45dca9a2a207'));
-          break;
-        case '027313_IOT':
-          if (Versioner.isPosterior(hardwareVersion, '241220A')) {
-            printLog("Soy nuevito aña");
+            if (factoryMode) {
+              calibrationUuid = service.characteristics.firstWhere((c) =>
+                  c.uuid == Guid('0147ab2a-3987-4bb8-802b-315a664eadd6'));
+              regulationUuid = service.characteristics.firstWhere((c) =>
+                  c.uuid == Guid('961d1cdd-028f-47d0-aa2a-e0095e387f55'));
+              debugUuid = service.characteristics.firstWhere((c) =>
+                  c.uuid == Guid('838335a1-ff5a-4344-bfdf-38bf6730de26'));
+              BluetoothService otaService = services.firstWhere((s) =>
+                  s.uuid == Guid('33e3a05a-c397-4bed-81b0-30deb11495c7'));
+              otaUuid = otaService.characteristics.firstWhere((c) =>
+                  c.uuid ==
+                  Guid(
+                      'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
+            }
+
+            workUuid = service.characteristics.firstWhere((c) =>
+                c.uuid ==
+                Guid(
+                    '6869fe94-c4a2-422a-ac41-b2a7a82803e9')); //Array de datos (ppm,etc)
+            lightUuid = service.characteristics.firstWhere((c) =>
+                c.uuid ==
+                Guid('12d3c6a1-f86e-4d5b-89b5-22dc3f5c831f')); //No leo
+
+            try {
+              varsUuid = service.characteristics.firstWhere((c) =>
+                  c.uuid == Guid('52a2f121-a8e3-468c-a5de-45dca9a2a207'));
+              bluetoothManager.hasVars = true;
+            } catch (e) {
+              printLog("No tiene vars ble: $e");
+              bluetoothManager.hasVars = false;
+            }
+
+            break;
+          case '020010_IOT' || '020020_IOT':
             BluetoothService service = services.firstWhere(
                 (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
             ioUuid = service.characteristics.firstWhere(
@@ -2115,44 +2450,59 @@ class BluetoothManager {
                     'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
             varsUuid = service.characteristics.firstWhere(
                 (c) => c.uuid == Guid('52a2f121-a8e3-468c-a5de-45dca9a2a207'));
-          } else {
+            break;
+          case '027313_IOT':
+            if (Versioner.isPosterior(hardwareVersion, '241220A')) {
+              printLog("Soy nuevito aña");
+              BluetoothService service = services.firstWhere((s) =>
+                  s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
+              ioUuid = service.characteristics.firstWhere((c) =>
+                  c.uuid == Guid('03b1c5d9-534a-4980-aed3-f59615205216'));
+              otaUuid = service.characteristics.firstWhere((c) =>
+                  c.uuid ==
+                  Guid(
+                      'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
+              varsUuid = service.characteristics.firstWhere((c) =>
+                  c.uuid == Guid('52a2f121-a8e3-468c-a5de-45dca9a2a207'));
+            } else {
+              BluetoothService espService = services.firstWhere((s) =>
+                  s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
+
+              varsUuid = espService.characteristics.firstWhere((c) =>
+                  c.uuid ==
+                  Guid(
+                      '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //DistanceControl:W_Status:EnergyTimer:AwsINIT
+              otaUuid = espService.characteristics.firstWhere((c) =>
+                  c.uuid ==
+                  Guid(
+                      'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
+            }
+
+            break;
+          case '024011_IOT':
             BluetoothService espService = services.firstWhere(
                 (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
 
             varsUuid = espService.characteristics.firstWhere((c) =>
                 c.uuid ==
                 Guid(
-                    '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //DistanceControl:W_Status:EnergyTimer:AwsINIT
+                    '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //DstCtrl:LargoRoller:InversionGiro:VelocidadMotor:PosicionActual:PosicionTrabajo:RollerMoving:AWSinit
             otaUuid = espService.characteristics.firstWhere((c) =>
                 c.uuid ==
                 Guid(
                     'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
-          }
-
-          break;
-        case '024011_IOT':
-          BluetoothService espService = services.firstWhere(
-              (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
-
-          varsUuid = espService.characteristics.firstWhere((c) =>
-              c.uuid ==
-              Guid(
-                  '52a2f121-a8e3-468c-a5de-45dca9a2a207')); //DstCtrl:LargoRoller:InversionGiro:VelocidadMotor:PosicionActual:PosicionTrabajo:RollerMoving:AWSinit
-          otaUuid = espService.characteristics.firstWhere((c) =>
-              c.uuid ==
-              Guid(
-                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
-          break;
-        case '027170_IOT':
-          BluetoothService service = services.firstWhere(
-              (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
-          patitoUuid = service.characteristics.firstWhere(
-              (c) => c.uuid == Guid('03b1c5d9-534a-4980-aed3-f59615205216'));
-          otaUuid = service.characteristics.firstWhere((c) =>
-              c.uuid ==
-              Guid(
-                  'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
-          break;
+            break;
+          case '027170_IOT':
+            BluetoothService service = services.firstWhere(
+                (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
+            patitoUuid = service.characteristics.firstWhere(
+                (c) => c.uuid == Guid('03b1c5d9-534a-4980-aed3-f59615205216'));
+            otaUuid = service.characteristics.firstWhere((c) =>
+                c.uuid ==
+                Guid(
+                    'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
+            break;
+        }
       }
 
       return Future.value(true);
@@ -2163,104 +2513,22 @@ class BluetoothManager {
       return Future.value(false);
     }
   }
+
+  void restoreData() {
+    hasLoggerBle = false;
+    hasResourceMonitor = false;
+    hasVars = false;
+    hasWifiService = false;
+    newGeneration = false;
+    hasAppService = false;
+    hasTemperatureService = false;
+    hasOtaService = false;
+    hasAwsService = false;
+    hasBluetoothService = false;
+    data = {};
+  }
 }
 //*-BLE, configuraciones del equipo-*\\
-
-//*-Suscripción a datos WiFi desde BLE-*\\
-Future<void> readInitialWifiData() async {
-  if (hasWifiVariables) {
-    try {
-      // Leer la característica una vez para obtener datos iniciales
-      List<int> initialData = await bluetoothManager.wifiAvailableUuid.read();
-      printLog("Datos WiFi iniciales leídos: $initialData");
-      wifiDataNotifier.updateWifiData(initialData);
-    } catch (e) {
-      printLog("Error al leer datos WiFi iniciales: $e", "rojo");
-    }
-  }
-}
-
-void subscribeToWifiData() async {
-  if (hasWifiVariables && !alreadySubWifi) {
-    try {
-      // IMPORTANTE: Configurar el listener ANTES de suscribirse
-      // porque el dispositivo envía datos inmediatamente
-      bluetoothManager.wifiAvailableUuid.onValueReceived
-          .listen((List<int> data) {
-        printLog("Nuevos datos WiFi recibidos: $data");
-        // Agregar nuevos datos al final de la lista existente
-        wifiDataNotifier.appendWifiData(data);
-      });
-      printLog("Listener WiFi configurado");
-
-      // Ahora sí, suscribirse a las notificaciones
-      await bluetoothManager.wifiAvailableUuid.setNotifyValue(true);
-      alreadySubWifi = true;
-      printLog("Suscrito a datos WiFi BLE");
-    } catch (e) {
-      printLog("Error al suscribirse a datos WiFi: $e", "rojo");
-    }
-  }
-}
-
-void unsubscribeFromWifiData() async {
-  if (hasWifiVariables && alreadySubWifi) {
-    try {
-      await bluetoothManager.wifiAvailableUuid.setNotifyValue(false);
-      alreadySubWifi = false;
-      wifiDataNotifier.clearWifiData();
-      printLog("Desuscrito de datos WiFi BLE");
-    } catch (e) {
-      printLog("Error al desuscribirse de datos WiFi: $e", "rojo");
-    }
-  }
-}
-
-//*-Gestión de redes WiFi guardadas-*\\
-Future<void> readStoredWifiNetworks() async {
-  if (hasWifiVariables) {
-    try {
-      printLog("Intentando leer redes guardadas...");
-      // Leer la característica de redes guardadas
-      List<int> storedData = await bluetoothManager.wifiStoredUuid.read();
-      printLog("Redes guardadas leídas: $storedData");
-      printLog(
-          "Datos en hex: ${storedData.map((e) => e.toRadixString(16).padLeft(2, '0')).join(' ')}");
-      wifiStoredNotifier.updateStoredNetworks(storedData);
-    } catch (e) {
-      printLog("Error al leer redes guardadas: $e", "rojo");
-    }
-  } else {
-    printLog(
-        "No se puede leer redes guardadas. hasWifiVariables: $hasWifiVariables");
-  }
-}
-
-Future<void> deleteStoredWifiNetwork(String ssid) async {
-  if (hasWifiVariables) {
-    try {
-      // Crear comando para borrar red
-      Map<String, dynamic> deleteCommand = {"cmd": 0, "content": ssid};
-
-      // Serializar a MessagePack
-      List<int> messagePackData = serialize(deleteCommand);
-
-      // Enviar comando
-      await bluetoothManager.wifiStoredUuid.write(messagePackData);
-      printLog("Comando de borrar red enviado para: $ssid");
-
-      // Actualizar la lista después de un pequeño delay
-      Future.delayed(const Duration(milliseconds: 500), () {
-        readStoredWifiNetworks();
-      });
-    } catch (e) {
-      printLog("Error al borrar red guardada: $e", "rojo");
-    }
-  }
-}
-//*-Gestión de redes WiFi guardadas-*\\
-
-//*-Suscripción a datos WiFi desde BLE-*\\
 
 //*-Metodos, interacción con código Nativo-*\\
 class NativeService {
@@ -2552,8 +2820,15 @@ class WiFiStoredNotifier extends ChangeNotifier {
   // Actualizar redes guardadas desde MessagePack
   void updateStoredNetworks(List<int> messagePack) {
     try {
+      printLog("Intentando decodificar MessagePack...");
+      printLog("Datos recibidos length: ${messagePack.length}");
+      printLog("A deserializar: ${Uint8List.fromList(messagePack)}");
+
       // Decodificar MessagePack
       final decoded = deserialize(Uint8List.fromList(messagePack));
+      printLog("MessagePack decodificado exitosamente");
+      printLog("Tipo de dato decodificado: ${decoded.runtimeType}");
+      printLog("Contenido decodificado: $decoded");
 
       if (decoded is Map) {
         Map<String, String> newStoredNetworks = {};
@@ -2566,10 +2841,23 @@ class WiFiStoredNotifier extends ChangeNotifier {
           _storedNetworks = newStoredNetworks;
           printLog("Redes guardadas actualizadas: $_storedNetworks");
           notifyListeners();
+        } else {
+          printLog("No hay cambios en las redes guardadas");
         }
+      } else {
+        printLog("El dato decodificado no es un Map: ${decoded.runtimeType}");
       }
     } catch (e) {
       printLog("Error decodificando MessagePack redes guardadas: $e", "rojo");
+      printLog("Stack trace: ${StackTrace.current}");
+
+      // Intentar decodificar como texto plano para debug
+      try {
+        String textData = String.fromCharCodes(messagePack);
+        printLog("Datos como texto: '$textData'");
+      } catch (textError) {
+        printLog("Tampoco se puede decodificar como texto: $textError");
+      }
     }
   }
 

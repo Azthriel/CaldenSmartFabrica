@@ -111,7 +111,7 @@ class LoggerBlePageState extends State<LoggerBlePage> {
             'Sin contenido';
 
         // Extraer el nivel de log
-        level = logData['log-level']?.toString() ??
+        level = logData['log_level']?.toString() ??
             logData['level']?.toString() ??
             logData['lvl']?.toString() ??
             logData['severity']?.toString() ??

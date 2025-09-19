@@ -17,18 +17,23 @@ class ResourceMonitorPage extends StatefulWidget {
 class _ResourceMonitorPageState extends State<ResourceMonitorPage> {
   // --- State Variables ---
 
-  // Para los datos que se leen una sola vez
-  Map<String, dynamic> _staticData = {};
   bool _isLoadingStaticData = true;
-
-  // Para los datos que llegan por notificación (en tiempo real)
-  Map<String, dynamic> _dynamicData = {};
+  StreamSubscription<List<int>>? resourceMonitorSubscription;
+  Map<String, dynamic> realTimeResmonData = {};
+  Map<String, dynamic> staticResmonData = {};
 
   @override
   void initState() {
     super.initState();
     _readStaticData();
     _startSubscription();
+  }
+
+  @override
+  void dispose() {
+    resourceMonitorSubscription?.cancel();
+    bluetoothManager.resourceMonitorUuid.setNotifyValue(false);
+    super.dispose();
   }
 
   // --- Data Handling Logic ---
@@ -67,7 +72,7 @@ class _ResourceMonitorPageState extends State<ResourceMonitorPage> {
         final decodedData = _decodeMessagePack(value);
         if (decodedData is Map) {
           setState(() {
-            _staticData = Map<String, dynamic>.from(decodedData);
+            staticResmonData = Map<String, dynamic>.from(decodedData);
           });
         }
       }
@@ -84,7 +89,7 @@ class _ResourceMonitorPageState extends State<ResourceMonitorPage> {
   /// Inicia la suscripción a los datos en tiempo real.
   void _startSubscription() async {
     try {
-      final resourceMonitorSubscription =
+      resourceMonitorSubscription =
           bluetoothManager.resourceMonitorUuid.onValueReceived.listen(
         (List<int> data) {
           if (data.isNotEmpty) {
@@ -93,7 +98,7 @@ class _ResourceMonitorPageState extends State<ResourceMonitorPage> {
             if (decoded is Map) {
               setState(() {
                 // Actualizamos el mapa con los nuevos valores
-                _dynamicData = Map<String, dynamic>.from(decoded);
+                realTimeResmonData = Map<String, dynamic>.from(decoded);
               });
             }
           }
@@ -106,8 +111,6 @@ class _ResourceMonitorPageState extends State<ResourceMonitorPage> {
       printLog('Iniciando suscripción al monitor de recursos...', 'verde');
       await bluetoothManager.resourceMonitorUuid.setNotifyValue(true);
       printLog('Suscripción activada.', 'verde');
-      bluetoothManager.device
-          .cancelWhenDisconnected(resourceMonitorSubscription);
 
       setState(() {});
     } catch (e) {
@@ -164,13 +167,13 @@ class _ResourceMonitorPageState extends State<ResourceMonitorPage> {
             const Divider(height: 20),
             if (_isLoadingStaticData)
               const Center(child: CircularProgressIndicator())
-            else if (_staticData.isEmpty)
+            else if (staticResmonData.isEmpty)
               const Center(
                 child: Text('No se pudieron cargar los datos.',
                     style: TextStyle(color: color3)),
               )
             else
-              ..._staticData.entries.map(
+              ...staticResmonData.entries.map(
                 (entry) => _buildInfoRow(
                   _getSpanishLabel(entry.key), // Traduce la clave a español
                   entry.value.toString(),
@@ -205,7 +208,7 @@ class _ResourceMonitorPageState extends State<ResourceMonitorPage> {
               ),
             ),
             const SizedBox(height: 16),
-            if (_dynamicData.isNotEmpty) ...{
+            if (realTimeResmonData.isNotEmpty) ...{
               _buildProgressIndicators()
             } else ...{
               const Center(
@@ -229,22 +232,22 @@ class _ResourceMonitorPageState extends State<ResourceMonitorPage> {
       children: [
         _buildProgressIndicator(
           label: 'Uso del Heap',
-          value: _dynamicData['used_heap'] ?? 0,
+          value: realTimeResmonData['used_heap'] ?? 0,
         ),
         const SizedBox(height: 16),
         _buildProgressIndicator(
           label: 'Máximo Heap Usado',
-          value: _dynamicData['max_used_heap'] ?? 0,
+          value: realTimeResmonData['max_used_heap'] ?? 0,
         ),
         const SizedBox(height: 16),
         _buildProgressIndicator(
           label: 'Uso de SPIFFS',
-          value: _dynamicData['used_spiffs'] ?? 0,
+          value: realTimeResmonData['used_spiffs'] ?? 0,
         ),
         const SizedBox(height: 16),
         _buildProgressIndicator(
           label: 'Máximo Stack Usado',
-          value: _dynamicData['max_used_stack'] ?? 0,
+          value: realTimeResmonData['max_used_stack'] ?? 0,
         ),
       ],
     );

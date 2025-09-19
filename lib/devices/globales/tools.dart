@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:caldensmartfabrica/aws/dynamo/dynamo.dart';
 import 'package:caldensmartfabrica/aws/mqtt/mqtt.dart';
 import 'package:flutter/material.dart';
+import 'package:msgpack_dart/msgpack_dart.dart';
 
 import '../../master.dart';
 
@@ -22,12 +23,19 @@ class ToolsPageState extends State<ToolsPage> {
   }
 
   void sendDataToDevice() async {
-    String dataToSend = textController.text;
-    String data = '${DeviceManager.getProductCode(deviceName)}[4]($dataToSend)';
-    try {
-      await bluetoothManager.toolsUuid.write(data.codeUnits);
-    } catch (e) {
-      printLog(e);
+    String dataToSend = textController.text.trim();
+    if (bluetoothManager.newGeneration) {
+      Map<String, dynamic> command = {"change_sn": dataToSend};
+      List<int> messagePackData = serialize(command);
+      bluetoothManager.appDataUuid.write(messagePackData);
+    } else {
+      String data =
+          '${DeviceManager.getProductCode(deviceName)}[4]($dataToSend)';
+      try {
+        await bluetoothManager.toolsUuid.write(data.codeUnits);
+      } catch (e) {
+        printLog(e);
+      }
     }
   }
 
@@ -49,6 +57,7 @@ class ToolsPageState extends State<ToolsPage> {
     sendMessagemqtt(topic2, msg);
 
     if (pc == '022000_IOT' || pc == '027000_IOT' || pc == '041220_IOT') {
+      //TODO: Ver que hace esto
       bluetoothManager.toolsUuid.write('$pc[7](10)'.codeUnits);
     }
 
@@ -131,7 +140,7 @@ class ToolsPageState extends State<ToolsPage> {
               fontWeight: FontWeight.bold,
               widthFactor: 0.8,
             ),
-            if (accessLevel > 1) ...{
+            if (accessLevel > 1) ...[
               buildButton(
                 text: 'Borrar NVS',
                 onPressed: () {
@@ -140,14 +149,42 @@ class ToolsPageState extends State<ToolsPage> {
                     DeviceManager.extractSerialNumber(deviceName),
                     'Se borró la NVS de este equipo...',
                   );
-                  String data =
-                      '${DeviceManager.getProductCode(deviceName)}[0](1)';
-                  bluetoothManager.toolsUuid.write(data.codeUnits);
+                  if (bluetoothManager.newGeneration) {
+                    Map<String, dynamic> command = {
+                      "reboot": {'erase_nvs': true}
+                    };
+                    List<int> messagePackData = serialize(command);
+                    bluetoothManager.appDataUuid.write(messagePackData);
+                  } else {
+                    String data =
+                        '${DeviceManager.getProductCode(deviceName)}[0](1)';
+                    bluetoothManager.toolsUuid.write(data.codeUnits);
+                  }
                 },
               ),
               const SizedBox(
                 height: 20,
               ),
+              if (bluetoothManager.newGeneration) ...[
+                buildButton(
+                  text: 'Borrar SPIFFS',
+                  onPressed: () {
+                    registerActivity(
+                      DeviceManager.getProductCode(deviceName),
+                      DeviceManager.extractSerialNumber(deviceName),
+                      'Se borró la SPIFFS de este equipo...',
+                    );
+                    Map<String, dynamic> command = {
+                      "reboot": {'erase_spiffs': true}
+                    };
+                    List<int> messagePackData = serialize(command);
+                    bluetoothManager.appDataUuid.write(messagePackData);
+                  },
+                ),
+                const SizedBox(
+                  height: 20,
+                ),
+              ],
               buildText(
                 text: '',
                 fontSize: 20,
@@ -203,7 +240,7 @@ class ToolsPageState extends State<ToolsPage> {
                           "Si el equipo no tiene conexión al servidor, no puede finalizarse el proceso");
                     }
                   }),
-            },
+            ],
             const SizedBox(
               height: 20,
             ),

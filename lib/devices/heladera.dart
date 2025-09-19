@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
 import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
@@ -8,6 +9,7 @@ import 'package:caldensmartfabrica/devices/globales/params.dart';
 import 'package:caldensmartfabrica/devices/globales/resmon.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
 import 'package:flutter/material.dart';
+import 'package:msgpack_dart/msgpack_dart.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:csv/csv.dart';
@@ -36,6 +38,17 @@ class HeladeraPageState extends State<HeladeraPage> {
   List<List<dynamic>> recordedData = [];
   Timer? recordTimer;
 
+  final String pc = DeviceManager.getProductCode(deviceName);
+  final String sn = DeviceManager.extractSerialNumber(deviceName);
+  final bool newGen = bluetoothManager.newGeneration;
+
+  //LOCAL DATA
+  bool _wstatus = false;
+  bool _fstatus = false;
+  double _wtemp = 0.0;
+  String _actualTemp = '0';
+  bool _tempmap = false;
+
   // Obtener el índice correcto para cada página
   int _getPageIndex(String pageType) {
     int index = 0;
@@ -61,13 +74,13 @@ class HeladeraPageState extends State<HeladeraPage> {
     }
 
     // Logger BLE page (si disponible)
-    if (hasLoggerBle) {
+    if (bluetoothManager.hasLoggerBle) {
       if (pageType == 'logger') return index;
       index++;
     }
 
     // Resource Monitor page (si disponible)
-    if (hasResourceMonitor) {
+    if (bluetoothManager.hasResourceMonitor) {
       if (pageType == 'monitor') return index;
       index++;
     }
@@ -148,7 +161,7 @@ class HeladeraPageState extends State<HeladeraPage> {
                     },
                   ),
                 // Logger BLE page (si disponible)
-                if (hasLoggerBle)
+                if (bluetoothManager.hasLoggerBle)
                   ListTile(
                     leading: const Icon(Icons.receipt_long, color: color4),
                     title: const Text('Logger BLE',
@@ -159,7 +172,7 @@ class HeladeraPageState extends State<HeladeraPage> {
                     },
                   ),
                 // Resource Monitor page (si disponible)
-                if (hasResourceMonitor)
+                if (bluetoothManager.hasResourceMonitor)
                   ListTile(
                     leading: const Icon(Icons.monitor, color: color4),
                     title: const Text('Resource Monitor',
@@ -203,6 +216,40 @@ class HeladeraPageState extends State<HeladeraPage> {
     });
   }
 
+  void processValues() {
+    if (newGen) {
+      printLog('Procesando valores: ${bluetoothManager.data}');
+      setState(() {
+        bluetoothManager.data.containsKey('w_status')
+            ? _wstatus = bluetoothManager.data['w_status'] ?? false
+            : null;
+        bluetoothManager.data.containsKey('f_status')
+            ? _fstatus = bluetoothManager.data['f_status'] ?? false
+            : null;
+        bluetoothManager.data.containsKey('w_temp')
+            ? _wtemp = double.tryParse(
+                    (bluetoothManager.data['w_temp'] ?? 0).toString()) ??
+                0.0
+            : null;
+        bluetoothManager.data.containsKey('actual_temp')
+            ? _actualTemp =
+                (bluetoothManager.data['actual_temp'] ?? '0').toString()
+            : null;
+        bluetoothManager.data.containsKey('temp_map')
+            ? _tempmap = bluetoothManager.data['temp_map'] ?? false
+            : null;
+      });
+    } else {
+      setState(() {
+        _wstatus = turnOn;
+        _fstatus = trueStatus;
+        _wtemp = tempValue.toDouble();
+        _actualTemp = actualTemp;
+        _tempmap = tempMap;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -216,12 +263,21 @@ class HeladeraPageState extends State<HeladeraPage> {
   @override
   initState() {
     super.initState();
-    updateWifiValues(toolsValues);
-    subscribeToWifiStatus();
-    printLog('Valor temp: $tempValue');
-    printLog('¿Encendido? $turnOn');
-    subscribeTrueStatus();
+    processValues();
+    if (newGen) {
+      subToWifiData();
+      subToAppData();
+      subToTempData();
+    } else {
+      updateWifiValues(toolsValues);
+      subscribeToWifiStatus();
+      printLog('Valor temp: $tempValue');
+      printLog('¿Encendido? $turnOn');
+      subscribeTrueStatus();
+    }
   }
+
+  //OLD GEN
 
   void subscribeTrueStatus() async {
     printLog('Me subscribo a vars');
@@ -234,6 +290,7 @@ class HeladeraPageState extends State<HeladeraPage> {
       setState(() {
         trueStatus = parts[0] == '1';
         actualTemp = parts[1];
+        processValues();
       });
     });
 
@@ -249,7 +306,7 @@ class HeladeraPageState extends State<HeladeraPage> {
     if (parts[0] == 'WCS_CONNECTED') {
       nameOfWifi = parts[1];
       isWifiConnected = true;
-      printLog('sis $isWifiConnected');
+      // // printLog('sis $isWifiConnected');
       setState(() {
         textState = 'CONECTADO';
         statusColor = Colors.green;
@@ -257,7 +314,7 @@ class HeladeraPageState extends State<HeladeraPage> {
       });
     } else if (parts[0] == 'WCS_DISCONNECTED') {
       isWifiConnected = false;
-      printLog('non $isWifiConnected');
+      // // printLog('non $isWifiConnected');
 
       setState(() {
         textState = 'DESCONECTADO';
@@ -288,42 +345,170 @@ class HeladeraPageState extends State<HeladeraPage> {
       }
     }
 
-    setState(() {});
+    setState(() {
+      processValues();
+    });
   }
 
   void subscribeToWifiStatus() async {
-    if (!hasWifiVariables) {
-      printLog('Se subscribio a wifi');
-      await bluetoothManager.toolsUuid.setNotifyValue(true);
+    printLog('Se subscribio a wifi');
+    await bluetoothManager.toolsUuid.setNotifyValue(true);
 
-      final wifiSub =
-          bluetoothManager.toolsUuid.onValueReceived.listen((List<int> status) {
-        updateWifiValues(status);
+    final wifiSub =
+        bluetoothManager.toolsUuid.onValueReceived.listen((List<int> status) {
+      updateWifiValues(status);
+    });
+
+    bluetoothManager.device.cancelWhenDisconnected(wifiSub);
+  }
+
+  //NEW GEN
+
+  void subToWifiData() {
+    final wifiSub =
+        bluetoothManager.wifiDataUuid.onValueReceived.listen((List<int> data) {
+      var map = deserialize(Uint8List.fromList(data));
+      Map<String, dynamic> appMap = Map<String, dynamic>.from(map);
+      printLog('Datos WiFi recibidos: $map');
+
+      setState(() {
+        bluetoothManager.data.addAll(appMap);
+        if (appMap['wcs'] == true) {
+          nameOfWifi = appMap['ssid'] ?? '';
+          isWifiConnected = true;
+
+          setState(() {
+            textState = 'CONECTADO';
+            statusColor = Colors.green;
+            wifiIcon = Icons.wifi;
+          });
+        } else if (appMap['wcs'] == false) {
+          isWifiConnected = false;
+
+          setState(() {
+            textState = 'DESCONECTADO';
+            statusColor = Colors.red;
+            wifiIcon = Icons.wifi_off;
+          });
+
+          if (appMap['wcs'] == false && atemp == true) {
+            //If comes from subscription, parts[1] = reason of error.
+            setState(() {
+              wifiIcon = Icons.warning_amber_rounded;
+              werror = true;
+            });
+
+            if (appMap['wifi_codes'] == 202 || appMap['wifi_codes'] == 15) {
+              errorMessage = 'Contraseña incorrecta';
+            } else if (appMap['wifi_codes'] == 201) {
+              errorMessage = 'La red especificada no existe';
+            } else if (appMap['wifi_codes'] == 1) {
+              errorMessage = 'Error desconocido';
+            } else {
+              errorMessage = appMap['wifi_codes'].toString();
+            }
+
+            if (appMap['wifi_codes'] != null) {
+              errorSintax = getWifiErrorSintax(appMap['wifi_codes']);
+            }
+          }
+        }
       });
+    });
 
-      bluetoothManager.device.cancelWhenDisconnected(wifiSub);
+    bluetoothManager.wifiDataUuid.setNotifyValue(true);
+
+    bluetoothManager.device.cancelWhenDisconnected(wifiSub);
+  }
+
+  void subToAppData() {
+    final appDataSub =
+        bluetoothManager.appDataUuid.onValueReceived.listen((List<int> data) {
+      var map = deserialize(Uint8List.fromList(data));
+      Map<String, dynamic> appMap = Map<String, dynamic>.from(map);
+      printLog('Datos App recibidos: $map');
+
+      setState(() {
+        bluetoothManager.data.addAll(appMap);
+        processValues();
+      });
+    });
+
+    bluetoothManager.appDataUuid.setNotifyValue(true);
+
+    bluetoothManager.device.cancelWhenDisconnected(appDataSub);
+  }
+
+  void subToTempData() {
+    final tempDataSub = bluetoothManager.temperatureUuid.onValueReceived
+        .listen((List<int> data) {
+      var map = deserialize(Uint8List.fromList(data));
+      Map<String, dynamic> appMap = Map<String, dynamic>.from(map);
+      printLog('Datos Temperatura recibidos: $map');
+
+      setState(() {
+        bluetoothManager.data.addAll(appMap);
+        processValues();
+      });
+    });
+
+    bluetoothManager.temperatureUuid.setNotifyValue(true);
+
+    bluetoothManager.device.cancelWhenDisconnected(tempDataSub);
+  }
+
+  //BOTH GENS
+  void sendTemperature(int temp) {
+    if (newGen) {
+      final map = {
+        "w_temp": temp,
+      };
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.temperatureUuid.write(messagePackData);
+    } else {
+      String data = '$pc[7]($temp)';
+      bluetoothManager.toolsUuid.write(data.codeUnits);
     }
   }
 
-  void sendTemperature(int temp) {
-    String data = '${DeviceManager.getProductCode(deviceName)}[7]($temp)';
-    bluetoothManager.toolsUuid.write(data.codeUnits);
-  }
-
   void turnDeviceOn(bool on) {
-    int fun = on ? 1 : 0;
-    String data = '${DeviceManager.getProductCode(deviceName)}[11]($fun)';
-    bluetoothManager.toolsUuid.write(data.codeUnits);
+    if (newGen) {
+      final map = {
+        "w_status": on,
+      };
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.appDataUuid.write(messagePackData);
+    } else {
+      int fun = on ? 1 : 0;
+      String data = '$pc[11]($fun)';
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
   }
 
   void sendRoomTemperature(String temp) {
-    String data = '${DeviceManager.getProductCode(deviceName)}[8]($temp)';
-    bluetoothManager.toolsUuid.write(data.codeUnits);
+    if (newGen) {
+      final map = {
+        "temp_offset": int.parse(temp),
+      };
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.temperatureUuid.write(messagePackData);
+    } else {
+      String data = '$pc[8]($temp)';
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
   }
 
   void startTempMap() {
-    String data = '${DeviceManager.getProductCode(deviceName)}[12](0)';
-    bluetoothManager.toolsUuid.write(data.codeUnits);
+    if (newGen) {
+      final map = {
+        "init_temp_map": true,
+      };
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.temperatureUuid.write(messagePackData);
+    } else {
+      String data = '$pc[12](0)';
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
   }
 
   void saveDataToCsv() async {
@@ -356,6 +541,7 @@ class HeladeraPageState extends State<HeladeraPage> {
       ],
 
       //*- Página 3 CONTROL -*\\
+      //NEW GEN
       Scaffold(
         backgroundColor: color4,
         body: Center(
@@ -365,14 +551,14 @@ class HeladeraPageState extends State<HeladeraPage> {
             children: [
               Text.rich(
                 TextSpan(
-                  text: turnOn
-                      ? trueStatus
+                  text: _wstatus
+                      ? _fstatus
                           ? 'Enfriando'
                           : 'Encendido'
                       : 'Apagado',
                   style: TextStyle(
-                      color: turnOn
-                          ? trueStatus
+                      color: _wstatus
+                          ? _fstatus
                               ? Colors.lightBlueAccent[600]
                               : Colors.green
                           : Colors.red,
@@ -387,19 +573,18 @@ class HeladeraPageState extends State<HeladeraPage> {
                   activeTrackColor: color1,
                   inactiveThumbColor: color1,
                   inactiveTrackColor: color4,
-                  value: turnOn,
+                  value: _wstatus,
                   onChanged: (value) {
                     turnDeviceOn(value);
                     setState(() {
-                      turnOn = value;
+                      _wstatus = value;
+                      bluetoothManager.data['w_status'] = value;
                     });
                   },
                 ),
               ),
               const SizedBox(height: 50),
-              buildText(
-                  text:
-                      'Temperatura de corte: ${tempValue.round().toString()} °C'),
+              buildText(text: 'Temperatura de corte: ${_wtemp.round()} °C'),
               SizedBox(
                 width: MediaQuery.of(context).size.width * 0.8,
                 child: SliderTheme(
@@ -410,19 +595,20 @@ class HeladeraPageState extends State<HeladeraPage> {
                     activeTrackColor: color0,
                     inactiveTrackColor: color3,
                     thumbShape: IconThumbSlider(
-                      iconData: trueStatus ? Icons.ac_unit : Icons.check,
+                      iconData: _fstatus ? Icons.ac_unit : Icons.check,
                       thumbRadius: 28,
                     ),
                   ),
                   child: Slider(
-                    value: tempValue,
+                    value: _wtemp,
                     onChanged: (value) {
                       setState(() {
-                        tempValue = value;
+                        _wtemp = value.round().toDouble();
                       });
                     },
                     onChangeEnd: (value) {
                       printLog(value);
+                      bluetoothManager.data['w_temp'] = _wtemp;
                       sendTemperature(value.round());
                     },
                     min: -30,
@@ -440,13 +626,10 @@ class HeladeraPageState extends State<HeladeraPage> {
                         hint: '',
                         keyboard: TextInputType.number,
                         onSubmitted: (value) {
-                          registerActivity(
-                              DeviceManager.getProductCode(deviceName),
-                              DeviceManager.extractSerialNumber(deviceName),
-                              'Se cambió la temperatura ambiente de $actualTemp°C a $value°C');
+                          registerActivity(pc, sn,
+                              'Se cambió la temperatura ambiente de $_actualTemp°C a $value°C');
                           sendRoomTemperature(value);
-                          registerTemp(DeviceManager.getProductCode(deviceName),
-                              DeviceManager.extractSerialNumber(deviceName));
+                          registerTemp(pc, sn);
                           showToast('Temperatura ambiente seteada');
                           setState(() {
                             roomTempSended = true;
@@ -472,7 +655,7 @@ class HeladeraPageState extends State<HeladeraPage> {
                 text: '',
                 textSpans: [
                   TextSpan(
-                    text: 'Temperatura actual: $actualTemp °C',
+                    text: 'Temperatura actual: $_actualTemp °C',
                     style: const TextStyle(
                       color: color4,
                       fontWeight: FontWeight.bold,
@@ -497,7 +680,10 @@ class HeladeraPageState extends State<HeladeraPage> {
                       const Duration(seconds: 1),
                       (Timer t) {
                         if (recording) {
-                          recordedData.add([DateTime.now(), actualTemp]);
+                          recordedData.add([
+                            DateTime.now(),
+                            _actualTemp,
+                          ]);
                         }
                       },
                     );
@@ -525,7 +711,7 @@ class HeladeraPageState extends State<HeladeraPage> {
                           TextStyle(color: color4, fontWeight: FontWeight.bold),
                     ),
                     TextSpan(
-                      text: tempMap ? 'REALIZADO' : 'NO REALIZADO',
+                      text: _tempmap ? 'REALIZADO' : 'NO REALIZADO',
                       style: TextStyle(
                           color: tempMap ? Colors.green : Colors.red,
                           fontWeight: FontWeight.bold),
@@ -538,9 +724,7 @@ class HeladeraPageState extends State<HeladeraPage> {
                 buildButton(
                   text: 'Iniciar mapeo temperatura',
                   onPressed: () {
-                    registerActivity(
-                        DeviceManager.getProductCode(deviceName),
-                        DeviceManager.extractSerialNumber(deviceName),
+                    registerActivity(pc, sn,
                         'Se inicio el mapeo de temperatura en el equipo');
                     startTempMap();
                     showToast('Iniciando mapeo de temperatura');
@@ -552,13 +736,18 @@ class HeladeraPageState extends State<HeladeraPage> {
                 buildButton(
                   text: 'Ciclado fijo',
                   onPressed: () {
-                    registerActivity(
-                        DeviceManager.getProductCode(deviceName),
-                        DeviceManager.extractSerialNumber(deviceName),
+                    registerActivity(pc, sn,
                         'Se mando el ciclado de la válvula de este equipo');
-                    String data =
-                        '${DeviceManager.getProductCode(deviceName)}[13](1000#5)';
-                    bluetoothManager.toolsUuid.write(data.codeUnits);
+                    if (newGen) {
+                      final map = {
+                        'cycle': {'iter': 5, 'delay': 1000}
+                      };
+                      List<int> messagePackData = serialize(map);
+                      bluetoothManager.appDataUuid.write(messagePackData);
+                    } else {
+                      String data = '$pc[13](1000#5)';
+                      bluetoothManager.toolsUuid.write(data.codeUnits);
+                    }
                   },
                 ),
                 const SizedBox(
@@ -641,15 +830,26 @@ class HeladeraPageState extends State<HeladeraPage> {
                             TextButton(
                               onPressed: () {
                                 int cicle = int.parse(cicleController.text) * 2;
-                                registerActivity(
-                                    DeviceManager.getProductCode(deviceName),
-                                    DeviceManager.extractSerialNumber(
-                                        deviceName),
+                                registerActivity(pc, sn,
                                     'Se mando el ciclado de la válvula de este equipo\nMilisegundos: ${timeController.text}\nIteraciones:$cicle');
-                                String data =
-                                    '${DeviceManager.getProductCode(deviceName)}[13](${timeController.text}#$cicle)';
-                                bluetoothManager.toolsUuid
-                                    .write(data.codeUnits);
+
+                                if (newGen) {
+                                  final map = {
+                                    'cycle': {
+                                      'iter': cicle,
+                                      'delay': int.parse(timeController.text)
+                                    }
+                                  };
+                                  List<int> messagePackData = serialize(map);
+                                  bluetoothManager.appDataUuid
+                                      .write(messagePackData);
+                                } else {
+                                  String data =
+                                      '$pc[13](${timeController.text}#$cicle)';
+                                  bluetoothManager.toolsUuid
+                                      .write(data.codeUnits);
+                                }
+
                                 navigatorKey.currentState!.pop();
                               },
                               child: const Text('Iniciar proceso',
@@ -684,11 +884,8 @@ class HeladeraPageState extends State<HeladeraPage> {
                   onSubmitted: (value) {
                     if (int.parse(value) <= 5000 && int.parse(value) >= 3000) {
                       registerActivity(
-                          DeviceManager.getProductCode(deviceName),
-                          DeviceManager.extractSerialNumber(deviceName),
-                          'Se modifico la distancia de encendido');
-                      putDistanceOn(DeviceManager.getProductCode(deviceName),
-                          DeviceManager.extractSerialNumber(deviceName), value);
+                          pc, sn, 'Se modifico la distancia de encendido');
+                      putDistanceOn(pc, sn, value);
                     } else {
                       showToast('Parametros no permitidos');
                     }
@@ -705,11 +902,8 @@ class HeladeraPageState extends State<HeladeraPage> {
                   onSubmitted: (value) {
                     if (int.parse(value) <= 300 && int.parse(value) >= 100) {
                       registerActivity(
-                          DeviceManager.getProductCode(deviceName),
-                          DeviceManager.extractSerialNumber(deviceName),
-                          'Se modifico la distancia de apagado');
-                      putDistanceOff(DeviceManager.getProductCode(deviceName),
-                          DeviceManager.extractSerialNumber(deviceName), value);
+                          pc, sn, 'Se modifico la distancia de apagado');
+                      putDistanceOff(pc, sn, value);
                     } else {
                       showToast('Parametros no permitidos');
                     }
@@ -731,12 +925,12 @@ class HeladeraPageState extends State<HeladeraPage> {
         const CredsTab(),
       ],
 
-      if (hasLoggerBle) ...[
+      if (bluetoothManager.hasLoggerBle) ...[
         //*- Página LOGGER -*\\
         const LoggerBlePage(),
       ],
 
-      if (hasResourceMonitor) ...[
+      if (bluetoothManager.hasResourceMonitor) ...[
         //*- Página RESOURCE MONITOR -*\\
         const ResourceMonitorPage(),
       ],

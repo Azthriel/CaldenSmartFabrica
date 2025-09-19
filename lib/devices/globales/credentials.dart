@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:caldensmartfabrica/secret.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:msgpack_dart/msgpack_dart.dart';
 import '../../master.dart';
 
 class CredsTab extends StatefulWidget {
@@ -16,9 +18,7 @@ class CredsTabState extends State<CredsTab> {
     setState(() {
       sending = true;
     });
-    Uri uri = Uri.parse(
-      'https://7afkb3q46b.execute-api.sa-east-1.amazonaws.com/v1/THINGS',
-    );
+    Uri uri = Uri.parse(createThingURL);
 
     final pc = DeviceManager.getProductCode(deviceName);
     final sn = DeviceManager.extractSerialNumber(deviceName);
@@ -61,26 +61,47 @@ class CredsTabState extends State<CredsTab> {
       for (String line in amazonCA.split('\n')) {
         if (line.isEmpty || line == ' ') break;
         printLog(line, "Cyan");
-        String datatoSend = '$pc[6](0#$line)';
-        await bluetoothManager.toolsUuid
-            .write(datatoSend.codeUnits, withoutResponse: false);
-        // await Future.delayed(const Duration(milliseconds: 200));
+        if (bluetoothManager.newGeneration) {
+          Map<String, dynamic> command = {
+            "amazonCA": line,
+          };
+          List<int> messagePackData = serialize(command);
+          await bluetoothManager.awsUuid.write(messagePackData);
+        } else {
+          String datatoSend = '$pc[6](0#$line)';
+          await bluetoothManager.toolsUuid
+              .write(datatoSend.codeUnits, withoutResponse: false);
+        }
       }
       for (String line in deviceCert.split('\n')) {
         if (line.isEmpty || line == ' ') break;
         printLog(line, "Cyan");
-        String datatoSend = '$pc[6](1#$line)';
-        await bluetoothManager.toolsUuid
-            .write(datatoSend.codeUnits, withoutResponse: false);
-        // await Future.delayed(const Duration(milliseconds: 200));
+        if (bluetoothManager.newGeneration) {
+          Map<String, dynamic> command = {
+            "deviceCert": line,
+          };
+          List<int> messagePackData = serialize(command);
+          await bluetoothManager.awsUuid.write(messagePackData);
+        } else {
+          String datatoSend = '$pc[6](1#$line)';
+          await bluetoothManager.toolsUuid
+              .write(datatoSend.codeUnits, withoutResponse: false);
+        }
       }
       for (String line in privateKey.split('\n')) {
         if (line.isEmpty || line == ' ') break;
         printLog(line, "Cyan");
-        String datatoSend = '$pc[6](2#$line)';
-        await bluetoothManager.toolsUuid
-            .write(datatoSend.codeUnits, withoutResponse: false);
-        // await Future.delayed(const Duration(milliseconds: 200));
+        if (bluetoothManager.newGeneration) {
+          Map<String, dynamic> command = {
+            "privateKey": line,
+          };
+          List<int> messagePackData = serialize(command);
+          await bluetoothManager.awsUuid.write(messagePackData);
+        } else {
+          String datatoSend = '$pc[6](2#$line)';
+          await bluetoothManager.toolsUuid
+              .write(datatoSend.codeUnits, withoutResponse: false);
+        }
       }
       registerActivity(
           pc, sn, 'Envié los certificados de $thingName al equipo');
@@ -116,11 +137,21 @@ class CredsTabState extends State<CredsTab> {
                     ),
                   ),
                   TextSpan(
-                    text: (awsInit || isConnectedToAWS) ? 'SI' : 'NO',
+                    text: bluetoothManager.newGeneration
+                        ? bluetoothManager.data['aws_init']
+                            ? 'SI'
+                            : 'NO'
+                        : (awsInit || isConnectedToAWS)
+                            ? 'SI'
+                            : 'NO',
                     style: TextStyle(
-                      color: (awsInit || isConnectedToAWS)
-                          ? color4
-                          : const Color(0xffFF0000),
+                      color: bluetoothManager.newGeneration
+                          ? (bluetoothManager.data['aws_init']
+                              ? color4
+                              : const Color(0xffFF0000))
+                          : (awsInit || isConnectedToAWS)
+                              ? color4
+                              : const Color(0xffFF0000),
                     ),
                   ),
                 ],
@@ -149,7 +180,7 @@ class CredsTabState extends State<CredsTab> {
               const SizedBox(
                 height: 10,
               ),
-              if (!isConnectedToAWS && accessLevel < 3) ...[
+              if (!isConnectedToAWS) ...[
                 sending
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -165,35 +196,88 @@ class CredsTabState extends State<CredsTab> {
                           setState(() {
                             sending = false;
                           });
-                          bluetoothManager.toolsUuid.write(
-                              '${DeviceManager.getProductCode(deviceName)}[0](0)'
-                                  .codeUnits);
+                          if (bluetoothManager.newGeneration) {
+                            Map<String, dynamic> command = {
+                              "reboot": {'erase_nvs': false},
+                            };
+                            List<int> messagePackData = serialize(command);
+                            bluetoothManager.appDataUuid.write(messagePackData);
+                          } else {
+                            bluetoothManager.toolsUuid.write(
+                                '${DeviceManager.getProductCode(deviceName)}[0](0)'
+                                    .codeUnits);
+                          }
                         },
                       ),
                 const SizedBox(
                   height: 20,
                 ),
-              ] else if (accessLevel == 3) ...[
-                sending
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          EasterEggs.things(legajoConectado),
-                          const LinearProgressIndicator(),
-                        ],
-                      )
-                    : buildButton(
-                        text: 'Crear y enviar Thing',
-                        onPressed: () async {
-                          await createAndSendThings();
-                          setState(() {
-                            sending = false;
-                          });
-                          bluetoothManager.toolsUuid.write(
-                              '${DeviceManager.getProductCode(deviceName)}[0](0)'
-                                  .codeUnits);
-                        },
-                      ),
+              ],
+              if (accessLevel == 3) ...[
+                buildButton(
+                  text: 'Borrar thing del equipo',
+                  onPressed: () async {
+                    Uri uri = Uri.parse(deleteThingURL);
+
+                    final pc = DeviceManager.getProductCode(deviceName);
+                    final sn = DeviceManager.extractSerialNumber(deviceName);
+
+                    // Verifica si el número de serie es igual al código de producto sin "_IOT" y con "00" al final
+                    final defaultSerial = '${pc.replaceAll('_IOT', '')}00';
+                    if (sn == defaultSerial || sn == '57730810') {
+                      showToast(
+                          'El dispositivo tiene el número de serie por defecto ($defaultSerial).');
+                      setState(() {
+                        sending = false;
+                      });
+                      return;
+                    }
+
+                    String thingName = '$pc:$sn';
+
+                    String bd = jsonEncode({'thingName': thingName});
+
+                    printLog('Body: $bd');
+                    var response = await http.post(uri, body: bd);
+
+                    if (response.statusCode == 200) {
+                      printLog('Respuesta: ${response.body}');
+
+                      // Parsear la respuesta JSON para obtener el statusCode real
+                      final responseData = jsonDecode(response.body);
+                      final actualStatusCode = responseData['statusCode'];
+
+                      if (actualStatusCode == 200) {
+                        showToast('Thing borrado: $thingName');
+
+                        registerActivity(
+                            pc, sn, 'Se borró la thing con nombre $thingName');
+                        if (bluetoothManager.newGeneration) {
+                          Map<String, dynamic> command = {
+                            "delete_thing": true,
+                          };
+                          List<int> messagePackData = serialize(command);
+                          bluetoothManager.awsUuid.write(messagePackData);
+                        }
+                      } else {
+                        // Obtener el mensaje de error del body
+                        final errorBody = jsonDecode(responseData['body']);
+                        final errorMessage =
+                            errorBody['error'] ?? 'Error desconocido';
+
+                        printLog('Error del Lambda: $errorMessage');
+                        showToast('Error al borrar el Thing: $errorMessage');
+                        registerActivity(pc, sn,
+                            'Fallo el borrado de $thingName: $errorMessage');
+                      }
+                    } else {
+                      printLog('Error HTTP: ${response.statusCode}');
+                      showToast('Error de conexión al borrar el Thing');
+                      registerActivity(
+                          pc, sn, 'Error de conexión al borrar $thingName');
+                    }
+                  },
+                ),
                 const SizedBox(
                   height: 20,
                 ),

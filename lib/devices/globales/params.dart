@@ -9,6 +9,9 @@ class ParamsTab extends StatefulWidget {
 }
 
 class ParamsTabState extends State<ParamsTab> {
+  final String pc = DeviceManager.getProductCode(deviceName);
+  final String sn = DeviceManager.extractSerialNumber(deviceName);
+
   @override
   Widget build(BuildContext context) {
     double bottomBarHeight = kBottomNavigationBarHeight;
@@ -44,8 +47,6 @@ class ParamsTabState extends State<ParamsTab> {
                 buildButton(
                   text: 'Desactivar control por distancia',
                   onPressed: () {
-                    String pc = DeviceManager.getProductCode(deviceName);
-                    String sn = DeviceManager.extractSerialNumber(deviceName);
                     putDistanceControl(pc, sn, false);
                     registerActivity(
                       pc,
@@ -82,11 +83,10 @@ class ParamsTabState extends State<ParamsTab> {
                 buildButton(
                   text: 'Eliminar Owner',
                   onPressed: () {
-                    putOwner(DeviceManager.getProductCode(deviceName),
-                        DeviceManager.extractSerialNumber(deviceName), '');
+                    putOwner(pc, sn, '');
                     registerActivity(
-                      DeviceManager.getProductCode(deviceName),
-                      DeviceManager.extractSerialNumber(deviceName),
+                      pc,
+                      sn,
                       'Se elimino el owner del equipo',
                     );
                     setState(() {
@@ -121,16 +121,16 @@ class ParamsTabState extends State<ParamsTab> {
                             IconButton(
                               onPressed: () {
                                 registerActivity(
-                                  DeviceManager.getProductCode(deviceName),
-                                  DeviceManager.extractSerialNumber(deviceName),
+                                  pc,
+                                  sn,
                                   'Se elimino el admin ${secondaryAdmins[i]} del equipo',
                                 );
                                 setState(() {
                                   secondaryAdmins.removeAt(i);
                                 });
                                 putSecondaryAdmins(
-                                  DeviceManager.getProductCode(deviceName),
-                                  DeviceManager.extractSerialNumber(deviceName),
+                                  pc,
+                                  sn,
                                   secondaryAdmins,
                                 );
                               },
@@ -236,15 +236,9 @@ class ParamsTabState extends State<ParamsTab> {
                           ),
                           TextButton(
                             onPressed: () {
-                              registerActivity(
-                                  DeviceManager.getProductCode(deviceName),
-                                  DeviceManager.extractSerialNumber(deviceName),
+                              registerActivity(pc, sn,
                                   'Se modifico el vencimiento del beneficio "alquiler temporario"');
-                              putDate(
-                                  DeviceManager.getProductCode(deviceName),
-                                  DeviceManager.extractSerialNumber(deviceName),
-                                  dateController.text.trim(),
-                                  true);
+                              putDate(pc, sn, dateController.text.trim(), true);
                               setState(() {
                                 atDate = dateController.text.trim();
                               });
@@ -337,15 +331,9 @@ class ParamsTabState extends State<ParamsTab> {
                           ),
                           TextButton(
                             onPressed: () {
-                              registerActivity(
-                                  DeviceManager.getProductCode(deviceName),
-                                  DeviceManager.extractSerialNumber(deviceName),
+                              registerActivity(pc, sn,
                                   'Se modifico el vencimiento del beneficio "alquiler temporario"');
-                              putDate(
-                                  DeviceManager.getProductCode(deviceName),
-                                  DeviceManager.extractSerialNumber(deviceName),
-                                  dateController.text.trim(),
-                                  true);
+                              putDate(pc, sn, dateController.text.trim(), true);
                               setState(() {
                                 atDate = dateController.text.trim();
                               });

@@ -58,13 +58,13 @@ class TermometroPageState extends State<TermometroPage> {
     }
 
     // Logger BLE page (si disponible)
-    if (hasLoggerBle) {
+    if (bluetoothManager.hasLoggerBle) {
       if (pageType == 'logger') return index;
       index++;
     }
 
     // Resource Monitor page (si disponible)
-    if (hasResourceMonitor) {
+    if (bluetoothManager.hasResourceMonitor) {
       if (pageType == 'monitor') return index;
       index++;
     }
@@ -145,7 +145,7 @@ class TermometroPageState extends State<TermometroPage> {
                     },
                   ),
                 // Logger BLE page (si disponible)
-                if (hasLoggerBle)
+                if (bluetoothManager.hasLoggerBle)
                   ListTile(
                     leading: const Icon(Icons.receipt_long, color: color4),
                     title: const Text('Logger BLE',
@@ -156,7 +156,7 @@ class TermometroPageState extends State<TermometroPage> {
                     },
                   ),
                 // Resource Monitor page (si disponible)
-                if (hasResourceMonitor)
+                if (bluetoothManager.hasResourceMonitor)
                   ListTile(
                     leading: const Icon(Icons.monitor, color: color4),
                     title: const Text('Resource Monitor',
@@ -238,7 +238,7 @@ class TermometroPageState extends State<TermometroPage> {
     if (parts[0] == 'WCS_CONNECTED') {
       nameOfWifi = parts[1];
       isWifiConnected = true;
-      // printLog('sis $isWifiConnected');
+      // // printLog('sis $isWifiConnected');
       setState(() {
         textState = 'CONECTADO';
         statusColor = Colors.green;
@@ -246,7 +246,7 @@ class TermometroPageState extends State<TermometroPage> {
       });
     } else if (parts[0] == 'WCS_DISCONNECTED') {
       isWifiConnected = false;
-      // printLog('non $isWifiConnected');
+      // // printLog('non $isWifiConnected');
 
       setState(() {
         textState = 'DESCONECTADO';
@@ -517,12 +517,12 @@ class TermometroPageState extends State<TermometroPage> {
         const CredsTab(),
       ],
 
-      if (hasLoggerBle) ...[
+      if (bluetoothManager.hasLoggerBle) ...[
         //*- Página LOGGER -*\\
         const LoggerBlePage(),
       ],
 
-      if (hasResourceMonitor) ...[
+      if (bluetoothManager.hasResourceMonitor) ...[
         //*- Página RESOURCE MONITOR -*\\
         const ResourceMonitorPage(),
       ],

@@ -4,6 +4,7 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:msgpack_dart/msgpack_dart.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../master.dart';
@@ -25,6 +26,8 @@ class OtaTabState extends State<OtaTab> {
   bool sizeWasSend = false;
   bool _isAuto = true;
   bool _factory = false;
+  final pc = DeviceManager.getProductCode(deviceName);
+  final sn = DeviceManager.extractSerialNumber(deviceName);
 
   @override
   void dispose() {
@@ -37,7 +40,58 @@ class OtaTabState extends State<OtaTab> {
   @override
   void initState() {
     super.initState();
-    subToProgress();
+    if (bluetoothManager.newGeneration) {
+      subToProgressNewGen();
+    } else {
+      subToProgress();
+    }
+  }
+
+  void subToProgressNewGen() {
+    final otaWifiSub =
+        bluetoothManager.otaWifiUuid.onValueReceived.listen((List<int> data) {
+      try {
+        Map<String, dynamic> otaWifiData =
+            deserialize(Uint8List.fromList(data));
+        if (otaWifiData.containsKey('ota_progress')) {
+          setState(() {
+            progressValue = double.tryParse(otaWifiData['ota_progress']) ?? 0.0;
+          });
+          printLog('Progreso OTA Wifi: ${otaWifiData['ota_progress']}');
+        }
+
+        if (otaWifiData.containsKey('ota_response')) {
+          showToast('Respuesta OTA Wifi: ${otaWifiData['ota_response']}');
+        }
+      } catch (e) {
+        printLog('Error malevolo: $e');
+        showToast('Error al actualizar progreso OTA Wifi');
+      }
+    });
+    final otaBleSub =
+        bluetoothManager.otaBleUuid.onValueReceived.listen((List<int> data) {
+      try {
+        Map<String, dynamic> otaBleData = deserialize(Uint8List.fromList(data));
+        if (otaBleData.containsKey('ota_progress')) {
+          setState(() {
+            progressValue = double.tryParse(otaBleData['ota_progress']) ?? 0.0;
+          });
+          printLog('Progreso OTA BLE: ${otaBleData['ota_progress']}');
+        }
+        if (otaBleData.containsKey('ota_response')) {
+          showToast('Respuesta OTA BLE: ${otaBleData['ota_response']}');
+        }
+      } catch (e) {
+        printLog('Error malevolo: $e');
+        showToast('Error al actualizar progreso OTA BLE');
+      }
+    });
+
+    bluetoothManager.otaWifiUuid.setNotifyValue(true);
+    bluetoothManager.otaBleUuid.setNotifyValue(true);
+
+    bluetoothManager.device.cancelWhenDisconnected(otaWifiSub);
+    bluetoothManager.device.cancelWhenDisconnected(otaBleSub);
   }
 
   void subToProgress() async {
@@ -114,23 +168,28 @@ class OtaTabState extends State<OtaTab> {
   void sendAutoOTA({
     required bool factory,
   }) async {
-    final fileName = await Versioner.fetchLatestFirmwareFile(
-        DeviceManager.getProductCode(deviceName), hardwareVersion, factory);
-    String url = Versioner.buildFirmwareUrl(
-        DeviceManager.getProductCode(deviceName), fileName, factory);
+    final fileName =
+        await Versioner.fetchLatestFirmwareFile(pc, hardwareVersion, factory);
+    String url = Versioner.buildFirmwareUrl(pc, fileName, factory);
     printLog('URL del firmware: $url');
 
-    registerActivity(
-        DeviceManager.getProductCode(deviceName),
-        DeviceManager.extractSerialNumber(deviceName),
-        'Envié OTA automatica con el file: $fileName');
+    registerActivity(pc, sn, 'Envié OTA automatica con el file: $fileName');
 
     try {
       if (isWifiConnected) {
         printLog('Si mandé ota Wifi');
         printLog('url: $url');
-        String data = '${DeviceManager.getProductCode(deviceName)}[2]($url)';
-        await bluetoothManager.toolsUuid.write(data.codeUnits);
+        if (bluetoothManager.newGeneration) {
+          Map<String, dynamic> command = {
+            "ota_url": url,
+          };
+          List<int> messagePackData = serialize(command);
+          bluetoothManager.otaWifiUuid.write(messagePackData);
+          return;
+        } else {
+          String data = '$pc[2]($url)';
+          await bluetoothManager.toolsUuid.write(data.codeUnits);
+        }
       } else {
         printLog('Arranca por la derecha la OTA BLE');
         String dir = (await getApplicationDocumentsDirectory()).path;
@@ -148,10 +207,18 @@ class OtaTabState extends State<OtaTab> {
 
         var firmware = await file.readAsBytes();
 
-        String data =
-            '${DeviceManager.getProductCode(deviceName)}[3](${bytes.length})';
-        printLog(data);
-        await bluetoothManager.toolsUuid.write(data.codeUnits);
+        if (bluetoothManager.newGeneration) {
+          Map<String, dynamic> command = {
+            "ota_size": bytes.length,
+          };
+          List<int> messagePackData = serialize(command);
+          await bluetoothManager.otaBleUuid.write(messagePackData);
+        } else {
+          String data = '$pc[3](${bytes.length})';
+          printLog(data);
+          await bluetoothManager.toolsUuid.write(data.codeUnits);
+        }
+
         printLog("Arranco OTA");
         try {
           int chunk = 255 - 3;
@@ -160,8 +227,16 @@ class OtaTabState extends State<OtaTab> {
               i,
               min(i + chunk, firmware.length),
             );
-            await bluetoothManager.infoUuid
-                .write(subvalue, withoutResponse: false);
+            if (bluetoothManager.newGeneration) {
+              Map<String, dynamic> command = {
+                "ota_chunk": subvalue,
+              };
+              List<int> messagePackData = serialize(command);
+              await bluetoothManager.otaBleUuid.write(messagePackData);
+            } else {
+              await bluetoothManager.infoUuid
+                  .write(subvalue, withoutResponse: false);
+            }
           }
           printLog('Acabe');
         } catch (e, stackTrace) {
@@ -194,17 +269,24 @@ class OtaTabState extends State<OtaTab> {
         'https://raw.githubusercontent.com/barberop/sime-domotica/main/'
         '$productCode/OTA_FW/${factory ? 'F' : 'W'}/hv${hardwareVersion}sv$softwareVersion.bin';
 
-    registerActivity(
-        DeviceManager.getProductCode(deviceName),
-        DeviceManager.extractSerialNumber(deviceName),
+    registerActivity(pc, sn,
         'Envié OTA manual $productCode con el file: hv${hardwareVersion}sv$softwareVersion.bin');
 
     try {
       if (isWifiConnected) {
         printLog('Si mandé ota Wifi');
         printLog('url: $url');
-        String data = '${DeviceManager.getProductCode(deviceName)}[2]($url)';
-        await bluetoothManager.toolsUuid.write(data.codeUnits);
+        if (bluetoothManager.newGeneration) {
+          Map<String, dynamic> command = {
+            "ota_url": url,
+          };
+          List<int> messagePackData = serialize(command);
+          await bluetoothManager.otaWifiUuid.write(messagePackData);
+          return;
+        } else {
+          String data = '$pc[2]($url)';
+          await bluetoothManager.toolsUuid.write(data.codeUnits);
+        }
       } else {
         printLog('Arranca por la derecha la OTA BLE');
         String dir = (await getApplicationDocumentsDirectory()).path;
@@ -222,10 +304,17 @@ class OtaTabState extends State<OtaTab> {
 
         var firmware = await file.readAsBytes();
 
-        String data =
-            '${DeviceManager.getProductCode(deviceName)}[3](${bytes.length})';
-        printLog(data);
-        await bluetoothManager.toolsUuid.write(data.codeUnits);
+        if (bluetoothManager.newGeneration) {
+          Map<String, dynamic> command = {
+            "ota_size": bytes.length,
+          };
+          List<int> messagePackData = serialize(command);
+          await bluetoothManager.otaBleUuid.write(messagePackData);
+        } else {
+          String data = '$pc[3](${bytes.length})';
+          printLog(data);
+          await bluetoothManager.toolsUuid.write(data.codeUnits);
+        }
         printLog("Arranco OTA");
         try {
           int chunk = 255 - 3;
@@ -234,8 +323,16 @@ class OtaTabState extends State<OtaTab> {
               i,
               min(i + chunk, firmware.length),
             );
-            await bluetoothManager.infoUuid
-                .write(subvalue, withoutResponse: false);
+            if (bluetoothManager.newGeneration) {
+              Map<String, dynamic> command = {
+                "ota_chunk": subvalue,
+              };
+              List<int> messagePackData = serialize(command);
+              await bluetoothManager.otaBleUuid.write(messagePackData);
+            } else {
+              await bluetoothManager.infoUuid
+                  .write(subvalue, withoutResponse: false);
+            }
           }
           printLog('Acabe');
         } catch (e, stackTrace) {
@@ -307,7 +404,7 @@ class OtaTabState extends State<OtaTab> {
                     ),
                   ),
                   Text(
-                    'Progreso descarga OTA: ${(progressValue * 100).toInt()}%',
+                    'Progreso descarga OTA: ${progressValue.round()}%',
                     style: const TextStyle(
                       color: color4,
                       fontWeight: FontWeight.bold,
