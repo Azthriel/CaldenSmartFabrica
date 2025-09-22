@@ -12,6 +12,19 @@ class ParamsTabState extends State<ParamsTab> {
   final String pc = DeviceManager.getProductCode(deviceName);
   final String sn = DeviceManager.extractSerialNumber(deviceName);
 
+  bool canBeRiego = false;
+
+  @override
+  void initState() {
+    super.initState();
+    canBeRiego = (pc == '020010_IOT' ||
+        pc == '020020_IOT' ||
+        (pc == '027313_IOT' &&
+            Versioner.isPosterior(hardwareVersion, '241220A')));
+
+    printLog('Riego: $canBeRiego');
+  }
+
   @override
   Widget build(BuildContext context) {
     double bottomBarHeight = kBottomNavigationBarHeight;
@@ -349,6 +362,61 @@ class ParamsTabState extends State<ParamsTab> {
                 },
               ),
               const SizedBox(height: 20),
+              if (canBeRiego) ...[
+                buildText(
+                  text: '',
+                  textSpans: [
+                    const TextSpan(
+                      text: 'Estado del sistema de riego en el equipo:\n',
+                      style:
+                          TextStyle(color: color4, fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text: riegoActive ? 'Activado' : 'Desactivado',
+                      style: TextStyle(
+                          color: riegoActive ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                  fontSize: 20.0,
+                  textAlign: TextAlign.center,
+                ),
+                if (riegoActive) ...[
+                  const SizedBox(height: 10),
+                  buildButton(
+                    text: 'Desactivar sistema de riego',
+                    onPressed: () {
+                      putRiego(pc, sn, false);
+                      registerActivity(
+                        pc,
+                        sn,
+                        'Se desactivo el sistema de riego',
+                      );
+                      setState(() {
+                        riegoActive = false;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                ] else ...[
+                  const SizedBox(height: 10),
+                  buildButton(
+                    text: 'Activar sistema de riego',
+                    onPressed: () {
+                      putRiego(pc, sn, true);
+                      registerActivity(
+                        pc,
+                        sn,
+                        'Se activo el sistema de riego',
+                      );
+                      setState(() {
+                        riegoActive = true;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ],
               Padding(
                 padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
               ),

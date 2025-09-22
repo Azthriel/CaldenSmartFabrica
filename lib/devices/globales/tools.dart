@@ -57,8 +57,13 @@ class ToolsPageState extends State<ToolsPage> {
     sendMessagemqtt(topic2, msg);
 
     if (pc == '022000_IOT' || pc == '027000_IOT' || pc == '041220_IOT') {
-      //TODO: Ver que hace esto
-      bluetoothManager.toolsUuid.write('$pc[7](10)'.codeUnits);
+      if (bluetoothManager.newGeneration) {
+        Map<String, dynamic> command = {"wtemp": 10};
+        List<int> messagePackData = serialize(command);
+        bluetoothManager.temperatureUuid.write(messagePackData);
+      } else {
+        bluetoothManager.toolsUuid.write('$pc[7](10)'.codeUnits);
+      }
     }
 
     await putLabProcessFinished(pc, sn, true);

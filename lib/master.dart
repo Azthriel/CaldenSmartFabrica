@@ -18,7 +18,7 @@ import 'package:msgpack_dart/msgpack_dart.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.35';
+String appVersionNumber = '1.0.36';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -199,6 +199,10 @@ late FToast fToast;
 WiFiDataNotifier wifiDataNotifier = WiFiDataNotifier();
 WiFiStoredNotifier wifiStoredNotifier = WiFiStoredNotifier();
 //*-WiFi Data Notifier Instance-*\\
+
+//*-Riego-*\\
+bool riegoActive = false;
+//*-Riego-*\\
 
 // // -------------------------------------------------------------------------------------------------------------\\ \\
 
