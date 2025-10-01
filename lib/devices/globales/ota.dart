@@ -404,7 +404,7 @@ class OtaTabState extends State<OtaTab> {
                     ),
                   ),
                   Text(
-                    'Progreso descarga OTA: ${progressValue.round()}%',
+                    'Progreso descarga OTA: ${(progressValue * 100).toInt()}%',
                     style: const TextStyle(
                       color: color4,
                       fontWeight: FontWeight.bold,

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'package:caldensmartfabrica/secret.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,7 +19,7 @@ import 'package:msgpack_dart/msgpack_dart.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.36';
+String appVersionNumber = '1.0.38';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -2640,6 +2641,7 @@ class Versioner {
     );
     printLog('Fetching OTA_FW/${factory ? 'F' : 'W'} from: $uri');
     final response = await http.get(uri, headers: {
+      'Authorization': 'Bearer $githubToken',
       'Accept': 'application/vnd.github.v3+json',
     });
     printLog('GitHub API status: ${response.statusCode}');

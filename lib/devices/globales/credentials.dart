@@ -56,6 +56,7 @@ class CredsTabState extends State<CredsTab> {
       printLog('Certificado: $deviceCert', "Cyan");
       printLog('Llave privada: $privateKey', "Cyan");
       printLog('Amazon CA: $amazonCA', "Cyan");
+      printLog('Certificado público: $publicCert', "Cyan");
 
       // Envía cada certificado al puerto asignado
       for (String line in amazonCA.split('\n')) {
@@ -63,7 +64,7 @@ class CredsTabState extends State<CredsTab> {
         printLog(line, "Cyan");
         if (bluetoothManager.newGeneration) {
           Map<String, dynamic> command = {
-            "amazonCA": line,
+            "root_ca": line,
           };
           List<int> messagePackData = serialize(command);
           await bluetoothManager.awsUuid.write(messagePackData);
@@ -78,7 +79,7 @@ class CredsTabState extends State<CredsTab> {
         printLog(line, "Cyan");
         if (bluetoothManager.newGeneration) {
           Map<String, dynamic> command = {
-            "deviceCert": line,
+            "ca_cert": line,
           };
           List<int> messagePackData = serialize(command);
           await bluetoothManager.awsUuid.write(messagePackData);
@@ -93,7 +94,7 @@ class CredsTabState extends State<CredsTab> {
         printLog(line, "Cyan");
         if (bluetoothManager.newGeneration) {
           Map<String, dynamic> command = {
-            "privateKey": line,
+            "private_key": line,
           };
           List<int> messagePackData = serialize(command);
           await bluetoothManager.awsUuid.write(messagePackData);
@@ -101,6 +102,17 @@ class CredsTabState extends State<CredsTab> {
           String datatoSend = '$pc[6](2#$line)';
           await bluetoothManager.toolsUuid
               .write(datatoSend.codeUnits, withoutResponse: false);
+        }
+      }
+      if (bluetoothManager.newGeneration) {
+        for (String line in publicCert.split('\n')) {
+          if (line.isEmpty || line == ' ') break;
+          printLog(line, "Cyan");
+          Map<String, dynamic> command = {
+            "device_sig": line,
+          };
+          List<int> messagePackData = serialize(command);
+          await bluetoothManager.awsUuid.write(messagePackData);
         }
       }
       registerActivity(
