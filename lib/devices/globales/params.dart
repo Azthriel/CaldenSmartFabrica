@@ -416,6 +416,48 @@ class ParamsTabState extends State<ParamsTab> {
                   ),
                   const SizedBox(height: 20),
                 ],
+                buildText(
+                  text: '',
+                  textSpans: [
+                    const TextSpan(
+                      text: 'Riego master:\n',
+                      style: TextStyle(
+                        color: color4,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextSpan(
+                      text: riegoMaster.isNotEmpty
+                          ? riegoMaster
+                          : 'No tiene riego master asignado',
+                      style: TextStyle(
+                        color:
+                            riegoMaster.isNotEmpty ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                  fontSize: 20.0,
+                  textAlign: TextAlign.center,
+                ),
+                if (riegoMaster.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  buildButton(
+                    text: 'Eliminar riego master',
+                    onPressed: () {
+                      putRiegoMaster(pc, sn, '');
+                      registerActivity(
+                        pc,
+                        sn,
+                        'Se elimino el riego master del equipo',
+                      );
+                      setState(() {
+                        riegoMaster = '';
+                      });
+                    },
+                  ),
+                ],
+                const SizedBox(height: 20),
               ],
               Padding(
                 padding: EdgeInsets.only(bottom: bottomBarHeight + 20),

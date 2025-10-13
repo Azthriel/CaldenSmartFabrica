@@ -11,6 +11,7 @@ import 'package:caldensmartfabrica/devices/globales/tools.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
+import 'package:msgpack_dart/msgpack_dart.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../master.dart';
@@ -41,6 +42,14 @@ class PatitoPageState extends State<PatitoPage> {
       List<DateTime>.filled(1000, DateTime.now(), growable: true);
   bool recording = false;
   List<List<dynamic>> recordedData = [];
+  List<int> _patitoData = [];
+  String _batteryPercentage = 'N/A';
+  String _batterymv = '0';
+  bool _isCharging = false;
+
+  final String pc = DeviceManager.getProductCode(deviceName);
+  final String sn = DeviceManager.extractSerialNumber(deviceName);
+  final bool newGen = bluetoothManager.newGeneration;
 
   // Obtener el índice correcto para cada página
   int _getPageIndex(String pageType) {
@@ -59,6 +68,12 @@ class PatitoPageState extends State<PatitoPage> {
     // Control page (siempre presente)
     if (pageType == 'control') return index;
     index++;
+
+    // Battery page (si disponible)
+    if (bluetoothManager.hasBatteryService) {
+      if (pageType == 'battery') return index;
+      index++;
+    }
 
     // Creds page (solo si accessLevel > 1)
     if (accessLevel > 1) {
@@ -142,6 +157,17 @@ class PatitoPageState extends State<PatitoPage> {
                     _navigateToTab(_getPageIndex('control'));
                   },
                 ),
+                // Battery page (si disponible)
+                if (bluetoothManager.hasBatteryService)
+                  ListTile(
+                    leading: const Icon(Icons.battery_std, color: color4),
+                    title:
+                        const Text('Batería', style: TextStyle(color: color4)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _navigateToTab(_getPageIndex('battery'));
+                    },
+                  ),
                 // Creds page (solo si accessLevel > 1)
                 if (accessLevel > 1)
                   ListTile(
@@ -209,6 +235,118 @@ class PatitoPageState extends State<PatitoPage> {
     });
   }
 
+  void processValues() {
+    if (newGen) {
+      setState(() {
+        addData(aceleracionX, bluetoothManager.data['acc_x'] ?? 0.0,
+            windowSize: 5);
+        addData(aceleracionY, bluetoothManager.data['acc_y'] ?? 0.0,
+            windowSize: 5);
+        addData(aceleracionZ, bluetoothManager.data['acc_z'] ?? 0.0,
+            windowSize: 5);
+        addData(giroX, bluetoothManager.data['gyr_x'] ?? 0.0, windowSize: 5);
+        addData(giroY, bluetoothManager.data['gyr_y'] ?? 0.0, windowSize: 5);
+        addData(giroZ, bluetoothManager.data['gyr_z'] ?? 0.0, windowSize: 5);
+        addDate(dates, DateTime.now());
+
+        addData(sumaAcc,
+            (aceleracionX.last + aceleracionY.last + aceleracionZ.last));
+        addData(promAcc,
+            (aceleracionX.last + aceleracionY.last + aceleracionZ.last) / 3);
+        addData(sumaGiro, (giroX.last + giroY.last + giroZ.last));
+        addData(promGiro, (giroX.last + giroY.last + giroZ.last) / 3);
+      });
+
+      if (recording) {
+        recordedData.add([
+          DateTime.now(),
+          bluetoothManager.data['acc_x'] ?? 0.0,
+          bluetoothManager.data['acc_y'] ?? 0.0,
+          bluetoothManager.data['acc_z'] ?? 0.0,
+          bluetoothManager.data['gyr_x'] ?? 0.0,
+          bluetoothManager.data['gyr_y'] ?? 0.0,
+          bluetoothManager.data['gyr_z'] ?? 0.0,
+          (bluetoothManager.data['acc_x'] ?? 0.0) +
+              (bluetoothManager.data['acc_y'] ?? 0.0) +
+              (bluetoothManager.data['acc_z'] ?? 0.0),
+          ((bluetoothManager.data['acc_x'] ?? 0.0) +
+                  (bluetoothManager.data['acc_y'] ?? 0.0) +
+                  (bluetoothManager.data['acc_z'] ?? 0.0)) /
+              3,
+          (bluetoothManager.data['gyr_x'] ?? 0.0) +
+              (bluetoothManager.data['gyr_y'] ?? 0.0) +
+              (bluetoothManager.data['gyr_z'] ?? 0.0),
+          ((bluetoothManager.data['gyr_x'] ?? 0.0) +
+                  (bluetoothManager.data['gyr_y'] ?? 0.0) +
+                  (bluetoothManager.data['gyr_z'] ?? 0.0)) /
+              3
+        ]);
+      }
+    } else {
+      if (_patitoData.isEmpty) return;
+      setState(() {
+        addData(aceleracionX, transformToDouble(_patitoData.sublist(0, 4)),
+            windowSize: 5);
+        addData(aceleracionY, transformToDouble(_patitoData.sublist(4, 8)),
+            windowSize: 5);
+        addData(aceleracionZ, transformToDouble(_patitoData.sublist(8, 12)),
+            windowSize: 5);
+        addData(giroX, transformToDouble(_patitoData.sublist(12, 16)),
+            windowSize: 5);
+        addData(giroY, transformToDouble(_patitoData.sublist(16, 20)),
+            windowSize: 5);
+        addData(giroZ, transformToDouble(_patitoData.sublist(20)),
+            windowSize: 5);
+        addDate(dates, DateTime.now());
+
+        addData(sumaAcc,
+            (aceleracionX.last + aceleracionY.last + aceleracionZ.last));
+        addData(promAcc,
+            (aceleracionX.last + aceleracionY.last + aceleracionZ.last) / 3);
+        addData(sumaGiro, (giroX.last + giroY.last + giroZ.last));
+        addData(promGiro, (giroX.last + giroY.last + giroZ.last) / 3);
+      });
+
+      if (recording) {
+        recordedData.add([
+          DateTime.now(),
+          transformToDouble(_patitoData.sublist(0, 4)),
+          transformToDouble(_patitoData.sublist(4, 8)),
+          transformToDouble(_patitoData.sublist(8, 12)),
+          transformToDouble(_patitoData.sublist(12, 16)),
+          transformToDouble(_patitoData.sublist(16, 20)),
+          transformToDouble(_patitoData.sublist(20)),
+          (transformToDouble(_patitoData.sublist(0, 4)) +
+              transformToDouble(_patitoData.sublist(4, 8)) +
+              transformToDouble(_patitoData.sublist(8, 12))),
+          ((transformToDouble(_patitoData.sublist(0, 4)) +
+                  transformToDouble(_patitoData.sublist(4, 8)) +
+                  transformToDouble(_patitoData.sublist(8, 12))) /
+              3),
+          (transformToDouble(_patitoData.sublist(12, 16)) +
+              transformToDouble(_patitoData.sublist(16, 20)) +
+              transformToDouble(_patitoData.sublist(20))),
+          ((transformToDouble(_patitoData.sublist(12, 16)) +
+                  transformToDouble(_patitoData.sublist(16, 20)) +
+                  transformToDouble(_patitoData.sublist(20))) /
+              3)
+        ]);
+      }
+    }
+
+    if (bluetoothManager.hasBatteryService) {
+      bluetoothManager.data.containsKey('charging')
+          ? _isCharging = bluetoothManager.data['charging'] ?? false
+          : null;
+      bluetoothManager.data.containsKey('mv')
+          ? _batterymv = (bluetoothManager.data['mv'] ?? 0).toString()
+          : null;
+      bluetoothManager.data.containsKey('%')
+          ? _batteryPercentage = (bluetoothManager.data['%'] ?? 0).toString()
+          : null;
+    }
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -219,10 +357,23 @@ class PatitoPageState extends State<PatitoPage> {
   @override
   initState() {
     super.initState();
-    updateWifiValues(toolsValues);
-    subscribeToWifiStatus();
-    subToPatito();
+    processValues();
+    if (newGen) {
+      subToWifiData();
+      subToAppData();
+    } else {
+      updateWifiValues(toolsValues);
+      subscribeToWifiStatus();
+      subToPatito();
+    }
+
+    if (bluetoothManager.hasBatteryService) {
+      subToBatteryData();
+      readInitialBatteryData();
+    }
   }
+
+  // OLD GEN
 
   void updateWifiValues(List<int> data) {
     var fun =
@@ -292,56 +443,125 @@ class PatitoPageState extends State<PatitoPage> {
     final patitoSub =
         bluetoothManager.patitoUuid.onValueReceived.listen((event) {
       if (context.mounted) {
-        setState(() {
-          addData(aceleracionX, transformToDouble(event.sublist(0, 4)),
-              windowSize: 5);
-          addData(aceleracionY, transformToDouble(event.sublist(4, 8)),
-              windowSize: 5);
-          addData(aceleracionZ, transformToDouble(event.sublist(8, 12)),
-              windowSize: 5);
-          addData(giroX, transformToDouble(event.sublist(12, 16)),
-              windowSize: 5);
-          addData(giroY, transformToDouble(event.sublist(16, 20)),
-              windowSize: 5);
-          addData(giroZ, transformToDouble(event.sublist(20)), windowSize: 5);
-          addDate(dates, DateTime.now());
-
-          addData(sumaAcc,
-              (aceleracionX.last + aceleracionY.last + aceleracionZ.last));
-          addData(promAcc,
-              (aceleracionX.last + aceleracionY.last + aceleracionZ.last) / 3);
-          addData(sumaGiro, (giroX.last + giroY.last + giroZ.last));
-          addData(promGiro, (giroX.last + giroY.last + giroZ.last) / 3);
-        });
-      }
-      if (recording) {
-        recordedData.add([
-          DateTime.now(),
-          transformToDouble(event.sublist(0, 4)),
-          transformToDouble(event.sublist(4, 8)),
-          transformToDouble(event.sublist(8, 12)),
-          transformToDouble(event.sublist(12, 16)),
-          transformToDouble(event.sublist(16, 20)),
-          transformToDouble(event.sublist(20)),
-          (transformToDouble(event.sublist(0, 4)) +
-              transformToDouble(event.sublist(4, 8)) +
-              transformToDouble(event.sublist(8, 12))),
-          ((transformToDouble(event.sublist(0, 4)) +
-                  transformToDouble(event.sublist(4, 8)) +
-                  transformToDouble(event.sublist(8, 12))) /
-              3),
-          (transformToDouble(event.sublist(12, 16)) +
-              transformToDouble(event.sublist(16, 20)) +
-              transformToDouble(event.sublist(20))),
-          ((transformToDouble(event.sublist(12, 16)) +
-                  transformToDouble(event.sublist(16, 20)) +
-                  transformToDouble(event.sublist(20))) /
-              3)
-        ]);
+        _patitoData = event;
+        processValues();
       }
     });
     bluetoothManager.device.cancelWhenDisconnected(patitoSub);
   }
+
+  // NEW GEN
+
+  void subToWifiData() {
+    final wifiSub =
+        bluetoothManager.wifiDataUuid.onValueReceived.listen((List<int> data) {
+      var map = deserialize(Uint8List.fromList(data));
+      Map<String, dynamic> appMap = Map<String, dynamic>.from(map);
+      printLog('Datos WiFi recibidos: $map');
+
+      setState(() {
+        bluetoothManager.data.addAll(appMap);
+        if (appMap['wcs'] == true) {
+          nameOfWifi = appMap['ssid'] ?? '';
+          isWifiConnected = true;
+
+          setState(() {
+            textState = 'CONECTADO';
+            statusColor = Colors.green;
+            wifiIcon = Icons.wifi;
+          });
+        } else if (appMap['wcs'] == false) {
+          isWifiConnected = false;
+
+          setState(() {
+            textState = 'DESCONECTADO';
+            statusColor = Colors.red;
+            wifiIcon = Icons.wifi_off;
+          });
+
+          if (appMap['wcs'] == false && atemp == true) {
+            //If comes from subscription, parts[1] = reason of error.
+            setState(() {
+              wifiIcon = Icons.warning_amber_rounded;
+              werror = true;
+            });
+
+            if (appMap['wifi_codes'] == 202 || appMap['wifi_codes'] == 15) {
+              errorMessage = 'Contraseña incorrecta';
+            } else if (appMap['wifi_codes'] == 201) {
+              errorMessage = 'La red especificada no existe';
+            } else if (appMap['wifi_codes'] == 1) {
+              errorMessage = 'Error desconocido';
+            } else {
+              errorMessage = appMap['wifi_codes'].toString();
+            }
+
+            if (appMap['wifi_codes'] != null) {
+              errorSintax = getWifiErrorSintax(appMap['wifi_codes']);
+            }
+          }
+        }
+      });
+    });
+
+    bluetoothManager.wifiDataUuid.setNotifyValue(true);
+
+    bluetoothManager.device.cancelWhenDisconnected(wifiSub);
+  }
+
+  void subToAppData() {
+    final appDataSub =
+        bluetoothManager.appDataUuid.onValueReceived.listen((List<int> data) {
+      var map = deserialize(Uint8List.fromList(data));
+      Map<String, dynamic> appMap = Map<String, dynamic>.from(map);
+      printLog('Datos App recibidos: $map');
+
+      setState(() {
+        bluetoothManager.data.addAll(appMap);
+        processValues();
+      });
+    });
+
+    bluetoothManager.appDataUuid.setNotifyValue(true);
+
+    bluetoothManager.device.cancelWhenDisconnected(appDataSub);
+  }
+
+  void subToBatteryData() {
+    final batteryDataSub =
+        bluetoothManager.batteryUuid.onValueReceived.listen((List<int> data) {
+      var map = deserialize(Uint8List.fromList(data));
+      Map<String, dynamic> appMap = Map<String, dynamic>.from(map);
+      printLog('Datos Batería recibidos: $map');
+
+      setState(() {
+        bluetoothManager.data.addAll(appMap);
+        processValues();
+      });
+    });
+
+    bluetoothManager.batteryUuid.setNotifyValue(true);
+
+    bluetoothManager.device.cancelWhenDisconnected(batteryDataSub);
+  }
+
+  void readInitialBatteryData() async {
+    try {
+      List<int> data = await bluetoothManager.batteryUuid.read();
+      var map = deserialize(Uint8List.fromList(data));
+      Map<String, dynamic> appMap = Map<String, dynamic>.from(map);
+      printLog('Datos iniciales de batería leídos: $map');
+
+      setState(() {
+        bluetoothManager.data.addAll(appMap);
+        processValues();
+      });
+    } catch (e) {
+      printLog('Error al leer datos iniciales de batería: $e');
+    }
+  }
+
+  // BOTH GEN
 
   void addData(List<double> list, double value, {int windowSize = 5}) {
     if (list.length >= 1000) {
@@ -413,6 +633,35 @@ class PatitoPageState extends State<PatitoPage> {
       sum += data[i];
     }
     return sum / windowSize;
+  }
+
+  // Métodos auxiliares para la batería
+  Color _getBatteryColor() {
+    double percentage = double.tryParse(_batteryPercentage) ?? 0.0;
+    if (percentage > 50) {
+      return Colors.green;
+    } else if (percentage > 20) {
+      return Colors.orange;
+    } else {
+      return Colors.red;
+    }
+  }
+
+  IconData _getBatteryIcon() {
+    double percentage = double.tryParse(_batteryPercentage) ?? 0.0;
+    if (_isCharging) {
+      return Icons.battery_charging_full;
+    } else if (percentage > 75) {
+      return Icons.battery_full;
+    } else if (percentage > 50) {
+      return Icons.battery_5_bar;
+    } else if (percentage > 25) {
+      return Icons.battery_3_bar;
+    } else if (percentage > 10) {
+      return Icons.battery_2_bar;
+    } else {
+      return Icons.battery_1_bar;
+    }
   }
 
   //! VISUAL
@@ -521,6 +770,264 @@ class PatitoPageState extends State<PatitoPage> {
           ),
         ),
       ),
+
+      if (bluetoothManager.hasBatteryService) ...[
+        //*- Página BATTERY -*\\
+        Scaffold(
+          backgroundColor: color4,
+          body: Center(
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Header
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20.0),
+                      decoration: BoxDecoration(
+                        color: color1,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF522B5B)
+                                  .withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              _isCharging
+                                  ? Icons.battery_charging_full
+                                  : Icons.battery_std,
+                              color: _isCharging ? Colors.green : color4,
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Estado de la Batería',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: color4,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _isCharging ? 'Cargando' : 'En uso',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: color4.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Battery Percentage Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20.0),
+                      decoration: BoxDecoration(
+                        color: color1,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 4,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF522B5B),
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Nivel de Carga',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: color4,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '$_batteryPercentage%',
+                                      style: const TextStyle(
+                                        fontSize: 36,
+                                        fontWeight: FontWeight.bold,
+                                        color: color4,
+                                      ),
+                                    ),
+                                    Container(
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color:
+                                            Colors.grey.withValues(alpha: 0.3),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: FractionallySizedBox(
+                                        alignment: Alignment.centerLeft,
+                                        widthFactor: double.tryParse(
+                                                    _batteryPercentage) !=
+                                                null
+                                            ? (double.parse(
+                                                        _batteryPercentage) /
+                                                    100)
+                                                .clamp(0.0, 1.0)
+                                            : 0.0,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: _getBatteryColor(),
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color:
+                                      _getBatteryColor().withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                                child: Icon(
+                                  _getBatteryIcon(),
+                                  color: _getBatteryColor(),
+                                  size: 24,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Battery Voltage Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20.0),
+                      decoration: BoxDecoration(
+                        color: color1,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 4,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF522B5B),
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Voltaje de la Batería',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: color4,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '$_batterymv mV',
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.bold,
+                                        color: _getBatteryColor(),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${(double.tryParse(_batterymv) ?? 0) / 1000} V',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: color4.withValues(alpha: 0.7),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: bottomBarHeight + 20),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
 
       if (accessLevel > 1) ...[
         //*- Página 4 CREDENTIAL -*\\

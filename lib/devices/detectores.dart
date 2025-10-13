@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
+import 'dart:typed_data';
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
 import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
 import 'package:caldensmartfabrica/devices/globales/resmon.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
 import 'package:flutter/material.dart';
+import 'package:msgpack_dart/msgpack_dart.dart';
 import '../master.dart';
 
 class DetectorPage extends StatefulWidget {
@@ -35,31 +36,63 @@ class DetectorPageState extends State<DetectorPage> {
   int _vrmsOffset = 0;
   int _vrms02Offset = 0;
   int _vccOffset = 0;
-  int tempMicro = 0;
-  String rs = '';
-  String rrco = '';
-  int rsValue = 0;
-  int rrcoValue = 0;
+  int _tempMicro = 0;
+  String _rs = '';
+  String _rrco = '';
+  int _rsValue = 0;
+  int _rrcoValue = 0;
   bool rsInvalid = false;
   bool rrcoInvalid = false;
   bool rsOver35k = false;
-  int ppmCO = 0;
-  int ppmCH4 = 0;
+  int _ppmCO = 0;
+  int _ppmCH4 = 0;
   //*-Calibracion-*\\
   //*-Regulacion-*\\
   List<String> valoresReg = [];
   final ScrollController _scrollController = ScrollController();
   bool regulationDone = false;
+  String _res_sen_gas_20C = '';
+  String _res_sen_gas_30C = '';
+  String _res_sen_gas_40C = '';
+  String _res_sen_gas_50C = '';
+  String _res_sen_gas_xC = '';
+  String _cor_temp_20C = '';
+  String _cor_temp_30C = '';
+  String _cor_temp_40C = '';
+  String _cor_temp_50C = '';
+  String _cor_temp_xC = '';
+  String _res_sen_co_20C = '';
+  String _res_sen_co_30C = '';
+  String _res_sen_co_40C = '';
+  String _res_sen_co_50C = '';
+  String _res_sen_co_xC = '';
+  String _res_sen_gas_aire_limpio = '';
+  String _res_sen_co_aire_limpio = '';
   //*-Regulacion-*\\
   //*-Debug-*\\
   List<String> debug = [];
   List<int> lastValue = [];
   int regIniIns = 0;
+  String _gasout = '';
+  String _gasout_estable_ch4 = '';
+  String _gasout_estable_co = '';
+  String _vcc_reg = '';
+  String _vcc_estable = '';
+  String _temp = '';
+  String _temp_estable = '';
+  String _pwm_rising = '';
+  String _pwm_falling = '';
+  String _pwm = '';
+  String _pwm_estable = '';
   //*-Debug-*\\
   //*-Light-*\\
   double _sliderValue = 100.0;
   //*-Light-*\\
   bool deviceEBBR = false;
+
+  final String pc = DeviceManager.getProductCode(deviceName);
+  final String sn = DeviceManager.extractSerialNumber(deviceName);
+  final bool newGen = bluetoothManager.newGeneration;
 
   // Obtener el índice correcto para cada página
   int _getPageIndex(String pageType) {
@@ -278,6 +311,227 @@ class DetectorPageState extends State<DetectorPage> {
     });
   }
 
+  void processValues() {
+    if (newGen) {
+      printLog('Procesando valores: ${bluetoothManager.data}');
+      setState(() {
+        // calibration values
+        bluetoothManager.data.containsKey('vrms')
+            ? _vrms =
+                int.tryParse(bluetoothManager.data['vrms'].toString()) ?? 0
+            : null;
+        bluetoothManager.data.containsKey('vcc')
+            ? _vcc = int.tryParse(bluetoothManager.data['vcc'].toString()) ?? 0
+            : null;
+        bluetoothManager.data.containsKey('rs')
+            ? _rsValue =
+                int.tryParse(bluetoothManager.data['rs'].toString()) ?? 0
+            : null;
+        bluetoothManager.data.containsKey('rrco')
+            ? _rrcoValue =
+                int.tryParse(bluetoothManager.data['rrco'].toString()) ?? 0
+            : null;
+        bluetoothManager.data.containsKey('temp_micro')
+            ? _tempMicro =
+                int.tryParse(bluetoothManager.data['temp_micro'].toString()) ??
+                    0
+            : null;
+        bluetoothManager.data.containsKey('ppm_co')
+            ? _ppmCO =
+                int.tryParse(bluetoothManager.data['ppm_co'].toString()) ?? 0
+            : null;
+        bluetoothManager.data.containsKey('ppm_ch4')
+            ? _ppmCH4 =
+                int.tryParse(bluetoothManager.data['ppm_ch4'].toString()) ?? 0
+            : null;
+        bluetoothManager.data.containsKey('rs_value')
+            ? _rsValue =
+                int.tryParse(bluetoothManager.data['rs_value'].toString()) ?? 0
+            : null;
+        bluetoothManager.data.containsKey('rrco_value')
+            ? _rrcoValue =
+                int.tryParse(bluetoothManager.data['rrco_value'].toString()) ??
+                    0
+            : null;
+        bluetoothManager.data.containsKey('vcc_offset')
+            ? _vccOffset =
+                int.tryParse(bluetoothManager.data['vcc_offset'].toString()) ??
+                    0
+            : null;
+        bluetoothManager.data.containsKey('vrms_offset')
+            ? _vrmsOffset =
+                int.tryParse(bluetoothManager.data['vrms_offset'].toString()) ??
+                    0
+            : null;
+        bluetoothManager.data.containsKey('vrms02_offset')
+            ? _vrms02Offset = int.tryParse(
+                    bluetoothManager.data['vrms02_offset'].toString()) ??
+                0
+            : null;
+
+        bluetoothManager.data.containsKey('device_ebbr')
+            ? deviceEBBR = bluetoothManager.data['device_ebbr'] == true
+            : null;
+        bluetoothManager.data.containsKey('regulation_done')
+            ? regulationDone = bluetoothManager.data['regulation_done'] == true
+            : null;
+
+        // Debug values
+        bluetoothManager.data.containsKey('gasout')
+            ? _gasout = bluetoothManager.data['gasout'].toString()
+            : null;
+        bluetoothManager.data.containsKey('gasout_estable_ch4')
+            ? _gasout_estable_ch4 =
+                bluetoothManager.data['gasout_estable_ch4'].toString()
+            : null;
+        bluetoothManager.data.containsKey('gasout_estable_co')
+            ? _gasout_estable_co =
+                bluetoothManager.data['gasout_estable_co'].toString()
+            : null;
+        bluetoothManager.data.containsKey('vcc_reg')
+            ? _vcc_reg = bluetoothManager.data['vcc_reg'].toString()
+            : null;
+        bluetoothManager.data.containsKey('vcc_estable')
+            ? _vcc_estable = bluetoothManager.data['vcc_estable'].toString()
+            : null;
+        bluetoothManager.data.containsKey('temp')
+            ? _temp = bluetoothManager.data['temp'].toString()
+            : null;
+        bluetoothManager.data.containsKey('temp_estable')
+            ? _temp_estable = bluetoothManager.data['temp_estable'].toString()
+            : null;
+        bluetoothManager.data.containsKey('pwm_rising')
+            ? _pwm_rising = bluetoothManager.data['pwm_rising'].toString()
+            : null;
+        bluetoothManager.data.containsKey('pwm_falling')
+            ? _pwm_falling = bluetoothManager.data['pwm_falling'].toString()
+            : null;
+        bluetoothManager.data.containsKey('pwm')
+            ? _pwm = bluetoothManager.data['pwm'].toString()
+            : null;
+        bluetoothManager.data.containsKey('pwm_estable')
+            ? _pwm_estable = bluetoothManager.data['pwm_estable'].toString()
+            : null;
+        // Regulation values
+        bluetoothManager.data.containsKey('res_sen_gas_20C')
+            ? _res_sen_gas_20C =
+                bluetoothManager.data['res_sen_gas_20C'].toString()
+            : null;
+        bluetoothManager.data.containsKey('res_sen_gas_30C')
+            ? _res_sen_gas_30C =
+                bluetoothManager.data['res_sen_gas_30C'].toString()
+            : null;
+        bluetoothManager.data.containsKey('res_sen_gas_40C')
+            ? _res_sen_gas_40C =
+                bluetoothManager.data['res_sen_gas_40C'].toString()
+            : null;
+        bluetoothManager.data.containsKey('res_sen_gas_50C')
+            ? _res_sen_gas_50C =
+                bluetoothManager.data['res_sen_gas_50C'].toString()
+            : null;
+        bluetoothManager.data.containsKey('res_sen_gas_xC')
+            ? _res_sen_gas_xC =
+                bluetoothManager.data['res_sen_gas_xC'].toString()
+            : null;
+        bluetoothManager.data.containsKey('cor_temp_20C')
+            ? _cor_temp_20C = bluetoothManager.data['cor_temp_20C'].toString()
+            : null;
+        bluetoothManager.data.containsKey('cor_temp_30C')
+            ? _cor_temp_30C = bluetoothManager.data['cor_temp_30C'].toString()
+            : null;
+        bluetoothManager.data.containsKey('cor_temp_40C')
+            ? _cor_temp_40C = bluetoothManager.data['cor_temp_40C'].toString()
+            : null;
+        bluetoothManager.data.containsKey('cor_temp_50C')
+            ? _cor_temp_50C = bluetoothManager.data['cor_temp_50C'].toString()
+            : null;
+        bluetoothManager.data.containsKey('cor_temp_xC')
+            ? _cor_temp_xC = bluetoothManager.data['cor_temp_xC'].toString()
+            : null;
+        bluetoothManager.data.containsKey('res_sen_co_20C')
+            ? _res_sen_co_20C =
+                bluetoothManager.data['res_sen_co_20C'].toString()
+            : null;
+        bluetoothManager.data.containsKey('res_sen_co_30C')
+            ? _res_sen_co_30C =
+                bluetoothManager.data['res_sen_co_30C'].toString()
+            : null;
+        bluetoothManager.data.containsKey('res_sen_co_40C')
+            ? _res_sen_co_40C =
+                bluetoothManager.data['res_sen_co_40C'].toString()
+            : null;
+        bluetoothManager.data.containsKey('res_sen_co_50C')
+            ? _res_sen_co_50C =
+                bluetoothManager.data['res_sen_co_50C'].toString()
+            : null;
+        bluetoothManager.data.containsKey('res_sen_co_xC')
+            ? _res_sen_co_xC = bluetoothManager.data['res_sen_co_xC'].toString()
+            : null;
+        bluetoothManager.data.containsKey('res_sen_gas_aire_limpio')
+            ? _res_sen_gas_aire_limpio =
+                bluetoothManager.data['res_sen_gas_aire_limpio'].toString()
+            : null;
+        bluetoothManager.data.containsKey('res_sen_co_aire_limpio')
+            ? _res_sen_co_aire_limpio =
+                bluetoothManager.data['res_sen_co_aire_limpio'].toString()
+            : null;
+
+        if (_rsValue >= 35000) {
+          rsInvalid = true;
+          rsOver35k = true;
+          _rsValue = 35000;
+        } else {
+          rsInvalid = false;
+        }
+        if (_rsValue < 3500) {
+          rsInvalid = true;
+        } else {
+          rsInvalid = false;
+        }
+        if (_rrcoValue > 28000) {
+          rrcoInvalid = false;
+        } else {
+          _rrcoValue = 0;
+          rrcoInvalid = true;
+        }
+
+        if (rsInvalid == true) {
+          if (rsOver35k == true) {
+            _rs = '>35kΩ';
+            rsColor = Colors.red;
+          } else {
+            _rs = '<3.5kΩ';
+            rsColor = Colors.red;
+          }
+        } else {
+          var fun = _rsValue / 1000;
+          _rs = '${fun}KΩ';
+        }
+        if (rrcoInvalid == true) {
+          _rrco = '<28kΩ';
+          rrcoColor = Colors.red;
+        } else {
+          var fun = _rrcoValue / 1000;
+          _rrco = '${fun}KΩ';
+        }
+
+        if (_vcc > 5000) {
+          _vccColor = Colors.red;
+        } else {
+          _vccColor = color0;
+        }
+
+        if (_vrms > 900) {
+          _vrmsColor = Colors.red;
+        } else {
+          _vrmsColor = color0;
+        }
+      });
+    } else {
+      setState(() {});
+    }
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -291,21 +545,106 @@ class DetectorPageState extends State<DetectorPage> {
   @override
   initState() {
     super.initState();
-    updateWifiValues(toolsValues);
-    subscribeToWifiStatus();
-    if (factoryMode) {
-      _calValues = calibrationValues;
-      ppmCO = workValues[5] + workValues[6] << 8;
-      ppmCH4 = workValues[7] + workValues[8] << 8;
-      updateValuesCalibracion(_calValues);
-      _subscribeToCalCharacteristic();
-      _subscribeToWorkCharacteristic();
-      _readValues();
-      _subscribeValue();
-      updateDebugValues(debugValues);
-      _subscribeDebug();
+    processValues();
+    if (newGen) {
+      subToWifiData();
+      subToAppData();
+    } else {
+      updateWifiValues(toolsValues);
+      subscribeToWifiStatus();
+      if (factoryMode) {
+        _calValues = calibrationValues;
+        _ppmCO = workValues[5] + workValues[6] << 8;
+        _ppmCH4 = workValues[7] + workValues[8] << 8;
+        updateValuesCalibracion(_calValues);
+        _subscribeToCalCharacteristic();
+        _subscribeToWorkCharacteristic();
+        _readValues();
+        _subscribeValue();
+        updateDebugValues(debugValues);
+        _subscribeDebug();
+      }
     }
   }
+
+  //NEW GEN
+
+  void subToWifiData() {
+    final wifiSub =
+        bluetoothManager.wifiDataUuid.onValueReceived.listen((List<int> data) {
+      var map = deserialize(Uint8List.fromList(data));
+      Map<String, dynamic> appMap = Map<String, dynamic>.from(map);
+      printLog('Datos WiFi recibidos: $map');
+
+      setState(() {
+        bluetoothManager.data.addAll(appMap);
+        if (appMap['wcs'] == true) {
+          nameOfWifi = appMap['ssid'] ?? '';
+          isWifiConnected = true;
+
+          setState(() {
+            textState = 'CONECTADO';
+            statusColor = Colors.green;
+            wifiIcon = Icons.wifi;
+          });
+        } else if (appMap['wcs'] == false) {
+          isWifiConnected = false;
+
+          setState(() {
+            textState = 'DESCONECTADO';
+            statusColor = Colors.red;
+            wifiIcon = Icons.wifi_off;
+          });
+
+          if (appMap['wcs'] == false && atemp == true) {
+            //If comes from subscription, parts[1] = reason of error.
+            setState(() {
+              wifiIcon = Icons.warning_amber_rounded;
+              werror = true;
+            });
+
+            if (appMap['wifi_codes'] == 202 || appMap['wifi_codes'] == 15) {
+              errorMessage = 'Contraseña incorrecta';
+            } else if (appMap['wifi_codes'] == 201) {
+              errorMessage = 'La red especificada no existe';
+            } else if (appMap['wifi_codes'] == 1) {
+              errorMessage = 'Error desconocido';
+            } else {
+              errorMessage = appMap['wifi_codes'].toString();
+            }
+
+            if (appMap['wifi_codes'] != null) {
+              errorSintax = getWifiErrorSintax(appMap['wifi_codes']);
+            }
+          }
+        }
+      });
+    });
+
+    bluetoothManager.wifiDataUuid.setNotifyValue(true);
+
+    bluetoothManager.device.cancelWhenDisconnected(wifiSub);
+  }
+
+  void subToAppData() {
+    final appDataSub =
+        bluetoothManager.appDataUuid.onValueReceived.listen((List<int> data) {
+      var map = deserialize(Uint8List.fromList(data));
+      Map<String, dynamic> appMap = Map<String, dynamic>.from(map);
+      printLog('Datos App recibidos: $map');
+
+      setState(() {
+        bluetoothManager.data.addAll(appMap);
+        processValues();
+      });
+    });
+
+    bluetoothManager.appDataUuid.setNotifyValue(true);
+
+    bluetoothManager.device.cancelWhenDisconnected(appDataSub);
+  }
+
+  //OLD GEN
 
   void updateWifiValues(List<int> data) {
     var fun =
@@ -370,72 +709,6 @@ class DetectorPageState extends State<DetectorPage> {
     bluetoothManager.device.cancelWhenDisconnected(wifiSub);
   }
 
-  void _setVcc(String newValue) {
-    if (newValue.isEmpty) {
-      printLog('STRING EMPTY');
-      return;
-    }
-
-    printLog('changing VCC!');
-
-    List<int> vccNewOffset = List<int>.filled(3, 0);
-    vccNewOffset[0] = int.parse(newValue);
-    vccNewOffset[1] = 0; // only 8 bytes value
-    vccNewOffset[2] = 0; // calibration point: vcc
-
-    try {
-      bluetoothManager.calibrationUuid.write(vccNewOffset);
-    } catch (e, stackTrace) {
-      printLog('Error al escribir vcc offset $e $stackTrace');
-      showToast('Error al escribir vcc offset');
-      // handleManualError(e, stackTrace);
-    }
-
-    setState(() {});
-  }
-
-  void _setVrms(String newValue) {
-    if (newValue.isEmpty) {
-      return;
-    }
-
-    List<int> vrmsNewOffset = List<int>.filled(3, 0);
-    vrmsNewOffset[0] = int.parse(newValue);
-    vrmsNewOffset[1] = 0; // only 8 bytes value
-    vrmsNewOffset[2] = 1; // calibration point: vrms
-
-    try {
-      bluetoothManager.calibrationUuid.write(vrmsNewOffset);
-    } catch (e, stackTrace) {
-      printLog('Error al setear vrms offset $e $stackTrace');
-      showToast('Error al setear vrms offset');
-      // handleManualError(e, stackTrace);
-    }
-
-    setState(() {});
-  }
-
-  void _setVrms02(String newValue) {
-    if (newValue.isEmpty) {
-      return;
-    }
-
-    List<int> vrms02NewOffset = List<int>.filled(3, 0);
-    vrms02NewOffset[0] = int.parse(newValue);
-    vrms02NewOffset[1] = 0; // only 8 bytes value
-    vrms02NewOffset[2] = 2; // calibration point: vrms02
-
-    try {
-      bluetoothManager.calibrationUuid.write(vrms02NewOffset);
-    } catch (e, stackTrace) {
-      printLog('Error al setear vrms offset $e $stackTrace');
-      showToast('Error al setear vrms02 offset');
-      // handleManualError(e, stackTrace);
-    }
-
-    setState(() {});
-  }
-
   void updateValuesCalibracion(List<int> newValues) async {
     _calValues = newValues;
     printLog('Valores actualizados: $_calValues');
@@ -476,50 +749,50 @@ class DetectorPageState extends State<DetectorPage> {
         _vrmsColor = color0;
       }
 
-      tempMicro = _calValues[7];
-      rsValue = _calValues[8];
-      rsValue += _calValues[9] << 8;
+      _tempMicro = _calValues[7];
+      _rsValue = _calValues[8];
+      _rsValue += _calValues[9] << 8;
 
-      rrcoValue = _calValues[10];
-      rrcoValue = _calValues[11] << 8;
+      _rrcoValue = _calValues[10];
+      _rrcoValue = _calValues[11] << 8;
 
-      if (rsValue >= 35000) {
+      if (_rsValue >= 35000) {
         rsInvalid = true;
         rsOver35k = true;
-        rsValue = 35000;
+        _rsValue = 35000;
       } else {
         rsInvalid = false;
       }
-      if (rsValue < 3500) {
+      if (_rsValue < 3500) {
         rsInvalid = true;
       } else {
         rsInvalid = false;
       }
-      if (rrcoValue > 28000) {
+      if (_rrcoValue > 28000) {
         rrcoInvalid = false;
       } else {
-        rrcoValue = 0;
+        _rrcoValue = 0;
         rrcoInvalid = true;
       }
 
       if (rsInvalid == true) {
         if (rsOver35k == true) {
-          rs = '>35kΩ';
+          _rs = '>35kΩ';
           rsColor = Colors.red;
         } else {
-          rs = '<3.5kΩ';
+          _rs = '<3.5kΩ';
           rsColor = Colors.red;
         }
       } else {
-        var fun = rsValue / 1000;
-        rs = '${fun}KΩ';
+        var fun = _rsValue / 1000;
+        _rs = '${fun}KΩ';
       }
       if (rrcoInvalid == true) {
-        rrco = '<28kΩ';
+        _rrco = '<28kΩ';
         rrcoColor = Colors.red;
       } else {
-        var fun = rrcoValue / 1000;
-        rrco = '${fun}KΩ';
+        var fun = _rrcoValue / 1000;
+        _rrco = '${fun}KΩ';
       }
     }
 
@@ -547,8 +820,8 @@ class DetectorPageState extends State<DetectorPage> {
     final workSub =
         bluetoothManager.workUuid.onValueReceived.listen((List<int> status) {
       setState(() {
-        ppmCO = status[5] + (status[6] << 8);
-        ppmCH4 = status[7] + (status[8] << 8);
+        _ppmCO = status[5] + (status[6] << 8);
+        _ppmCH4 = status[7] + (status[8] << 8);
       });
     });
 
@@ -659,16 +932,6 @@ class DetectorPageState extends State<DetectorPage> {
     }
   }
 
-  void _sendValueToBle(int value) async {
-    try {
-      final data = [value];
-      bluetoothManager.lightUuid.write(data, withoutResponse: true);
-    } catch (e, stackTrace) {
-      printLog('Error al mandar el valor del brillo $e $stackTrace');
-      // handleManualError(e, stackTrace);
-    }
-  }
-
   void updateDebugValues(List<int> values) {
     debug.clear();
     lastValue.clear();
@@ -743,18 +1006,160 @@ class DetectorPageState extends State<DetectorPage> {
     }
   }
 
-  void _cambiarTipoDeDispositivo(){
-    String data = '${DeviceManager.getProductCode(deviceName)}[11](${deviceEBBR ? 0 : 1})';
-
-    bluetoothManager.toolsUuid.write(data.codeUnits);
-  }
-
   void readVars() async {
     varsValues = await bluetoothManager.varsUuid.read();
     var parts2 = utf8.decode(varsValues).split(':');
     printLog('Valores vars: $parts2');
 
     deviceEBBR = parts2[0] == '1';
+  }
+
+  //BOTH GEN
+
+  void _setVcc(String newValue) {
+    if (newValue.isEmpty) {
+      printLog('STRING EMPTY');
+      return;
+    }
+
+    printLog('changing VCC!');
+
+    if (newGen) {
+      Map<String, dynamic> map = {
+        'set_vcc': int.parse(newValue),
+      };
+      List<int> encoded = serialize(map);
+      try {
+        bluetoothManager.appDataUuid.write(encoded);
+      } catch (e, stackTrace) {
+        printLog('Error al escribir vcc offset $e $stackTrace');
+        showToast('Error al escribir vcc offset');
+        // handleManualError(e, stackTrace);
+      }
+    } else {
+      List<int> vccNewOffset = List<int>.filled(3, 0);
+      vccNewOffset[0] = int.parse(newValue);
+      vccNewOffset[1] = 0; // only 8 bytes value
+      vccNewOffset[2] = 0; // calibration point: vcc
+
+      try {
+        bluetoothManager.calibrationUuid.write(vccNewOffset);
+      } catch (e, stackTrace) {
+        printLog('Error al escribir vcc offset $e $stackTrace');
+        showToast('Error al escribir vcc offset');
+        // handleManualError(e, stackTrace);
+      }
+    }
+
+    setState(() {});
+  }
+
+  void _setVrms(String newValue) {
+    if (newValue.isEmpty) {
+      return;
+    }
+
+    if (newGen) {
+      Map<String, dynamic> map = {
+        'set_vrms': int.parse(newValue),
+      };
+      List<int> encoded = serialize(map);
+      try {
+        bluetoothManager.appDataUuid.write(encoded);
+      } catch (e, stackTrace) {
+        printLog('Error al setear vrms offset $e $stackTrace');
+        showToast('Error al setear vrms offset');
+      }
+    } else {
+      List<int> vrmsNewOffset = List<int>.filled(3, 0);
+      vrmsNewOffset[0] = int.parse(newValue);
+      vrmsNewOffset[1] = 0; // only 8 bytes value
+      vrmsNewOffset[2] = 1; // calibration point: vrms
+
+      try {
+        bluetoothManager.calibrationUuid.write(vrmsNewOffset);
+      } catch (e, stackTrace) {
+        printLog('Error al setear vrms offset $e $stackTrace');
+        showToast('Error al setear vrms offset');
+        // handleManualError(e, stackTrace);
+      }
+    }
+    setState(() {});
+  }
+
+  void _setVrms02(String newValue) {
+    if (newValue.isEmpty) {
+      return;
+    }
+
+    if (newGen) {
+      Map<String, dynamic> map = {
+        'set_vrms02': int.parse(newValue),
+      };
+      List<int> encoded = serialize(map);
+      try {
+        bluetoothManager.appDataUuid.write(encoded);
+      } catch (e, stackTrace) {
+        printLog('Error al setear vrms02 offset $e $stackTrace');
+        showToast('Error al setear vrms02 offset');
+      }
+    } else {
+      List<int> vrms02NewOffset = List<int>.filled(3, 0);
+      vrms02NewOffset[0] = int.parse(newValue);
+      vrms02NewOffset[1] = 0; // only 8 bytes value
+      vrms02NewOffset[2] = 2; // calibration point: vrms02
+
+      try {
+        bluetoothManager.calibrationUuid.write(vrms02NewOffset);
+      } catch (e, stackTrace) {
+        printLog('Error al setear vrms offset $e $stackTrace');
+        showToast('Error al setear vrms02 offset');
+        // handleManualError(e, stackTrace);
+      }
+    }
+    setState(() {});
+  }
+
+  void _setBrightness(int value) async {
+    if (newGen) {
+      try {
+        Map<String, dynamic> map = {
+          'set_brightness': value,
+        };
+        List<int> encoded = serialize(map);
+        bluetoothManager.appDataUuid.write(encoded);
+      } catch (e, stackTrace) {
+        printLog('Error al mandar el valor del brillo $e $stackTrace');
+      }
+    } else {
+      try {
+        final data = [value];
+        bluetoothManager.lightUuid.write(data, withoutResponse: true);
+      } catch (e, stackTrace) {
+        printLog('Error al mandar el valor del brillo $e $stackTrace');
+        // handleManualError(e, stackTrace);
+      }
+    }
+  }
+
+  void _cambiarTipoDeDispositivo() {
+    if (newGen) {
+      Map<String, dynamic> map = {
+        'set_EBBR': deviceEBBR ? false : true,
+      };
+      List<int> encoded = serialize(map);
+      try {
+        bluetoothManager.appDataUuid.write(encoded);
+      } catch (e, stackTrace) {
+        printLog('Error al cambiar el tipo de dispositivo $e $stackTrace');
+        showToast('Error al cambiar el tipo de dispositivo');
+      }
+    } else {
+      String data =
+          '${DeviceManager.getProductCode(deviceName)}[11](${deviceEBBR ? 0 : 1})';
+
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
   }
 
   //! VISUAL
@@ -1039,7 +1444,7 @@ class DetectorPageState extends State<DetectorPage> {
                         ),
                       ),
                       TextSpan(
-                        text: rs,
+                        text: _rs,
                         style: TextStyle(
                           fontSize: 24.0,
                           color: rsColor,
@@ -1057,7 +1462,7 @@ class DetectorPageState extends State<DetectorPage> {
                     thumbShape: SliderComponentShape.noThumb,
                   ),
                   child: Slider(
-                    value: rsValue.toDouble(),
+                    value: _rsValue.toDouble(),
                     min: 0,
                     max: 35000,
                     onChanged: null,
@@ -1076,7 +1481,7 @@ class DetectorPageState extends State<DetectorPage> {
                         ),
                       ),
                       TextSpan(
-                        text: rrco,
+                        text: _rrco,
                         style: TextStyle(
                           fontSize: 24.0,
                           color: rrcoColor,
@@ -1094,7 +1499,7 @@ class DetectorPageState extends State<DetectorPage> {
                     thumbShape: SliderComponentShape.noThumb,
                   ),
                   child: Slider(
-                    value: rrcoValue.toDouble(),
+                    value: _rrcoValue.toDouble(),
                     min: 0,
                     max: 100000,
                     onChanged: null,
@@ -1113,7 +1518,7 @@ class DetectorPageState extends State<DetectorPage> {
                         ),
                       ),
                       TextSpan(
-                        text: tempMicro.toString(),
+                        text: _tempMicro.toString(),
                         style: const TextStyle(
                           fontSize: 24.0,
                           color: color0,
@@ -1143,7 +1548,7 @@ class DetectorPageState extends State<DetectorPage> {
                         ),
                       ),
                       TextSpan(
-                        text: '$ppmCO',
+                        text: '$_ppmCO',
                         style: const TextStyle(
                           fontSize: 24.0,
                           color: color0,
@@ -1165,7 +1570,7 @@ class DetectorPageState extends State<DetectorPage> {
                         ),
                       ),
                       TextSpan(
-                        text: '$ppmCH4',
+                        text: '$_ppmCH4',
                         style: const TextStyle(
                           fontSize: 24.0,
                           color: color0,
@@ -1209,38 +1614,350 @@ class DetectorPageState extends State<DetectorPage> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
-                Expanded(
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    itemCount: valoresReg.length,
-                    itemBuilder: (context, index) {
-                      return Column(
-                        children: [
+                if (newGen) ...[
+                  // Nueva generación - mostrar valores individuales
+                  Expanded(
+                    child: ListView(
+                      controller: _scrollController,
+                      children: [
+                        if (_res_sen_gas_20C.isNotEmpty) ...[
                           buildText(
-                            text: textToShow(index),
+                            text: 'Resistencia del sensor en gas a 20 grados',
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             textAlign: TextAlign.left,
                             widthFactor: 0.8,
                           ),
                           buildText(
-                            text: valoresReg[index],
+                            text: _res_sen_gas_20C,
                             fontSize: 30,
                             fontWeight: FontWeight.normal,
-                            color: const Color.fromARGB(255, 247, 230, 82),
                             textAlign: TextAlign.center,
                             widthFactor: 0.8,
                           ),
-                          if (index == valoresReg.length - 1)
-                            Padding(
-                              padding:
-                                  EdgeInsets.only(bottom: bottomBarHeight + 20),
-                            ),
+                          const SizedBox(height: 15),
                         ],
-                      );
-                    },
+                        if (_res_sen_gas_30C.isNotEmpty) ...[
+                          buildText(
+                            text: 'Resistencia del sensor en gas a 30 grados',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.left,
+                            widthFactor: 0.8,
+                          ),
+                          buildText(
+                            text: _res_sen_gas_30C,
+                            fontSize: 30,
+                            fontWeight: FontWeight.normal,
+                            textAlign: TextAlign.center,
+                            widthFactor: 0.8,
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                        if (_res_sen_gas_40C.isNotEmpty) ...[
+                          buildText(
+                            text: 'Resistencia del sensor en gas a 40 grados',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.left,
+                            widthFactor: 0.8,
+                          ),
+                          buildText(
+                            text: _res_sen_gas_40C,
+                            fontSize: 30,
+                            fontWeight: FontWeight.normal,
+                            textAlign: TextAlign.center,
+                            widthFactor: 0.8,
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                        if (_res_sen_gas_50C.isNotEmpty) ...[
+                          buildText(
+                            text: 'Resistencia del sensor en gas a 50 grados',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.left,
+                            widthFactor: 0.8,
+                          ),
+                          buildText(
+                            text: _res_sen_gas_50C,
+                            fontSize: 30,
+                            fontWeight: FontWeight.normal,
+                            textAlign: TextAlign.center,
+                            widthFactor: 0.8,
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                        if (_res_sen_gas_xC.isNotEmpty) ...[
+                          buildText(
+                            text: 'Resistencia del sensor en gas a x grados',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.left,
+                            widthFactor: 0.8,
+                          ),
+                          buildText(
+                            text: _res_sen_gas_xC,
+                            fontSize: 30,
+                            fontWeight: FontWeight.normal,
+                            textAlign: TextAlign.center,
+                            widthFactor: 0.8,
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                        if (_cor_temp_20C.isNotEmpty) ...[
+                          buildText(
+                            text: 'Corrector de temperatura a 20 grados',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.left,
+                            widthFactor: 0.8,
+                          ),
+                          buildText(
+                            text: _cor_temp_20C,
+                            fontSize: 30,
+                            fontWeight: FontWeight.normal,
+                            textAlign: TextAlign.center,
+                            widthFactor: 0.8,
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                        if (_cor_temp_30C.isNotEmpty) ...[
+                          buildText(
+                            text: 'Corrector de temperatura a 30 grados',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.left,
+                            widthFactor: 0.8,
+                          ),
+                          buildText(
+                            text: _cor_temp_30C,
+                            fontSize: 30,
+                            fontWeight: FontWeight.normal,
+                            textAlign: TextAlign.center,
+                            widthFactor: 0.8,
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                        if (_cor_temp_40C.isNotEmpty) ...[
+                          buildText(
+                            text: 'Corrector de temperatura a 40 grados',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.left,
+                            widthFactor: 0.8,
+                          ),
+                          buildText(
+                            text: _cor_temp_40C,
+                            fontSize: 30,
+                            fontWeight: FontWeight.normal,
+                            textAlign: TextAlign.center,
+                            widthFactor: 0.8,
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                        if (_cor_temp_50C.isNotEmpty) ...[
+                          buildText(
+                            text: 'Corrector de temperatura a 50 grados',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.left,
+                            widthFactor: 0.8,
+                          ),
+                          buildText(
+                            text: _cor_temp_50C,
+                            fontSize: 30,
+                            fontWeight: FontWeight.normal,
+                            textAlign: TextAlign.center,
+                            widthFactor: 0.8,
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                        if (_cor_temp_xC.isNotEmpty) ...[
+                          buildText(
+                            text: 'Corrector de temperatura a x grados',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.left,
+                            widthFactor: 0.8,
+                          ),
+                          buildText(
+                            text: _cor_temp_xC,
+                            fontSize: 30,
+                            fontWeight: FontWeight.normal,
+                            textAlign: TextAlign.center,
+                            widthFactor: 0.8,
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                        if (_res_sen_co_20C.isNotEmpty) ...[
+                          buildText(
+                            text:
+                                'Resistencia de sensor en monoxido a 20 grados',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.left,
+                            widthFactor: 0.8,
+                          ),
+                          buildText(
+                            text: _res_sen_co_20C,
+                            fontSize: 30,
+                            fontWeight: FontWeight.normal,
+                            textAlign: TextAlign.center,
+                            widthFactor: 0.8,
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                        if (_res_sen_co_30C.isNotEmpty) ...[
+                          buildText(
+                            text:
+                                'Resistencia de sensor en monoxido a 30 grados',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.left,
+                            widthFactor: 0.8,
+                          ),
+                          buildText(
+                            text: _res_sen_co_30C,
+                            fontSize: 30,
+                            fontWeight: FontWeight.normal,
+                            textAlign: TextAlign.center,
+                            widthFactor: 0.8,
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                        if (_res_sen_co_40C.isNotEmpty) ...[
+                          buildText(
+                            text:
+                                'Resistencia de sensor en monoxido a 40 grados',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.left,
+                            widthFactor: 0.8,
+                          ),
+                          buildText(
+                            text: _res_sen_co_40C,
+                            fontSize: 30,
+                            fontWeight: FontWeight.normal,
+                            textAlign: TextAlign.center,
+                            widthFactor: 0.8,
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                        if (_res_sen_co_50C.isNotEmpty) ...[
+                          buildText(
+                            text:
+                                'Resistencia de sensor en monoxido a 50 grados',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.left,
+                            widthFactor: 0.8,
+                          ),
+                          buildText(
+                            text: _res_sen_co_50C,
+                            fontSize: 30,
+                            fontWeight: FontWeight.normal,
+                            textAlign: TextAlign.center,
+                            widthFactor: 0.8,
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                        if (_res_sen_co_xC.isNotEmpty) ...[
+                          buildText(
+                            text:
+                                'Resistencia de sensor en monoxido a x grados',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.left,
+                            widthFactor: 0.8,
+                          ),
+                          buildText(
+                            text: _res_sen_co_xC,
+                            fontSize: 30,
+                            fontWeight: FontWeight.normal,
+                            textAlign: TextAlign.center,
+                            widthFactor: 0.8,
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                        if (_res_sen_gas_aire_limpio.isNotEmpty) ...[
+                          buildText(
+                            text:
+                                'Resistencia del sensor de CH4 en aire limpio',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.left,
+                            widthFactor: 0.8,
+                          ),
+                          buildText(
+                            text: _res_sen_gas_aire_limpio,
+                            fontSize: 30,
+                            fontWeight: FontWeight.normal,
+                            textAlign: TextAlign.center,
+                            widthFactor: 0.8,
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                        if (_res_sen_co_aire_limpio.isNotEmpty) ...[
+                          buildText(
+                            text: 'Resistencia del sensor de CO en aire limpio',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.left,
+                            widthFactor: 0.8,
+                          ),
+                          buildText(
+                            text: _res_sen_co_aire_limpio,
+                            fontSize: 30,
+                            fontWeight: FontWeight.normal,
+                            textAlign: TextAlign.center,
+                            widthFactor: 0.8,
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                        Padding(
+                          padding:
+                              EdgeInsets.only(bottom: bottomBarHeight + 20),
+                        ),
+                      ],
+                    ),
                   ),
-                )
+                ] else ...[
+                  // Vieja generación - mostrar valores de valoresReg
+                  Expanded(
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      itemCount: valoresReg.length,
+                      itemBuilder: (context, index) {
+                        return Column(
+                          children: [
+                            buildText(
+                              text: textToShow(index),
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              textAlign: TextAlign.left,
+                              widthFactor: 0.8,
+                            ),
+                            buildText(
+                              text: valoresReg[index],
+                              fontSize: 30,
+                              fontWeight: FontWeight.normal,
+                              textAlign: TextAlign.center,
+                              widthFactor: 0.8,
+                            ),
+                            if (index == valoresReg.length - 1) ...[
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: bottomBarHeight + 20,
+                                ),
+                              )
+                            ],
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1290,7 +2007,7 @@ class DetectorPageState extends State<DetectorPage> {
                       setState(() {
                         _sliderValue = value;
                       });
-                      _sendValueToBle(_sliderValue.toInt());
+                      _setBrightness(_sliderValue.toInt());
                     },
                   ),
                 ),
@@ -1312,92 +2029,179 @@ class DetectorPageState extends State<DetectorPage> {
             backgroundColor: color4,
             body: Column(
               children: [
-                const Text('Valores del PIC ADC',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: color1,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 30)),
+                const Text(
+                  'Valores del PIC ADC',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: color1,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 30,
+                  ),
+                ),
                 const SizedBox(
                   height: 20,
                 ),
-                Expanded(
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    itemCount: debug.length + 1,
-                    itemBuilder: (context, index) {
-                      return index == 0
-                          ? ListBody(
-                              children: [
-                                Row(
-                                  children: [
-                                    const Text('RegIniIns: ',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                            color: color1,
-                                            fontWeight: FontWeight.normal,
-                                            fontSize: 20)),
-                                    Text(regIniIns.toString(),
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                            color: color1,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 20)),
-                                  ],
-                                ),
-                                SliderTheme(
-                                  data: SliderTheme.of(context).copyWith(
-                                      disabledActiveTrackColor: color0,
-                                      disabledInactiveTrackColor: color3,
-                                      trackHeight: 12,
-                                      thumbShape: SliderComponentShape.noThumb),
-                                  child: Slider(
-                                    value: regIniIns.toDouble(),
-                                    min: 0,
-                                    max: pow(2, 32).toDouble(),
-                                    onChanged: null,
-                                    onChangeStart: null,
-                                  ),
-                                ),
-                              ],
-                            )
-                          : ListBody(
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(_textToShowADC(index - 1),
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                            color: color1,
-                                            fontWeight: FontWeight.normal,
-                                            fontSize: 20)),
-                                    Text(debug[index - 1],
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                            color: color1,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 20)),
-                                  ],
-                                ),
-                                SliderTheme(
-                                  data: SliderTheme.of(context).copyWith(
-                                      disabledActiveTrackColor: color0,
-                                      disabledInactiveTrackColor: color3,
-                                      trackHeight: 12,
-                                      thumbShape: SliderComponentShape.noThumb),
-                                  child: Slider(
-                                    value: double.parse(debug[index - 1]),
-                                    min: 0,
-                                    max: 1024,
-                                    onChanged: null,
-                                    onChangeStart: null,
-                                  ),
-                                ),
-                              ],
-                            );
-                    },
+                if (newGen) ...[
+                  // Nueva generación - mostrar valores individuales
+                  Expanded(
+                    child: ListView(
+                      controller: _scrollController,
+                      children: [
+                        if (_gasout.isNotEmpty) ...[
+                          buildText(
+                            text: 'Gasout: $_gasout',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (_gasout_estable_ch4.isNotEmpty) ...[
+                          buildText(
+                            text: 'Gasout estable CH4: $_gasout_estable_ch4',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (_gasout_estable_co.isNotEmpty) ...[
+                          buildText(
+                            text: 'Gasout estable CO: $_gasout_estable_co',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (_vcc_reg.isNotEmpty) ...[
+                          buildText(
+                            text: 'VCC: $_vcc_reg',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (_vcc_estable.isNotEmpty) ...[
+                          buildText(
+                            text: 'VCC estable: $_vcc_estable',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (_temp.isNotEmpty) ...[
+                          buildText(
+                            text: 'Temperatura: $_temp',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (_temp_estable.isNotEmpty) ...[
+                          buildText(
+                            text: 'Temperatura estable: $_temp_estable',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (_pwm_rising.isNotEmpty) ...[
+                          buildText(
+                            text: 'PWM Rising point: $_pwm_rising',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (_pwm_falling.isNotEmpty) ...[
+                          buildText(
+                            text: 'PWM Falling point: $_pwm_falling',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (_pwm.isNotEmpty) ...[
+                          buildText(
+                            text: 'PWM: $_pwm',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (_pwm_estable.isNotEmpty) ...[
+                          buildText(
+                            text: 'PWM estable: $_pwm_estable',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        Padding(
+                          padding:
+                              EdgeInsets.only(bottom: bottomBarHeight + 20),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ] else ...[
+                  // Vieja generación - mostrar valores de valoresReg
+                  Expanded(
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      itemCount: debug.length,
+                      itemBuilder: (context, index) {
+                        return Column(
+                          children: [
+                            buildText(
+                              text: _textToShowADC(index),
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              textAlign: TextAlign.left,
+                              widthFactor: 0.8,
+                            ),
+                            buildText(
+                              text: debug[index],
+                              fontSize: 30,
+                              fontWeight: FontWeight.normal,
+                              textAlign: TextAlign.center,
+                              widthFactor: 0.8,
+                            ),
+                            SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                  disabledActiveTrackColor: color0,
+                                  disabledInactiveTrackColor: color3,
+                                  trackHeight: 12,
+                                  thumbShape: SliderComponentShape.noThumb),
+                              child: Slider(
+                                value: double.parse(debug[index]),
+                                min: 0,
+                                max: 1024,
+                                onChanged: null,
+                                onChangeStart: null,
+                              ),
+                            ),
+                            if (index == valoresReg.length - 1) ...[
+                              Padding(
+                                padding: EdgeInsets.only(
+                                    bottom: bottomBarHeight + 20),
+                              ),
+                            ]
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1441,7 +2245,8 @@ class DetectorPageState extends State<DetectorPage> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                buildButton(text: 'Cambiar tipo', onPressed: _cambiarTipoDeDispositivo),
+                buildButton(
+                    text: 'Cambiar tipo', onPressed: _cambiarTipoDeDispositivo),
                 const SizedBox(height: 20),
               ],
             ),

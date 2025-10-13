@@ -318,7 +318,7 @@ class RelePageState extends State<RelePage> {
               Transform.scale(
                 scale: 3.0,
                 child: Switch(
-                  activeColor: color4,
+                  activeThumbColor: color4,
                   activeTrackColor: color1,
                   inactiveThumbColor: color1,
                   inactiveTrackColor: color4,

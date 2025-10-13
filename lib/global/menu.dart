@@ -2,6 +2,7 @@ import 'package:caldensmartfabrica/aws/mqtt/mqtt.dart';
 import 'package:caldensmartfabrica/global/registro.dart';
 import 'package:caldensmartfabrica/global/scan.dart';
 import 'package:caldensmartfabrica/global/toolsaws.dart';
+import 'package:caldensmartfabrica/global/parametersaws.dart';
 import 'package:caldensmartfabrica/global/wifi_tester.dart';
 import 'package:caldensmartfabrica/master.dart';
 import 'package:flutter/material.dart';
@@ -255,6 +256,7 @@ class MenuPageState extends State<MenuPage> {
             children: [
               const ScanPage(),
               if (accessLevel >= 2) const ToolsAWS(),
+              if (accessLevel >= 2) const ParametersAWS(),
               if (accessLevel >= 3) const RegistroScreen(),
               if (accessLevel >= 2) const WifiTestScreen(),
             ],
@@ -270,6 +272,9 @@ class MenuPageState extends State<MenuPage> {
                 const Icon(Icons.bluetooth_searching, color: color4),
                 if (accessLevel >= 2) ...[
                   const Icon(Icons.webhook_outlined, color: color4),
+                ],
+                if (accessLevel >= 2) ...[
+                  const Icon(Icons.settings, color: color4),
                 ],
                 if (accessLevel >= 3) ...[
                   const Icon(Icons.assignment, color: color4),

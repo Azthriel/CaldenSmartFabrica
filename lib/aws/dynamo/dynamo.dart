@@ -35,6 +35,7 @@ Future<void> queryItems(String pc, String sn) async {
         distanceControlActive =
             item['distanceControlActive']?.boolValue ?? false;
         riegoActive = item['riegoActive']?.boolValue ?? false;
+        riegoMaster = item['riegoMaster']?.s ?? '';
       }
     } else {
       printLog('Dispositivo no encontrado');
@@ -222,5 +223,37 @@ Future<void> putRiego(String pc, String sn, bool data) async {
     printLog('Item escrito perfectamente $response');
   } catch (e) {
     printLog('Error inserting item: $e');
+  }
+}
+
+Future<void> putRiegoMaster(String pc, String sn, String data) async {
+  try {
+    final response = await service.updateItem(tableName: 'sime-domotica', key: {
+      'product_code': AttributeValue(s: pc),
+      'device_id': AttributeValue(s: sn),
+    }, attributeUpdates: {
+      'riegoMaster': AttributeValueUpdate(value: AttributeValue(s: data)),
+    });
+
+    printLog('Item escrito perfectamente $response');
+  } catch (e) {
+    printLog('Error inserting item: $e');
+  }
+}
+
+Future<void> removeRiegoMaster(String pc, String sn) async {
+  try {
+    final response = await service.updateItem(tableName: 'sime-domotica', key: {
+      'product_code': AttributeValue(s: pc),
+      'device_id': AttributeValue(s: sn),
+    }, attributeUpdates: {
+      'riegoMaster': AttributeValueUpdate(
+        action: AttributeAction.delete,
+      ),
+    });
+
+    printLog('RiegoMaster eliminado perfectamente $response');
+  } catch (e) {
+    printLog('Error eliminando riegoMaster: $e');
   }
 }

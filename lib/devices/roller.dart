@@ -1,5 +1,8 @@
+// ignore_for_file: unused_field
+
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
 import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
@@ -7,6 +10,7 @@ import 'package:caldensmartfabrica/devices/globales/params.dart';
 import 'package:caldensmartfabrica/devices/globales/resmon.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
 import 'package:flutter/material.dart';
+import 'package:msgpack_dart/msgpack_dart.dart';
 import '../master.dart';
 
 class RollerPage extends StatefulWidget {
@@ -21,8 +25,32 @@ class RollerPageState extends State<RollerPage> {
   final PageController _pageController = PageController(initialPage: 0);
   TextEditingController rLargeController = TextEditingController();
   TextEditingController workController = TextEditingController();
+  TextEditingController tpwmthrsController = TextEditingController();
+  TextEditingController sgthrsController = TextEditingController();
+  TextEditingController tcoolthrsController = TextEditingController();
 
   int _selectedIndex = 0;
+
+  final String pc = DeviceManager.getProductCode(deviceName);
+  final String sn = DeviceManager.extractSerialNumber(deviceName);
+  final bool newGen = bluetoothManager.newGeneration;
+
+  int _positionInDegrees = 0;
+  int _actualPosition = 0;
+  int _workingPosition = 0;
+  bool _rollermoving = false;
+  String _rollerLength = '';
+  String _rollerPolarity = '';
+  String _contrapulseTime = '';
+  String _rollerRPM = '';
+  String _rollerMicroStep = '';
+  String _rollerIMAX = '';
+  String _rollerIRMSRUN = '';
+  String _rollerIRMSHOLD = '';
+  bool _rollerFreewheeling = false;
+  String _rollerTPWMTHRS = '';
+  String _rollerTCOOLTHRS = '';
+  String _rollerSGTHRS = '';
 
   // Obtener el índice correcto para cada página
   int _getPageIndex(String pageType) {
@@ -191,6 +219,84 @@ class RollerPageState extends State<RollerPage> {
     });
   }
 
+  void processValues() {
+    if (newGen) {
+      setState(() {
+        bluetoothManager.data.containsKey('roller_position_degreees')
+            ? _positionInDegrees =
+                bluetoothManager.data['roller_position_degrees']
+            : null;
+        bluetoothManager.data.containsKey('roller_position')
+            ? _actualPosition = bluetoothManager.data['roller_position']
+            : null;
+        bluetoothManager.data.containsKey('roller_target_position')
+            ? _workingPosition = bluetoothManager.data['roller_target_position']
+            : null;
+        bluetoothManager.data.containsKey('roller_moving')
+            ? _rollermoving = bluetoothManager.data['roller_moving']
+            : null;
+        bluetoothManager.data.containsKey('roller_length')
+            ? _rollerLength = bluetoothManager.data['roller_length'].toString()
+            : null;
+        bluetoothManager.data.containsKey('roller_polarity')
+            ? _rollerPolarity = bluetoothManager.data['roller_polarity']
+            : null;
+        bluetoothManager.data.containsKey('contrapulse_time')
+            ? _contrapulseTime =
+                bluetoothManager.data['contrapulse_time'].toString()
+            : null;
+        bluetoothManager.data.containsKey('motor_rpm')
+            ? _rollerRPM = bluetoothManager.data['motor_rpm'].toString()
+            : null;
+        bluetoothManager.data.containsKey('microstep')
+            ? _rollerMicroStep = bluetoothManager.data['microstep'].toString()
+            : null;
+        bluetoothManager.data.containsKey('motor_current_max')
+            ? _rollerIMAX =
+                bluetoothManager.data['motor_current_max'].toString()
+            : null;
+        bluetoothManager.data.containsKey('motor_current_run')
+            ? _rollerIRMSRUN =
+                bluetoothManager.data['motor_current_run'].toString()
+            : null;
+        bluetoothManager.data.containsKey('motor_current_hold')
+            ? _rollerIRMSHOLD =
+                bluetoothManager.data['motor_current_hold'].toString()
+            : null;
+        bluetoothManager.data.containsKey('free_wheeling')
+            ? _rollerFreewheeling = bluetoothManager.data['free_wheeling']
+            : null;
+        bluetoothManager.data.containsKey('tpwm_thrs')
+            ? _rollerTPWMTHRS = bluetoothManager.data['tpwm_thrs'].toString()
+            : null;
+        bluetoothManager.data.containsKey('tcool_thrs')
+            ? _rollerTCOOLTHRS = bluetoothManager.data['tcool_thrs'].toString()
+            : null;
+        bluetoothManager.data.containsKey('sg_thrs')
+            ? _rollerSGTHRS = bluetoothManager.data['sg_thrs'].toString()
+            : null;
+      });
+    } else {
+      setState(() {
+        _positionInDegrees = actualPositionGrades;
+        _actualPosition = actualPosition;
+        _workingPosition = workingPosition;
+        _rollermoving = rollerMoving;
+        _rollerLength = rollerlength;
+        _rollerPolarity = rollerPolarity;
+        _contrapulseTime = contrapulseTime;
+        _rollerRPM = rollerRPM;
+        _rollerMicroStep = rollerMicroStep;
+        _rollerIRMSRUN = rollerIRMSRUN;
+        _rollerIRMSHOLD = rollerIRMSHOLD;
+        _rollerFreewheeling = rollerFreewheeling;
+        _rollerTPWMTHRS = rollerTPWMTHRS;
+        _rollerTCOOLTHRS = rollerTCOOLTHRS;
+        _rollerSGTHRS = rollerSGTHRS;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -203,10 +309,242 @@ class RollerPageState extends State<RollerPage> {
   @override
   initState() {
     super.initState();
-    updateWifiValues(toolsValues);
-    subscribeToWifiStatus();
-    subToVars();
+    if (newGen) {
+      subToWifiData();
+      subToAppData();
+    } else {
+      updateWifiValues(toolsValues);
+      subscribeToWifiStatus();
+      subToVars();
+    }
   }
+
+  //BOTH GEN
+
+  void setRange(int mm) {
+    if (newGen) {
+      final map = {
+        "roller_length": mm,
+      };
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.appDataUuid.write(messagePackData);
+    } else {
+      String data = '$pc[7]($mm)';
+      printLog(data);
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
+  }
+
+  void setDistance(int pc) {
+    if (newGen) {
+      final map = {
+        "roller_position": pc,
+      };
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.appDataUuid.write(messagePackData);
+    } else {
+      String data = '$pc[7]($pc%)';
+      printLog(data);
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
+  }
+
+  void setRollerConfig(int type) {
+    if (newGen) {
+      var map = {};
+      if (type == 1) {
+        map = {
+          "invert_polarity": true,
+        };
+      } else {
+        map = {
+          "set_zero": true,
+        };
+      }
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.appDataUuid.write(messagePackData);
+    } else {
+      String data = '$pc[8]($type)';
+      printLog(data);
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
+  }
+
+  void setMotorSpeed(String rpm) {
+    if (newGen) {
+      final map = {
+        "motor_rpm": int.parse(rpm),
+      };
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.appDataUuid.write(messagePackData);
+    } else {
+      String data = '$pc[10]($rpm)';
+      printLog(data);
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
+  }
+
+  void setMicroStep(String uStep) {
+    if (newGen) {
+      final map = {
+        "microstep": int.parse(uStep),
+      };
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.appDataUuid.write(messagePackData);
+    } else {
+      String data = '$pc[11]($uStep)';
+      printLog(data);
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
+  }
+
+  void setMotorCurrent(bool run, String value) {
+    if (newGen) {
+      final map = {
+        (run ? "motor_current_run" : "motor_current_hold"): int.parse(value),
+      };
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.appDataUuid.write(messagePackData);
+    } else {
+      String data = '$pc[12](${run ? '1' : '0'}#$value)';
+      printLog(data);
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
+  }
+
+  void setFreeWheeling(bool active) {
+    if (newGen) {
+      final map = {
+        "free_wheeling": active,
+      };
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.appDataUuid.write(messagePackData);
+    } else {
+      String data = '$pc[14](${active ? '1' : '0'})';
+      printLog(data);
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
+  }
+
+  void setTPWMTHRS(String value) {
+    if (newGen) {
+      final map = {
+        "tpwm_thrs": int.parse(value),
+      };
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.appDataUuid.write(messagePackData);
+    } else {
+      String data = '$pc[15]($value)';
+      printLog(data);
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
+  }
+
+  void setTCOOLTHRS(String value) {
+    if (newGen) {
+      final map = {
+        "tcool_thrs": int.parse(value),
+      };
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.appDataUuid.write(messagePackData);
+    } else {
+      String data = '$pc[16]($value)';
+      printLog(data);
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
+  }
+
+  void setSGTHRS(String value) {
+    if (newGen) {
+      final map = {
+        "sg_thrs": int.parse(value),
+      };
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.appDataUuid.write(messagePackData);
+    } else {
+      String data = '$pc[17]($value)';
+      printLog(data);
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
+  }
+
+  //NEW GEN
+  void subToWifiData() {
+    final wifiSub =
+        bluetoothManager.wifiDataUuid.onValueReceived.listen((List<int> data) {
+      var map = deserialize(Uint8List.fromList(data));
+      Map<String, dynamic> appMap = Map<String, dynamic>.from(map);
+      printLog('Datos WiFi recibidos: $map');
+
+      setState(() {
+        bluetoothManager.data.addAll(appMap);
+        if (appMap['wcs'] == true) {
+          nameOfWifi = appMap['ssid'] ?? '';
+          isWifiConnected = true;
+
+          setState(() {
+            textState = 'CONECTADO';
+            statusColor = Colors.green;
+            wifiIcon = Icons.wifi;
+          });
+        } else if (appMap['wcs'] == false) {
+          isWifiConnected = false;
+
+          setState(() {
+            textState = 'DESCONECTADO';
+            statusColor = Colors.red;
+            wifiIcon = Icons.wifi_off;
+          });
+
+          if (appMap['wcs'] == false && atemp == true) {
+            //If comes from subscription, parts[1] = reason of error.
+            setState(() {
+              wifiIcon = Icons.warning_amber_rounded;
+              werror = true;
+            });
+
+            if (appMap['wifi_codes'] == 202 || appMap['wifi_codes'] == 15) {
+              errorMessage = 'Contraseña incorrecta';
+            } else if (appMap['wifi_codes'] == 201) {
+              errorMessage = 'La red especificada no existe';
+            } else if (appMap['wifi_codes'] == 1) {
+              errorMessage = 'Error desconocido';
+            } else {
+              errorMessage = appMap['wifi_codes'].toString();
+            }
+
+            if (appMap['wifi_codes'] != null) {
+              errorSintax = getWifiErrorSintax(appMap['wifi_codes']);
+            }
+          }
+        }
+      });
+    });
+
+    bluetoothManager.wifiDataUuid.setNotifyValue(true);
+
+    bluetoothManager.device.cancelWhenDisconnected(wifiSub);
+  }
+
+  void subToAppData() {
+    final appDataSub =
+        bluetoothManager.appDataUuid.onValueReceived.listen((List<int> data) {
+      var map = deserialize(Uint8List.fromList(data));
+      Map<String, dynamic> appMap = Map<String, dynamic>.from(map);
+      printLog('Datos App recibidos: $map');
+
+      setState(() {
+        bluetoothManager.data.addAll(appMap);
+        processValues();
+      });
+    });
+
+    bluetoothManager.appDataUuid.setNotifyValue(true);
+
+    bluetoothManager.device.cancelWhenDisconnected(appDataSub);
+  }
+
+  //OLD GEN
 
   void updateWifiValues(List<int> data) {
     var fun =
@@ -292,68 +630,6 @@ class RollerPageState extends State<RollerPage> {
     bluetoothManager.device.cancelWhenDisconnected(varsSub);
   }
 
-  void setRange(int mm) {
-    String data = '${DeviceManager.getProductCode(deviceName)}[7]($mm)';
-    printLog(data);
-    bluetoothManager.toolsUuid.write(data.codeUnits);
-  }
-
-  void setDistance(int pc) {
-    String data = '${DeviceManager.getProductCode(deviceName)}[7]($pc%)';
-    printLog(data);
-    bluetoothManager.toolsUuid.write(data.codeUnits);
-  }
-
-  void setRollerConfig(int type) {
-    String data = '${DeviceManager.getProductCode(deviceName)}[8]($type)';
-    printLog(data);
-    bluetoothManager.toolsUuid.write(data.codeUnits);
-  }
-
-  void setMotorSpeed(String rpm) {
-    String data = '${DeviceManager.getProductCode(deviceName)}[10]($rpm)';
-    printLog(data);
-    bluetoothManager.toolsUuid.write(data.codeUnits);
-  }
-
-  void setMicroStep(String uStep) {
-    String data = '${DeviceManager.getProductCode(deviceName)}[11]($uStep)';
-    printLog(data);
-    bluetoothManager.toolsUuid.write(data.codeUnits);
-  }
-
-  void setMotorCurrent(bool run, String value) {
-    String data =
-        '${DeviceManager.getProductCode(deviceName)}[12](${run ? '1' : '0'}#$value)';
-    printLog(data);
-    bluetoothManager.toolsUuid.write(data.codeUnits);
-  }
-
-  void setFreeWheeling(bool active) {
-    String data =
-        '${DeviceManager.getProductCode(deviceName)}[14](${active ? '1' : '0'})';
-    printLog(data);
-    bluetoothManager.toolsUuid.write(data.codeUnits);
-  }
-
-  void setTPWMTHRS(String value) {
-    String data = '${DeviceManager.getProductCode(deviceName)}[15]($value)';
-    printLog(data);
-    bluetoothManager.toolsUuid.write(data.codeUnits);
-  }
-
-  void setTCOOLTHRS(String value) {
-    String data = '${DeviceManager.getProductCode(deviceName)}[16]($value)';
-    printLog(data);
-    bluetoothManager.toolsUuid.write(data.codeUnits);
-  }
-
-  void setSGTHRS(String value) {
-    String data = '${DeviceManager.getProductCode(deviceName)}[17]($value)';
-    printLog(data);
-    bluetoothManager.toolsUuid.write(data.codeUnits);
-  }
-
   //! VISUAL
   @override
   Widget build(BuildContext context) {
@@ -398,7 +674,7 @@ class RollerPageState extends State<RollerPage> {
                       hint: '',
                       keyboard: TextInputType.number,
                       onSubmitted: (value) {
-                        workingPosition = int.parse(value);
+                        _workingPosition = int.parse(value);
                         setDistance(int.parse(value));
                         workController.clear();
                       },
@@ -416,17 +692,17 @@ class RollerPageState extends State<RollerPage> {
                             activeTrackColor: color0,
                             inactiveTrackColor: color3,
                             thumbShape: IconThumbSlider(
-                                iconData: workingPosition - 1 <=
-                                            actualPosition &&
-                                        workingPosition + 1 >= actualPosition
+                                iconData: _workingPosition - 1 <=
+                                            _actualPosition &&
+                                        _workingPosition + 1 >= _actualPosition
                                     ? Icons.check
-                                    : workingPosition < actualPosition
+                                    : _workingPosition < _actualPosition
                                         ? Icons.arrow_back
                                         : Icons.arrow_forward,
                                 thumbRadius: 25)),
                         child: Slider(
-                          value: actualPosition.toDouble(),
-                          secondaryTrackValue: workingPosition.toDouble(),
+                          value: _actualPosition.toDouble(),
+                          secondaryTrackValue: _workingPosition.toDouble(),
                           onChanged: (_) {},
                           min: 0,
                           max: 100,
@@ -453,7 +729,7 @@ class RollerPageState extends State<RollerPage> {
                               width: 15,
                             ),
                             Text(
-                              '$actualPosition%',
+                              '$_actualPosition%',
                               style: const TextStyle(
                                   fontSize: 15.0,
                                   color: color0,
@@ -478,7 +754,7 @@ class RollerPageState extends State<RollerPage> {
                               width: 10,
                             ),
                             Text(
-                              '$workingPosition%',
+                              '$_workingPosition%',
                               style: const TextStyle(
                                   fontSize: 15.0,
                                   color: color0,
@@ -505,7 +781,7 @@ class RollerPageState extends State<RollerPage> {
                           width: 20,
                         ),
                         Text(
-                          rollerMoving ? 'EN MOVIMIENTO' : 'QUIETO',
+                          _rollermoving ? 'EN MOVIMIENTO' : 'QUIETO',
                           style: const TextStyle(
                               fontSize: 15.0,
                               color: color0,
@@ -523,22 +799,44 @@ class RollerPageState extends State<RollerPage> {
                   children: [
                     GestureDetector(
                       onLongPressStart: (LongPressStartDetails a) {
-                        String data =
-                            '${DeviceManager.getProductCode(deviceName)}[7](0%)';
-                        bluetoothManager.toolsUuid.write(data.codeUnits);
-                        setState(() {
-                          workingPosition = 0;
-                        });
-                        printLog(data);
+                        if (newGen) {
+                          final map = {
+                            "roller_position": 0,
+                          };
+                          List<int> messagePackData = serialize(map);
+                          bluetoothManager.appDataUuid.write(messagePackData);
+                          setState(() {
+                            _workingPosition = 0;
+                          });
+                          printLog('Seteo posición a 0');
+                        } else {
+                          String data = '$pc[7](0%)';
+                          bluetoothManager.toolsUuid.write(data.codeUnits);
+                          setState(() {
+                            _workingPosition = 0;
+                          });
+                          printLog(data);
+                        }
                       },
                       onLongPressEnd: (LongPressEndDetails a) {
-                        String data =
-                            '${DeviceManager.getProductCode(deviceName)}[7]($actualPosition%)';
-                        bluetoothManager.toolsUuid.write(data.codeUnits);
-                        setState(() {
-                          workingPosition = actualPosition;
-                        });
-                        printLog(data);
+                        if (newGen) {
+                          final map = {
+                            "roller_position": _actualPosition,
+                          };
+                          List<int> messagePackData = serialize(map);
+                          bluetoothManager.appDataUuid.write(messagePackData);
+                          setState(() {
+                            _workingPosition = _actualPosition;
+                          });
+                          printLog('Seteo posición a $_actualPosition');
+                        } else {
+                          String data = '$pc[7]($_actualPosition%)';
+                          bluetoothManager.toolsUuid.write(data.codeUnits);
+                          setState(() {
+                            _workingPosition = _actualPosition;
+                          });
+                          printLog(data);
+                        }
                       },
                       child: buildButton(
                         text: 'Subir',
@@ -550,22 +848,44 @@ class RollerPageState extends State<RollerPage> {
                     ),
                     GestureDetector(
                       onLongPressStart: (LongPressStartDetails a) {
-                        String data =
-                            '${DeviceManager.getProductCode(deviceName)}[7](100%)';
-                        bluetoothManager.toolsUuid.write(data.codeUnits);
-                        setState(() {
-                          workingPosition = 100;
-                        });
-                        printLog(data);
+                        if (newGen) {
+                          final map = {
+                            "roller_position": 100,
+                          };
+                          List<int> messagePackData = serialize(map);
+                          bluetoothManager.appDataUuid.write(messagePackData);
+                          setState(() {
+                            _workingPosition = 100;
+                          });
+                          printLog('Seteo posición a 100');
+                        } else {
+                          String data = '$pc[7](100%)';
+                          bluetoothManager.toolsUuid.write(data.codeUnits);
+                          setState(() {
+                            _workingPosition = 100;
+                          });
+                          printLog(data);
+                        }
                       },
                       onLongPressEnd: (LongPressEndDetails a) {
-                        String data =
-                            '${DeviceManager.getProductCode(deviceName)}[7]($actualPosition%)';
-                        bluetoothManager.toolsUuid.write(data.codeUnits);
-                        setState(() {
-                          workingPosition = actualPosition;
-                        });
-                        printLog(data);
+                        if (newGen) {
+                          final map = {
+                            "roller_position": _actualPosition,
+                          };
+                          List<int> messagePackData = serialize(map);
+                          bluetoothManager.appDataUuid.write(messagePackData);
+                          setState(() {
+                            _workingPosition = _actualPosition;
+                          });
+                          printLog('Seteo posición a $_actualPosition');
+                        } else {
+                          String data = '$pc[7]($_actualPosition%)';
+                          bluetoothManager.toolsUuid.write(data.codeUnits);
+                          setState(() {
+                            _workingPosition = _actualPosition;
+                          });
+                          printLog(data);
+                        }
                       },
                       child: buildButton(
                         text: 'Bajar',
@@ -581,7 +901,7 @@ class RollerPageState extends State<RollerPage> {
                   text: 'Setear punto 0',
                   onPressed: () {
                     setState(() {
-                      workingPosition = 0;
+                      _workingPosition = 0;
                     });
                     setRollerConfig(0);
                   },
@@ -609,7 +929,7 @@ class RollerPageState extends State<RollerPage> {
                           ),
                         ),
                         TextSpan(
-                          text: rollerlength,
+                          text: _rollerLength,
                           style: const TextStyle(
                             fontSize: 25.0,
                             color: color4,
@@ -655,7 +975,7 @@ class RollerPageState extends State<RollerPage> {
                                         if (valor != null) {
                                           setRange(valor);
                                           setState(() {
-                                            rollerlength = value;
+                                            _rollerLength = value;
                                           });
                                         } else {
                                           showToast('Valor no permitido');
@@ -674,7 +994,7 @@ class RollerPageState extends State<RollerPage> {
                                       if (valor != null) {
                                         setRange(valor);
                                         setState(() {
-                                          rollerlength = rLargeController.text;
+                                          _rollerLength = rLargeController.text;
                                         });
                                       } else {
                                         showToast('Valor no permitido');
@@ -682,8 +1002,10 @@ class RollerPageState extends State<RollerPage> {
                                       rLargeController.clear();
                                       navigatorKey.currentState?.pop();
                                     },
-                                    child: const Text('Modificar',
-                                        style: TextStyle(color: color4)),
+                                    child: const Text(
+                                      'Modificar',
+                                      style: TextStyle(color: color4),
+                                    ),
                                   )
                                 ],
                               );
@@ -710,7 +1032,7 @@ class RollerPageState extends State<RollerPage> {
                       ),
                     ),
                     TextSpan(
-                      text: rollerPolarity,
+                      text: _rollerPolarity,
                       style: const TextStyle(
                         color: color4,
                         fontWeight: FontWeight.bold,
@@ -724,9 +1046,9 @@ class RollerPageState extends State<RollerPage> {
                   text: 'Invertir',
                   onPressed: () {
                     setRollerConfig(1);
-                    rollerPolarity == '0'
-                        ? rollerPolarity = '1'
-                        : rollerPolarity = '0';
+                    _rollerPolarity == '0'
+                        ? _rollerPolarity = '1'
+                        : _rollerPolarity = '0';
                     context.mounted ? setState(() {}) : null;
                   },
                 ),
@@ -754,7 +1076,7 @@ class RollerPageState extends State<RollerPage> {
                           ),
                         ),
                         TextSpan(
-                          text: rollerRPM,
+                          text: _rollerRPM,
                           style: const TextStyle(
                             color: color4,
                             fontWeight: FontWeight.bold,
@@ -787,26 +1109,12 @@ class RollerPageState extends State<RollerPage> {
                           keyboard: TextInputType.number,
                           onSubmitted: (value) {
                             setState(() {
-                              rollerRPM = value;
+                              _rollerRPM = value;
                             });
                             printLog('Modifico RPM a $value');
                             setMotorSpeed(value);
                           },
                         ),
-
-                        // Slider(
-                        //   min: 0,
-                        //   max: 400,
-                        //   value: double.parse(rollerRPM),
-                        //   onChanged: (value) {
-                        //     setState(() {
-                        //       rollerRPM = value.round().toString();
-                        //     });
-                        //   },
-                        //   onChangeEnd: (value) {
-                        //     setMotorSpeed(value.round().toString());
-                        //   },
-                        // ),
                       ),
                     )
                   ],
@@ -829,7 +1137,7 @@ class RollerPageState extends State<RollerPage> {
                       ),
                     ),
                     TextSpan(
-                      text: rollerMicroStep,
+                      text: _rollerMicroStep,
                       style: const TextStyle(
                         color: color4,
                         fontWeight: FontWeight.bold,
@@ -900,7 +1208,7 @@ class RollerPageState extends State<RollerPage> {
                         if (value != null) {
                           setMicroStep(value);
                           setState(() {
-                            rollerMicroStep = value.toString();
+                            _rollerMicroStep = value.toString();
                           });
                         }
                       },
@@ -932,7 +1240,7 @@ class RollerPageState extends State<RollerPage> {
                         ),
                         TextSpan(
                           text:
-                              '${((int.parse(rollerIRMSRUN) * 2100) / 31).round()} mA',
+                              '${((int.parse(_rollerIRMSRUN) * 2100) / 31).round()} mA',
                           style: const TextStyle(
                             color: color4,
                             fontWeight: FontWeight.bold,
@@ -962,10 +1270,10 @@ class RollerPageState extends State<RollerPage> {
                         child: Slider(
                           min: 0,
                           max: 31,
-                          value: double.parse(rollerIRMSRUN),
+                          value: double.parse(_rollerIRMSRUN),
                           onChanged: (value) {
                             setState(() {
-                              rollerIRMSRUN = value.round().toString();
+                              _rollerIRMSRUN = value.round().toString();
                             });
                           },
                           onChangeEnd: (value) {
@@ -1001,7 +1309,7 @@ class RollerPageState extends State<RollerPage> {
                         ),
                         TextSpan(
                           text:
-                              '${((int.parse(rollerIRMSHOLD) * 2100) / 31).round()} mA',
+                              '${((int.parse(_rollerIRMSHOLD) * 2100) / 31).round()} mA',
                           style: const TextStyle(
                             color: color4,
                             fontWeight: FontWeight.bold,
@@ -1031,10 +1339,10 @@ class RollerPageState extends State<RollerPage> {
                         child: Slider(
                           min: 0,
                           max: 31,
-                          value: double.parse(rollerIRMSHOLD),
+                          value: double.parse(_rollerIRMSHOLD),
                           onChanged: (value) {
                             setState(() {
-                              rollerIRMSHOLD = value.round().toString();
+                              _rollerIRMSHOLD = value.round().toString();
                             });
                           },
                           onChangeEnd: (value) {
@@ -1067,7 +1375,7 @@ class RollerPageState extends State<RollerPage> {
                               color: color4, fontWeight: FontWeight.normal),
                         ),
                         TextSpan(
-                          text: rollerTPWMTHRS,
+                          text: _rollerTPWMTHRS,
                           style: const TextStyle(
                               color: color4, fontWeight: FontWeight.bold),
                         ),
@@ -1079,7 +1387,7 @@ class RollerPageState extends State<RollerPage> {
                       height: 10,
                     ),
                     buildTextField(
-                      controller: workController,
+                      controller: tpwmthrsController,
                       label: 'Modificar:',
                       hint: '',
                       keyboard: TextInputType.number,
@@ -1118,7 +1426,7 @@ class RollerPageState extends State<RollerPage> {
                               color: color4, fontWeight: FontWeight.normal),
                         ),
                         TextSpan(
-                          text: rollerTCOOLTHRS,
+                          text: _rollerTCOOLTHRS,
                           style: const TextStyle(
                               color: color4, fontWeight: FontWeight.bold),
                         ),
@@ -1130,7 +1438,7 @@ class RollerPageState extends State<RollerPage> {
                       height: 10,
                     ),
                     buildTextField(
-                      controller: workController,
+                      controller: tcoolthrsController,
                       label: 'Modificar:',
                       hint: '',
                       keyboard: TextInputType.number,
@@ -1168,7 +1476,7 @@ class RollerPageState extends State<RollerPage> {
                               color: color4, fontWeight: FontWeight.normal),
                         ),
                         TextSpan(
-                          text: rollerSGTHRS,
+                          text: _rollerSGTHRS,
                           style: const TextStyle(
                               color: color4, fontWeight: FontWeight.bold),
                         ),
@@ -1180,13 +1488,13 @@ class RollerPageState extends State<RollerPage> {
                       height: 10,
                     ),
                     buildTextField(
-                      controller: workController,
+                      controller: sgthrsController,
                       label: 'Modificar:',
                       hint: '',
                       keyboard: TextInputType.number,
                       onSubmitted: (value) {
                         setState(() {
-                          rollerSGTHRS = value;
+                          _rollerSGTHRS = value;
                         });
                         printLog('Modifique SG Threshold: $value');
                         setSGTHRS(value);
@@ -1255,15 +1563,15 @@ class RollerPageState extends State<RollerPage> {
                     SizedBox(
                       width: 300,
                       child: Switch(
-                        activeColor: color4,
+                        activeThumbColor: color4,
                         activeTrackColor: color1,
                         inactiveThumbColor: color1,
                         inactiveTrackColor: color4,
-                        value: rollerFreewheeling,
+                        value: _rollerFreewheeling,
                         onChanged: (value) {
                           setFreeWheeling(value);
                           setState(() {
-                            rollerFreewheeling = value;
+                            _rollerFreewheeling = value;
                           });
                         },
                       ),
@@ -1336,16 +1644,24 @@ class RollerPageState extends State<RollerPage> {
                             ),
                             TextButton(
                               onPressed: () {
-                                registerActivity(
-                                    DeviceManager.getProductCode(deviceName),
-                                    DeviceManager.extractSerialNumber(
-                                        deviceName),
+                                registerActivity(pc, sn,
                                     'Se mando el ciclado de este equipo');
-                                String data =
-                                    '${DeviceManager.getProductCode(deviceName)}[13](${int.parse(cicleController.text)})';
-                                bluetoothManager.toolsUuid
-                                    .write(data.codeUnits);
-                                navigatorKey.currentState!.pop();
+                                if (newGen) {
+                                  final map = {
+                                    'cycle': {
+                                      'iter': int.parse(cicleController.text)
+                                    }
+                                  };
+                                  List<int> messagePackData = serialize(map);
+                                  bluetoothManager.appDataUuid
+                                      .write(messagePackData);
+                                } else {
+                                  String data =
+                                      '$pc[13](${int.parse(cicleController.text)})';
+                                  bluetoothManager.toolsUuid
+                                      .write(data.codeUnits);
+                                  navigatorKey.currentState!.pop();
+                                }
                               },
                               child: const Text(
                                 'Iniciar proceso',

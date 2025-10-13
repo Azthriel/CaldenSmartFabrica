@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
 import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
@@ -11,6 +12,7 @@ import 'package:caldensmartfabrica/devices/globales/tools.dart';
 import 'package:caldensmartfabrica/master.dart';
 import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
+import 'package:msgpack_dart/msgpack_dart.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -32,6 +34,16 @@ class TermometroPageState extends State<TermometroPage> {
   bool recording = false;
   List<List<dynamic>> recordedData = [];
   Timer? recordTimer;
+
+  final String pc = DeviceManager.getProductCode(deviceName);
+  final String sn = DeviceManager.extractSerialNumber(deviceName);
+  final bool newGen = bluetoothManager.newGeneration;
+
+  String _actualTemp = '';
+  String _tempOffset = '';
+  bool _alertMaxFlag = false;
+  bool _alertMinFlag = false;
+  bool _tempMap = false;
 
   // Obtener el índice correcto para cada página
   int _getPageIndex(String pageType) {
@@ -200,13 +212,156 @@ class TermometroPageState extends State<TermometroPage> {
     });
   }
 
+  void processValues() {
+    if (newGen) {
+      setState(() {
+        bluetoothManager.data.containsKey('actual_temp')
+            ? _actualTemp = bluetoothManager.data['actual_temp']!
+            : null;
+        bluetoothManager.data.containsKey('temp_offset')
+            ? _tempOffset = bluetoothManager.data['temp_offset']!
+            : null;
+        bluetoothManager.data.containsKey('alertMaxFlag')
+            ? _alertMaxFlag = bluetoothManager.data['alertMaxFlag']! == '1'
+            : null;
+        bluetoothManager.data.containsKey('alertMinFlag')
+            ? _alertMinFlag = bluetoothManager.data['alertMinFlag']! == '1'
+            : null;
+        bluetoothManager.data.containsKey('tempMap')
+            ? _tempMap = bluetoothManager.data['tempMap']! == true
+            : null;
+      });
+    } else {
+      setState(() {
+        _actualTemp = actualTemp;
+        _tempOffset = offsetTemp;
+        _alertMaxFlag = alertMaxFlag;
+        _alertMinFlag = alertMinFlag;
+        _tempMap = tempMap;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    updateWifiValues(toolsValues);
-    subscribeToWifiStatus();
-    subscribeToVars();
+    if (newGen) {
+      subToWifiData();
+      subToAppData();
+      subToTempData();
+    } else {
+      updateWifiValues(toolsValues);
+      subscribeToWifiStatus();
+      subscribeToVars();
+    }
   }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    tempMaxController.dispose();
+    tempMinController.dispose();
+    offsetController.dispose();
+    recordTimer?.cancel();
+    super.dispose();
+  }
+
+  // NEW GEN
+
+  void subToWifiData() {
+    final wifiSub =
+        bluetoothManager.wifiDataUuid.onValueReceived.listen((List<int> data) {
+      var map = deserialize(Uint8List.fromList(data));
+      Map<String, dynamic> appMap = Map<String, dynamic>.from(map);
+      printLog('Datos WiFi recibidos: $map');
+
+      setState(() {
+        bluetoothManager.data.addAll(appMap);
+        if (appMap['wcs'] == true) {
+          nameOfWifi = appMap['ssid'] ?? '';
+          isWifiConnected = true;
+
+          setState(() {
+            textState = 'CONECTADO';
+            statusColor = Colors.green;
+            wifiIcon = Icons.wifi;
+          });
+        } else if (appMap['wcs'] == false) {
+          isWifiConnected = false;
+
+          setState(() {
+            textState = 'DESCONECTADO';
+            statusColor = Colors.red;
+            wifiIcon = Icons.wifi_off;
+          });
+
+          if (appMap['wcs'] == false && atemp == true) {
+            //If comes from subscription, parts[1] = reason of error.
+            setState(() {
+              wifiIcon = Icons.warning_amber_rounded;
+              werror = true;
+            });
+
+            if (appMap['wifi_codes'] == 202 || appMap['wifi_codes'] == 15) {
+              errorMessage = 'Contraseña incorrecta';
+            } else if (appMap['wifi_codes'] == 201) {
+              errorMessage = 'La red especificada no existe';
+            } else if (appMap['wifi_codes'] == 1) {
+              errorMessage = 'Error desconocido';
+            } else {
+              errorMessage = appMap['wifi_codes'].toString();
+            }
+
+            if (appMap['wifi_codes'] != null) {
+              errorSintax = getWifiErrorSintax(appMap['wifi_codes']);
+            }
+          }
+        }
+      });
+    });
+
+    bluetoothManager.wifiDataUuid.setNotifyValue(true);
+
+    bluetoothManager.device.cancelWhenDisconnected(wifiSub);
+  }
+
+  void subToAppData() {
+    final appDataSub =
+        bluetoothManager.appDataUuid.onValueReceived.listen((List<int> data) {
+      var map = deserialize(Uint8List.fromList(data));
+      Map<String, dynamic> appMap = Map<String, dynamic>.from(map);
+      printLog('Datos App recibidos: $map');
+
+      setState(() {
+        bluetoothManager.data.addAll(appMap);
+        processValues();
+      });
+    });
+
+    bluetoothManager.appDataUuid.setNotifyValue(true);
+
+    bluetoothManager.device.cancelWhenDisconnected(appDataSub);
+  }
+
+  void subToTempData() {
+    final tempDataSub = bluetoothManager.temperatureUuid.onValueReceived
+        .listen((List<int> data) {
+      var map = deserialize(Uint8List.fromList(data));
+      Map<String, dynamic> appMap = Map<String, dynamic>.from(map);
+      printLog('Datos Temperatura recibidos: $map');
+
+      setState(() {
+        bluetoothManager.data.addAll(appMap);
+        processValues();
+      });
+    });
+
+    bluetoothManager.temperatureUuid.setNotifyValue(true);
+
+    bluetoothManager.device.cancelWhenDisconnected(tempDataSub);
+  }
+
+  // OLD GEN
 
   void subscribeToVars() async {
     printLog('Me subscribo a vars');
@@ -217,12 +372,11 @@ class TermometroPageState extends State<TermometroPage> {
       var parts = utf8.decode(status).split(':');
 
       if (parts.length == 4) {
-        setState(() {
-          actualTemp = parts[0];
-          offsetTemp = parts[1];
-          alertMaxFlag = parts[2] == '1';
-          alertMinFlag = parts[3] == '1';
-        });
+        actualTemp = parts[0];
+        offsetTemp = parts[1];
+        alertMaxFlag = parts[2] == '1';
+        alertMinFlag = parts[3] == '1';
+        processValues();
       }
     });
 
@@ -292,6 +446,8 @@ class TermometroPageState extends State<TermometroPage> {
     bluetoothManager.device.cancelWhenDisconnected(wifiSub);
   }
 
+  // BOTH GEN
+
   void saveDataToCsv() async {
     List<List<dynamic>> rows = [
       [
@@ -310,16 +466,6 @@ class TermometroPageState extends State<TermometroPage> {
 
     await Share.shareXFiles([XFile(file.path)],
         text: 'CSV TEMPERATURA (Termómetro)');
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    tempMaxController.dispose();
-    tempMinController.dispose();
-    offsetController.dispose();
-    recordTimer?.cancel();
-    super.dispose();
   }
 
   @override
@@ -343,9 +489,9 @@ class TermometroPageState extends State<TermometroPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 20),
-                buildText(text: 'Temperatura Actual:\n$actualTemp °C'),
+                buildText(text: 'Temperatura Actual:\n$_actualTemp °C'),
                 const SizedBox(height: 20),
-                buildText(text: 'Temperatura ambiente:\n$offsetTemp °C'),
+                buildText(text: 'Temperatura ambiente:\n$_tempOffset °C'),
                 const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: () {
@@ -361,8 +507,8 @@ class TermometroPageState extends State<TermometroPage> {
                         const Duration(seconds: 1),
                         (Timer t) {
                           if (recording) {
-                            recordedData
-                                .add([DateTime.now(), actualTemp, offsetTemp]);
+                            recordedData.add(
+                                [DateTime.now(), _actualTemp, _tempOffset]);
                           }
                         },
                       );
@@ -388,12 +534,19 @@ class TermometroPageState extends State<TermometroPage> {
                     onPressed: () {
                       String p0 = offsetController.text.trim();
                       setState(() {
-                        offsetTemp = p0;
+                        _tempOffset = p0;
                       });
-                      String data =
-                          '${DeviceManager.getProductCode(deviceName)}[9]($p0)';
-                      printLog('Enviando: $data');
-                      bluetoothManager.toolsUuid.write(data.codeUnits);
+                      if (newGen) {
+                        final map = {
+                          "temp_offset": int.parse(p0),
+                        };
+                        List<int> messagePackData = serialize(map);
+                        bluetoothManager.temperatureUuid.write(messagePackData);
+                      } else {
+                        String data = '$pc[9]($p0)';
+                        printLog('Enviando: $data');
+                        bluetoothManager.toolsUuid.write(data.codeUnits);
+                      }
                       showToast(
                         'Temperatura ambiente enviada: $p0 °C',
                       );
@@ -407,7 +560,7 @@ class TermometroPageState extends State<TermometroPage> {
                 const SizedBox(height: 20),
                 buildText(
                     text:
-                        'Alerta Temperatura Máxima:\n${alertMaxFlag ? 'SI' : 'NO'}'),
+                        'Alerta Temperatura Máxima:\n${_alertMaxFlag ? 'SI' : 'NO'}'),
                 const SizedBox(height: 10),
                 buildTextField(
                   label: 'Temperatura Máxima de alerta',
@@ -416,10 +569,18 @@ class TermometroPageState extends State<TermometroPage> {
                   suffixIcon: IconButton(
                       onPressed: () {
                         String p0 = tempMaxController.text.trim();
-                        String data =
-                            '${DeviceManager.getProductCode(deviceName)}[7]($p0)';
-                        printLog('Enviando: $data');
-                        bluetoothManager.toolsUuid.write(data.codeUnits);
+                        if (newGen) {
+                          final map = {
+                            "alert_max_temp": int.parse(p0),
+                          };
+                          List<int> messagePackData = serialize(map);
+                          bluetoothManager.temperatureUuid
+                              .write(messagePackData);
+                        } else {
+                          String data = '$pc[7]($p0)';
+                          printLog('Enviando: $data');
+                          bluetoothManager.toolsUuid.write(data.codeUnits);
+                        }
                         showToast(
                           'Temperatura máxima de alerta enviada: $p0 °C',
                         );
@@ -432,7 +593,7 @@ class TermometroPageState extends State<TermometroPage> {
                 const SizedBox(height: 10),
                 buildText(
                     text:
-                        'Alerta Temperatura Mínima:\n${alertMinFlag ? 'SI' : 'NO'}'),
+                        'Alerta Temperatura Mínima:\n${_alertMinFlag ? 'SI' : 'NO'}'),
                 const SizedBox(height: 10),
                 buildTextField(
                   label: 'Temperatura Mínima de alerta',
@@ -441,10 +602,18 @@ class TermometroPageState extends State<TermometroPage> {
                   suffixIcon: IconButton(
                       onPressed: () {
                         String p0 = tempMinController.text.trim();
-                        String data =
-                            '${DeviceManager.getProductCode(deviceName)}[8]($p0)';
-                        printLog('Enviando: $data');
-                        bluetoothManager.toolsUuid.write(data.codeUnits);
+                        if (newGen) {
+                          final map = {
+                            "alert_min_temp": int.parse(p0),
+                          };
+                          List<int> messagePackData = serialize(map);
+                          bluetoothManager.temperatureUuid
+                              .write(messagePackData);
+                        } else {
+                          String data = '$pc[8]($p0)';
+                          printLog('Enviando: $data');
+                          bluetoothManager.toolsUuid.write(data.codeUnits);
+                        }
                         showToast(
                           'Temperatura mínima de alerta enviada: $p0 °C',
                         );
@@ -464,9 +633,9 @@ class TermometroPageState extends State<TermometroPage> {
                           TextStyle(color: color4, fontWeight: FontWeight.bold),
                     ),
                     TextSpan(
-                      text: tempMap ? 'REALIZADO' : 'NO REALIZADO',
+                      text: _tempMap ? 'REALIZADO' : 'NO REALIZADO',
                       style: TextStyle(
-                          color: tempMap ? Colors.green : Colors.red,
+                          color: _tempMap ? Colors.green : Colors.red,
                           fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -477,13 +646,18 @@ class TermometroPageState extends State<TermometroPage> {
                 buildButton(
                   text: 'Iniciar mapeo temperatura',
                   onPressed: () {
-                    String pc = DeviceManager.getProductCode(deviceName);
-                    registerActivity(
-                        pc,
-                        DeviceManager.extractSerialNumber(deviceName),
+                    registerActivity(pc, sn,
                         'Se inicio el mapeo de temperatura en el equipo');
-                    String data = '$pc[10](0)';
-                    bluetoothManager.toolsUuid.write(data.codeUnits);
+                    if (newGen) {
+                      final map = {
+                        "init_temp_map": true,
+                      };
+                      List<int> messagePackData = serialize(map);
+                      bluetoothManager.temperatureUuid.write(messagePackData);
+                    } else {
+                      String data = '$pc[10](0)';
+                      bluetoothManager.toolsUuid.write(data.codeUnits);
+                    }
                     showToast('Iniciando mapeo de temperatura');
                   },
                 ),
@@ -491,14 +665,21 @@ class TermometroPageState extends State<TermometroPage> {
                 buildButton(
                   text: 'Borrar mapeo temperatura',
                   onPressed: () {
-                    String pc = DeviceManager.getProductCode(deviceName);
                     registerActivity(
                       pc,
-                      DeviceManager.extractSerialNumber(deviceName),
+                      sn,
                       'Se borro el mapeo de temperatura en el equipo',
                     );
-                    String data = '$pc[10](1)';
-                    bluetoothManager.toolsUuid.write(data.codeUnits);
+                    if (newGen) {
+                      final map = {
+                        "clear_temp_map": true,
+                      };
+                      List<int> messagePackData = serialize(map);
+                      bluetoothManager.temperatureUuid.write(messagePackData);
+                    } else {
+                      String data = '$pc[10](1)';
+                      bluetoothManager.toolsUuid.write(data.codeUnits);
+                    }
                     showToast('Borrando mapeo de temperatura');
                   },
                 ),

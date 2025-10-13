@@ -19,7 +19,7 @@ import 'package:msgpack_dart/msgpack_dart.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.38';
+String appVersionNumber = '1.0.40';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -203,6 +203,7 @@ WiFiStoredNotifier wifiStoredNotifier = WiFiStoredNotifier();
 
 //*-Riego-*\\
 bool riegoActive = false;
+String riegoMaster = '';
 //*-Riego-*\\
 
 // // -------------------------------------------------------------------------------------------------------------\\ \\
@@ -2187,6 +2188,7 @@ class BluetoothManager {
   bool hasOtaService = false;
   bool hasAwsService = false;
   bool hasBluetoothService = false;
+  bool hasBatteryService = false;
 
   // Variables de antigua generación
   bool hasVars = false;
@@ -2204,6 +2206,7 @@ class BluetoothManager {
   late BluetoothCharacteristic bleDataUuid;
   late BluetoothCharacteristic otaBleUuid;
   late BluetoothCharacteristic otaWifiUuid;
+  late BluetoothCharacteristic batteryUuid;
 
   // Características generación antigua
   late BluetoothCharacteristic infoUuid;
@@ -2232,6 +2235,30 @@ class BluetoothManager {
 
       printLog("Generación nueva: $newGeneration");
 
+      try {
+        BluetoothService loggerService = services.firstWhere(
+            (s) => s.uuid == Guid('ad04c0c7-6a98-4ab7-a29c-4c59ef1d0077'));
+        liveLoggerUuid = loggerService.characteristics.firstWhere(
+            (c) => c.uuid == Guid('e3375cd1-c0d2-4d8b-823d-2a7536cad48d'));
+        registerLoggerUuid = loggerService.characteristics.firstWhere(
+            (c) => c.uuid == Guid('b6abd12d-9b1c-452e-875d-28f99421e17a'));
+        hasLoggerBle = true;
+      } catch (e) {
+        printLog("Error al configurar los loggers: $e");
+        hasLoggerBle = false;
+      }
+
+      try {
+        BluetoothService resourceService = services.firstWhere(
+            (s) => s.uuid == Guid('a7bda260-17f0-4fea-923a-d7e98555b592'));
+        resourceMonitorUuid = resourceService.characteristics.firstWhere(
+            (c) => c.uuid == Guid('86728aa9-624b-4346-8c34-9eda0408bc1f'));
+        hasResourceMonitor = true;
+      } catch (e) {
+        printLog("Error al configurar el monitor de recursos: $e");
+        hasResourceMonitor = false;
+      }
+
       //!División de setups
 
       if (newGeneration) {
@@ -2253,30 +2280,6 @@ class BluetoothManager {
         printLog("Hardware Version: $hardwareVersion");
         printLog("Software Version: $softwareVersion");
         printLog("Factory Mode: $factoryMode");
-
-        try {
-          BluetoothService loggerService = services.firstWhere(
-              (s) => s.uuid == Guid('ad04c0c7-6a98-4ab7-a29c-4c59ef1d0077'));
-          liveLoggerUuid = loggerService.characteristics.firstWhere(
-              (c) => c.uuid == Guid('e3375cd1-c0d2-4d8b-823d-2a7536cad48d'));
-          registerLoggerUuid = loggerService.characteristics.firstWhere(
-              (c) => c.uuid == Guid('b6abd12d-9b1c-452e-875d-28f99421e17a'));
-          hasLoggerBle = true;
-        } catch (e) {
-          printLog("Error al configurar los loggers: $e");
-          hasLoggerBle = false;
-        }
-
-        try {
-          BluetoothService resourceService = services.firstWhere(
-              (s) => s.uuid == Guid('a7bda260-17f0-4fea-923a-d7e98555b592'));
-          resourceMonitorUuid = resourceService.characteristics.firstWhere(
-              (c) => c.uuid == Guid('86728aa9-624b-4346-8c34-9eda0408bc1f'));
-          hasResourceMonitor = true;
-        } catch (e) {
-          printLog("Error al configurar el monitor de recursos: $e");
-          hasResourceMonitor = false;
-        }
 
         try {
           BluetoothService wifiService = services.firstWhere(
@@ -2506,6 +2509,17 @@ class BluetoothManager {
                 c.uuid ==
                 Guid(
                     'ae995fcd-2c7a-4675-84f8-332caf784e9f')); //Ota comandos (Solo notify)
+
+            try {
+              BluetoothService batteryService = services.firstWhere((s) =>
+                  s.uuid == Guid('92bcf3ed-c983-4c77-b07f-56d9e0f34540'));
+              batteryUuid = batteryService.characteristics.firstWhere((c) =>
+                  c.uuid == Guid('bf9a2a2d-fab2-45df-a0a9-c7bed6bcb0b8'));
+              hasBatteryService = true;
+            } catch (e) {
+              printLog("Error al configurar el monitor de batería: $e");
+              hasBatteryService = false;
+            }
             break;
         }
       }

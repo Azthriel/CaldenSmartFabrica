@@ -415,7 +415,7 @@ class ModuloPageState extends State<ModuloPage> {
                         Transform.scale(
                           scale: 2.0,
                           child: Switch(
-                            activeColor: color4,
+                            activeThumbColor: color4,
                             activeTrackColor: color1,
                             inactiveThumbColor: color1,
                             inactiveTrackColor: color4,
@@ -626,7 +626,7 @@ class ModuloPageState extends State<ModuloPage> {
                             ),
                           ),
                           Switch(
-                            activeColor: color4,
+                            activeThumbColor: color4,
                             activeTrackColor: color1,
                             inactiveThumbColor: color1,
                             inactiveTrackColor: color4,
@@ -692,7 +692,7 @@ class ModuloPageState extends State<ModuloPage> {
                             ),
                           ),
                           Switch(
-                            activeColor: color4,
+                            activeThumbColor: color4,
                             activeTrackColor: color1,
                             inactiveThumbColor: color1,
                             inactiveTrackColor: color4,

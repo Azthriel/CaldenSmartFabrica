@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:caldensmartfabrica/master.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -41,6 +43,10 @@ class PermissionHandlerState extends State<PermissionHandler> {
     if (permissionStatus1.isGranted &&
         permissionStatus2.isGranted &&
         permissionStatus3.isGranted) {
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    } else if (permissionStatus3.isGranted && Platform.isIOS) {
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/login');
       }

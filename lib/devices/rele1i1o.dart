@@ -410,7 +410,7 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
                       Transform.scale(
                         scale: 2.0,
                         child: Switch(
-                          activeColor: color4,
+                          activeThumbColor: color4,
                           activeTrackColor: color1,
                           inactiveThumbColor: color1,
                           inactiveTrackColor: color4,
@@ -666,7 +666,7 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
                           ),
                         ),
                         Switch(
-                          activeColor: color4,
+                          activeThumbColor: color4,
                           activeTrackColor: color1,
                           inactiveThumbColor: color1,
                           inactiveTrackColor: color4,
@@ -730,7 +730,7 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
                           ),
                         ),
                         Switch(
-                          activeColor: color4,
+                          activeThumbColor: color4,
                           activeTrackColor: color1,
                           inactiveThumbColor: color1,
                           inactiveTrackColor: color4,

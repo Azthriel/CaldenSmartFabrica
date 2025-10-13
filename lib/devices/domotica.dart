@@ -447,7 +447,7 @@ class DomoticaPageState extends State<DomoticaPage> {
                                   size: 50,
                                 )
                           : Switch(
-                              activeColor: color4,
+                              activeThumbColor: color4,
                               activeTrackColor: color1,
                               inactiveThumbColor: color1,
                               inactiveTrackColor: color4,
@@ -675,7 +675,7 @@ class DomoticaPageState extends State<DomoticaPage> {
                                   color: color0,
                                   fontWeight: FontWeight.normal)),
                           Switch(
-                            activeColor: color4,
+                            activeThumbColor: color4,
                             activeTrackColor: color1,
                             inactiveThumbColor: color1,
                             inactiveTrackColor: color4,
@@ -746,7 +746,7 @@ class DomoticaPageState extends State<DomoticaPage> {
                                 fontWeight: FontWeight.normal),
                           ),
                           Switch(
-                            activeColor: color4,
+                            activeThumbColor: color4,
                             activeTrackColor: color1,
                             inactiveThumbColor: color1,
                             inactiveTrackColor: color4,
