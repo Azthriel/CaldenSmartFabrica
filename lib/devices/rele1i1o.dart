@@ -28,6 +28,8 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
 
   int _selectedIndex = 0;
 
+  final bool canControl = (accessLevel >= 3 || owner == '');
+
   // Obtener el índice correcto para cada página
   int _getPageIndex(String pageType) {
     int index = 0;
@@ -48,7 +50,7 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
 
     // Creds page (solo si accessLevel > 1)
     if (accessLevel > 1) {
-      if (pageType == 'burneo') return index; // página de burneo/control
+      if (pageType == 'burneo') return index;
       index++;
       if (pageType == 'creds') return index;
       index++;
@@ -404,23 +406,26 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
                         ),
                         textAlign: TextAlign.start,
                       ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Transform.scale(
-                        scale: 2.0,
-                        child: Switch(
-                          activeThumbColor: color4,
-                          activeTrackColor: color1,
-                          inactiveThumbColor: color1,
-                          inactiveTrackColor: color4,
-                          value: estado[0] == '1',
-                          onChanged: (value) async {
-                            String fun = '0#${value ? '1' : '0'}';
-                            await bluetoothManager.ioUuid.write(fun.codeUnits);
-                          },
+                      if (canControl) ...[
+                        const SizedBox(
+                          height: 10,
                         ),
-                      ),
+                        Transform.scale(
+                          scale: 2.0,
+                          child: Switch(
+                            activeThumbColor: color4,
+                            activeTrackColor: color1,
+                            inactiveThumbColor: color1,
+                            inactiveTrackColor: color4,
+                            value: estado[0] == '1',
+                            onChanged: (value) async {
+                              String fun = '0#${value ? '1' : '0'}';
+                              await bluetoothManager.ioUuid
+                                  .write(fun.codeUnits);
+                            },
+                          ),
+                        ),
+                      ],
                       Padding(
                         padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
                       ),
@@ -558,9 +563,10 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
                       onSelected: (sel) async {
                         setState(() => hasEntry = true);
                         await putHasEntry(
-                            DeviceManager.getProductCode(deviceName),
-                            DeviceManager.extractSerialNumber(deviceName),
-                            true);
+                          DeviceManager.getProductCode(deviceName),
+                          DeviceManager.extractSerialNumber(deviceName),
+                          true,
+                        );
                         registerActivity(
                             DeviceManager.getProductCode(deviceName),
                             DeviceManager.extractSerialNumber(deviceName),
@@ -846,14 +852,12 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: color1,
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                deviceName,
-                style: const TextStyle(color: color4),
-              ),
-            ],
+          title: Text(
+            deviceName,
+            style: const TextStyle(
+              color: color4,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new),

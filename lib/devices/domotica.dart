@@ -28,6 +28,8 @@ class DomoticaPageState extends State<DomoticaPage> {
 
   int _selectedIndex = 0;
 
+  final bool canControl = (accessLevel >= 3 || owner == '');
+
   // Obtener el índice correcto para cada página
   int _getPageIndex(String pageType) {
     int index = 0;
@@ -446,18 +448,20 @@ class DomoticaPageState extends State<DomoticaPage> {
                                   color: color4,
                                   size: 50,
                                 )
-                          : Switch(
-                              activeThumbColor: color4,
-                              activeTrackColor: color1,
-                              inactiveThumbColor: color1,
-                              inactiveTrackColor: color4,
-                              value: estado[index] == '1',
-                              onChanged: (value) async {
-                                String fun = '$index#${value ? '1' : '0'}';
-                                await bluetoothManager.ioUuid
-                                    .write(fun.codeUnits);
-                              },
-                            ),
+                          : canControl
+                              ? Switch(
+                                  activeThumbColor: color4,
+                                  activeTrackColor: color1,
+                                  inactiveThumbColor: color1,
+                                  inactiveTrackColor: color4,
+                                  value: estado[index] == '1',
+                                  onChanged: (value) async {
+                                    String fun = '$index#${value ? '1' : '0'}';
+                                    await bluetoothManager.ioUuid
+                                        .write(fun.codeUnits);
+                                  },
+                                )
+                              : const SizedBox.shrink(),
                       const SizedBox(
                         height: 10,
                       ),
@@ -529,7 +533,7 @@ class DomoticaPageState extends State<DomoticaPage> {
                       const SizedBox(
                         height: 5,
                       ),
-                      if (hardwareVersion == '240422A') ...[
+                      if (hardwareVersion == '240422A' && canControl) ...[
                         Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
@@ -862,14 +866,12 @@ class DomoticaPageState extends State<DomoticaPage> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: color1,
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                deviceName,
-                style: const TextStyle(color: color4),
-              ),
-            ],
+          title: Text(
+            deviceName,
+            style: const TextStyle(
+              color: color4,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new),

@@ -22,6 +22,8 @@ class RelePageState extends State<RelePage> {
 
   int _selectedIndex = 0;
 
+  final bool canControl = (accessLevel >= 3 || owner == '');
+
   // Obtener el índice correcto para cada página
   int _getPageIndex(String pageType) {
     int index = 0;
@@ -314,23 +316,25 @@ class RelePageState extends State<RelePage> {
                 style: TextStyle(
                     color: turnOn ? Colors.green : Colors.red, fontSize: 30),
               ),
-              const SizedBox(height: 30),
-              Transform.scale(
-                scale: 3.0,
-                child: Switch(
-                  activeThumbColor: color4,
-                  activeTrackColor: color1,
-                  inactiveThumbColor: color1,
-                  inactiveTrackColor: color4,
-                  value: turnOn,
-                  onChanged: (value) {
-                    turnDeviceOn(value);
-                    setState(() {
-                      turnOn = value;
-                    });
-                  },
+              if (canControl) ...[
+                const SizedBox(height: 30),
+                Transform.scale(
+                  scale: 3.0,
+                  child: Switch(
+                    activeThumbColor: color4,
+                    activeTrackColor: color1,
+                    inactiveThumbColor: color1,
+                    inactiveTrackColor: color4,
+                    value: turnOn,
+                    onChanged: (value) {
+                      turnDeviceOn(value);
+                      setState(() {
+                        turnOn = value;
+                      });
+                    },
+                  ),
                 ),
-              ),
+              ],
               const SizedBox(height: 50),
               if (accessLevel > 1) ...[
                 buildButton(
@@ -552,14 +556,12 @@ class RelePageState extends State<RelePage> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: color1,
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                deviceName,
-                style: const TextStyle(color: color4),
-              ),
-            ],
+          title: Text(
+            deviceName,
+            style: const TextStyle(
+              color: color4,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new),

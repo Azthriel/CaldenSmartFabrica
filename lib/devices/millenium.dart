@@ -36,6 +36,8 @@ class MilleniumPageState extends State<MilleniumPage> {
   List<List<dynamic>> recordedData = [];
   Timer? recordTimer;
 
+  final bool canControl = (accessLevel >= 3 || owner == '');
+
   // Obtener el índice correcto para cada página
   int _getPageIndex(String pageType) {
     int index = 0;
@@ -384,25 +386,27 @@ class MilleniumPageState extends State<MilleniumPage> {
                   ),
                 ),
               ),
-              const SizedBox(
-                height: 30,
-              ),
-              Transform.scale(
-                scale: 3.0,
-                child: Switch(
-                  activeThumbColor: color4,
-                  activeTrackColor: color1,
-                  inactiveThumbColor: color1,
-                  inactiveTrackColor: color4,
-                  value: turnOn,
-                  onChanged: (value) {
-                    turnDeviceOn(value);
-                    setState(() {
-                      turnOn = value;
-                    });
-                  },
+              if (canControl) ...[
+                const SizedBox(
+                  height: 30,
                 ),
-              ),
+                Transform.scale(
+                  scale: 3.0,
+                  child: Switch(
+                    activeThumbColor: color4,
+                    activeTrackColor: color1,
+                    inactiveThumbColor: color1,
+                    inactiveTrackColor: color4,
+                    value: turnOn,
+                    onChanged: (value) {
+                      turnDeviceOn(value);
+                      setState(() {
+                        turnOn = value;
+                      });
+                    },
+                  ),
+                ),
+              ],
               const SizedBox(
                 height: 50,
               ),
@@ -410,36 +414,38 @@ class MilleniumPageState extends State<MilleniumPage> {
                 text:
                     'Temperatura de corte: ${tempValue.round().toString()} °C',
               ),
-              SizedBox(
-                width: MediaQuery.of(context).size.width * 0.8,
-                child: SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    trackHeight: 50.0,
-                    valueIndicatorColor: color4,
-                    thumbColor: color1,
-                    activeTrackColor: color0,
-                    inactiveTrackColor: color3,
-                    thumbShape: IconThumbSlider(
-                      iconData: trueStatus ? Icons.water_drop : Icons.check,
-                      thumbRadius: 28,
+              if (canControl) ...[
+                SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 50.0,
+                      valueIndicatorColor: color4,
+                      thumbColor: color1,
+                      activeTrackColor: color0,
+                      inactiveTrackColor: color3,
+                      thumbShape: IconThumbSlider(
+                        iconData: trueStatus ? Icons.water_drop : Icons.check,
+                        thumbRadius: 28,
+                      ),
+                    ),
+                    child: Slider(
+                      value: tempValue,
+                      onChanged: (value) {
+                        setState(() {
+                          tempValue = value;
+                        });
+                      },
+                      onChangeEnd: (value) {
+                        printLog(value);
+                        sendTemperature(value.round());
+                      },
+                      min: 15,
+                      max: 70,
                     ),
                   ),
-                  child: Slider(
-                    value: tempValue,
-                    onChanged: (value) {
-                      setState(() {
-                        tempValue = value;
-                      });
-                    },
-                    onChangeEnd: (value) {
-                      printLog(value);
-                      sendTemperature(value.round());
-                    },
-                    min: 15,
-                    max: 70,
-                  ),
                 ),
-              ),
+              ],
               const SizedBox(
                 height: 30,
               ),
@@ -710,16 +716,12 @@ class MilleniumPageState extends State<MilleniumPage> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: color1,
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                deviceName,
-                style: const TextStyle(
-                  color: color4,
-                ),
-              ),
-            ],
+          title: Text(
+            deviceName,
+            style: const TextStyle(
+              color: color4,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
           leading: IconButton(
             icon: const Icon(

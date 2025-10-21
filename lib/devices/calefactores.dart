@@ -38,6 +38,8 @@ class CalefactoresPageState extends State<CalefactoresPage> {
   List<List<dynamic>> recordedData = [];
   Timer? recordTimer;
 
+  final bool canControl = (accessLevel >= 3 || owner == '');
+
   final String pc = DeviceManager.getProductCode(deviceName);
   final String sn = DeviceManager.extractSerialNumber(deviceName);
   final bool newGen = bluetoothManager.newGeneration;
@@ -273,7 +275,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
   }
 
   @override
-  initState() {
+  void initState() {
     super.initState();
     processValues();
     if (newGen) {
@@ -283,8 +285,8 @@ class CalefactoresPageState extends State<CalefactoresPage> {
     } else {
       updateWifiValues(toolsValues);
       subscribeToWifiStatus();
-      printLog('Valor temp: $tempValue');
-      printLog('¿Encendido? $turnOn');
+      printLog('Valor temp: $_wtemp');
+      printLog('¿Encendido? $_fstatus');
       subscribeTrueStatus();
     }
   }
@@ -356,8 +358,16 @@ class CalefactoresPageState extends State<CalefactoresPage> {
       printLog('Datos App recibidos: $map');
 
       setState(() {
-        bluetoothManager.data.addAll(appMap);
-        processValues();
+        appMap.containsKey('w_status')
+            ? _wstatus = appMap['w_status'] ?? false
+            : null;
+        appMap.containsKey('f_status')
+            ? _fstatus = appMap['f_status'] ?? false
+            : null;
+
+        appMap.containsKey('manual_mode')
+            ? _manualmode = appMap['manual_mode'] ?? false
+            : null;
       });
     });
 
@@ -374,8 +384,20 @@ class CalefactoresPageState extends State<CalefactoresPage> {
       printLog('Datos Temperatura recibidos: $map');
 
       setState(() {
-        bluetoothManager.data.addAll(appMap);
-        processValues();
+        appMap.containsKey('w_temp')
+            ? _wtemp =
+                double.tryParse((appMap['w_temp'] ?? 0).toString()) ?? 0.0
+            : null;
+        appMap.containsKey('actual_temp')
+            ? _actualTemp = (appMap['actual_temp'] ?? '0').toString()
+            : null;
+        appMap.containsKey('temp_map')
+            ? _tempmap = appMap['temp_map'] ?? false
+            : null;
+        appMap.containsKey('offset_temp')
+            ? _offsetTemp =
+                int.tryParse((appMap['offset_temp'] ?? 0).toString()) ?? 0
+            : null;
       });
     });
 
@@ -395,9 +417,8 @@ class CalefactoresPageState extends State<CalefactoresPage> {
       var parts = utf8.decode(status).split(':');
       // printLog(parts);
       setState(() {
-        trueStatus = parts[0] == '1';
-        actualTemp = parts[1];
-        processValues();
+        _fstatus = parts[0] == '1';
+        _actualTemp = parts[1];
       });
     });
 
@@ -452,9 +473,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
       }
     }
 
-    setState(() {
-      processValues();
-    });
+    setState(() {});
   }
 
   void subscribeToWifiStatus() async {
@@ -579,101 +598,108 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                   ),
                 ),
                 const SizedBox(height: 30),
-                Transform.scale(
-                  scale: 3.0,
-                  child: Switch(
-                    activeThumbColor: color4,
-                    activeTrackColor: color1,
-                    inactiveThumbColor: color1,
-                    inactiveTrackColor: color4,
-                    value: _wstatus,
-                    onChanged: (value) {
-                      turnDeviceOn(value);
-                      setState(() {
-                        _wstatus = value;
-                      });
-                    },
+                if (canControl) ...[
+                  Transform.scale(
+                    scale: 3.0,
+                    child: Switch(
+                      activeThumbColor: color4,
+                      activeTrackColor: color1,
+                      inactiveThumbColor: color1,
+                      inactiveTrackColor: color4,
+                      value: _wstatus,
+                      onChanged: (value) {
+                        turnDeviceOn(value);
+                        setState(() {
+                          _wstatus = value;
+                        });
+                      },
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: 50),
                 buildText(
                     text:
                         'Temperatura de corte: ${_wtemp.round().toString()} °C'),
-                SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.8,
-                  child: SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      trackHeight: 50.0,
-                      valueIndicatorColor: color4,
-                      thumbColor: color1,
-                      activeTrackColor: color0,
-                      inactiveTrackColor: color3,
-                      thumbShape: IconThumbSlider(
-                        iconData: _fstatus
-                            ? pc == '027000_IOT'
-                                ? Icons.local_fire_department
-                                : Icons.flash_on_rounded
-                            : Icons.check,
-                        thumbRadius: 28,
+                if (canControl) ...[
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.8,
+                    child: SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 50.0,
+                        valueIndicatorColor: color4,
+                        thumbColor: color1,
+                        activeTrackColor: color0,
+                        inactiveTrackColor: color3,
+                        thumbShape: IconThumbSlider(
+                          iconData: _fstatus
+                              ? pc == '027000_IOT'
+                                  ? Icons.local_fire_department
+                                  : Icons.flash_on_rounded
+                              : Icons.check,
+                          thumbRadius: 28,
+                        ),
+                      ),
+                      child: Slider(
+                        value: _wtemp,
+                        onChanged: (value) {
+                          setState(() {
+                            _wtemp = value;
+                          });
+                        },
+                        onChangeEnd: (value) {
+                          printLog(value);
+                          sendTemperature(value.round());
+                        },
+                        min: 0,
+                        max: 40,
                       ),
                     ),
-                    child: Slider(
-                      value: _wtemp,
-                      onChanged: (value) {
-                        setState(() {
-                          _wtemp = value;
-                        });
-                      },
-                      onChangeEnd: (value) {
-                        printLog(value);
-                        sendTemperature(value.round());
-                      },
-                      min: 0,
-                      max: 40,
-                    ),
                   ),
-                ),
+                ],
                 if (pc == '027000_IOT') ...[
-                  const SizedBox(
-                    height: 30,
-                  ),
-                  GestureDetector(
-                    onLongPressStart: (LongPressStartDetails a) async {
-                      setState(() {
-                        ignite = true;
-                      });
-                      while (ignite) {
-                        await Future.delayed(const Duration(milliseconds: 500));
-                        if (!ignite) break;
+                  if (canControl) ...[
+                    const SizedBox(
+                      height: 30,
+                    ),
+                    GestureDetector(
+                      onLongPressStart: (LongPressStartDetails a) async {
+                        setState(() {
+                          ignite = true;
+                        });
+                        while (ignite) {
+                          await Future.delayed(
+                              const Duration(milliseconds: 500));
+                          if (!ignite) break;
+                          if (newGen) {
+                            Map<String, dynamic> command = {"cdi": true};
+                            List<int> messagePackData = serialize(command);
+                            bluetoothManager.appDataUuid.write(messagePackData);
+                            printLog(command.toString());
+                          } else {
+                            String data = '027000_IOT[15](1)';
+                            bluetoothManager.toolsUuid.write(data.codeUnits);
+                            printLog(data);
+                          }
+                        }
+                      },
+                      onLongPressEnd: (LongPressEndDetails a) {
+                        setState(() {
+                          ignite = false;
+                        });
                         if (newGen) {
-                          Map<String, dynamic> command = {"cdi": true};
+                          Map<String, dynamic> command = {"cdi": false};
                           List<int> messagePackData = serialize(command);
                           bluetoothManager.appDataUuid.write(messagePackData);
                           printLog(command.toString());
                         } else {
-                          String data = '027000_IOT[15](1)';
+                          String data = '027000_IOT[15](0)';
                           bluetoothManager.toolsUuid.write(data.codeUnits);
                           printLog(data);
                         }
-                      }
-                    },
-                    onLongPressEnd: (LongPressEndDetails a) {
-                      setState(() {
-                        ignite = false;
-                      });
-                      if (newGen) {
-                        Map<String, dynamic> command = {"cdi": false};
-                        List<int> messagePackData = serialize(command);
-                        bluetoothManager.appDataUuid.write(messagePackData);
-                        printLog(command.toString());
-                      } else {
-                        String data = '027000_IOT[15](0)';
-                        bluetoothManager.toolsUuid.write(data.codeUnits);
-                        printLog(data);
-                      }
-                    },
-                    child: buildButton(onPressed: () {}, text: 'Chispero'),
-                  ),
+                      },
+                      child: buildButton(onPressed: () {}, text: 'Chispero'),
+                    ),
+                  ],
                   const SizedBox(
                     height: 30,
                   ),
@@ -1252,16 +1278,12 @@ class CalefactoresPageState extends State<CalefactoresPage> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: color1,
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                deviceName,
-                style: const TextStyle(
-                  color: color4,
-                ),
-              ),
-            ],
+          title: Text(
+            deviceName,
+            style: const TextStyle(
+              color: color4,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
           leading: IconButton(
             icon: const Icon(

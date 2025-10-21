@@ -634,8 +634,187 @@ class DetectorPageState extends State<DetectorPage> {
       printLog('Datos App recibidos: $map');
 
       setState(() {
-        bluetoothManager.data.addAll(appMap);
-        processValues();
+        // calibration values
+        appMap.containsKey('vrms')
+            ? _vrms = int.tryParse(appMap['vrms'].toString()) ?? 0
+            : null;
+        appMap.containsKey('vcc')
+            ? _vcc = int.tryParse(appMap['vcc'].toString()) ?? 0
+            : null;
+        appMap.containsKey('rs')
+            ? _rsValue = int.tryParse(appMap['rs'].toString()) ?? 0
+            : null;
+        appMap.containsKey('rrco')
+            ? _rrcoValue = int.tryParse(appMap['rrco'].toString()) ?? 0
+            : null;
+        appMap.containsKey('temp_micro')
+            ? _tempMicro = int.tryParse(appMap['temp_micro'].toString()) ?? 0
+            : null;
+        appMap.containsKey('ppm_co')
+            ? _ppmCO = int.tryParse(appMap['ppm_co'].toString()) ?? 0
+            : null;
+        appMap.containsKey('ppm_ch4')
+            ? _ppmCH4 = int.tryParse(appMap['ppm_ch4'].toString()) ?? 0
+            : null;
+        appMap.containsKey('rs_value')
+            ? _rsValue = int.tryParse(appMap['rs_value'].toString()) ?? 0
+            : null;
+        appMap.containsKey('rrco_value')
+            ? _rrcoValue = int.tryParse(appMap['rrco_value'].toString()) ?? 0
+            : null;
+        appMap.containsKey('vcc_offset')
+            ? _vccOffset = int.tryParse(appMap['vcc_offset'].toString()) ?? 0
+            : null;
+        appMap.containsKey('vrms_offset')
+            ? _vrmsOffset = int.tryParse(appMap['vrms_offset'].toString()) ?? 0
+            : null;
+        appMap.containsKey('vrms02_offset')
+            ? _vrms02Offset =
+                int.tryParse(appMap['vrms02_offset'].toString()) ?? 0
+            : null;
+
+        appMap.containsKey('device_ebbr')
+            ? deviceEBBR = appMap['device_ebbr'] == true
+            : null;
+        appMap.containsKey('regulation_done')
+            ? regulationDone = appMap['regulation_done'] == true
+            : null;
+
+        // Debug values
+        appMap.containsKey('gasout')
+            ? _gasout = appMap['gasout'].toString()
+            : null;
+        appMap.containsKey('gasout_estable_ch4')
+            ? _gasout_estable_ch4 = appMap['gasout_estable_ch4'].toString()
+            : null;
+        appMap.containsKey('gasout_estable_co')
+            ? _gasout_estable_co = appMap['gasout_estable_co'].toString()
+            : null;
+        appMap.containsKey('vcc_reg')
+            ? _vcc_reg = appMap['vcc_reg'].toString()
+            : null;
+        appMap.containsKey('vcc_estable')
+            ? _vcc_estable = appMap['vcc_estable'].toString()
+            : null;
+        appMap.containsKey('temp') ? _temp = appMap['temp'].toString() : null;
+        appMap.containsKey('temp_estable')
+            ? _temp_estable = appMap['temp_estable'].toString()
+            : null;
+        appMap.containsKey('pwm_rising')
+            ? _pwm_rising = appMap['pwm_rising'].toString()
+            : null;
+        appMap.containsKey('pwm_falling')
+            ? _pwm_falling = appMap['pwm_falling'].toString()
+            : null;
+        appMap.containsKey('pwm') ? _pwm = appMap['pwm'].toString() : null;
+        appMap.containsKey('pwm_estable')
+            ? _pwm_estable = appMap['pwm_estable'].toString()
+            : null;
+        // Regulation values
+        appMap.containsKey('res_sen_gas_20C')
+            ? _res_sen_gas_20C = appMap['res_sen_gas_20C'].toString()
+            : null;
+        appMap.containsKey('res_sen_gas_30C')
+            ? _res_sen_gas_30C = appMap['res_sen_gas_30C'].toString()
+            : null;
+        appMap.containsKey('res_sen_gas_40C')
+            ? _res_sen_gas_40C = appMap['res_sen_gas_40C'].toString()
+            : null;
+        appMap.containsKey('res_sen_gas_50C')
+            ? _res_sen_gas_50C = appMap['res_sen_gas_50C'].toString()
+            : null;
+        appMap.containsKey('res_sen_gas_xC')
+            ? _res_sen_gas_xC = appMap['res_sen_gas_xC'].toString()
+            : null;
+        appMap.containsKey('cor_temp_20C')
+            ? _cor_temp_20C = appMap['cor_temp_20C'].toString()
+            : null;
+        appMap.containsKey('cor_temp_30C')
+            ? _cor_temp_30C = appMap['cor_temp_30C'].toString()
+            : null;
+        appMap.containsKey('cor_temp_40C')
+            ? _cor_temp_40C = appMap['cor_temp_40C'].toString()
+            : null;
+        appMap.containsKey('cor_temp_50C')
+            ? _cor_temp_50C = appMap['cor_temp_50C'].toString()
+            : null;
+        appMap.containsKey('cor_temp_xC')
+            ? _cor_temp_xC = appMap['cor_temp_xC'].toString()
+            : null;
+        appMap.containsKey('res_sen_co_20C')
+            ? _res_sen_co_20C = appMap['res_sen_co_20C'].toString()
+            : null;
+        appMap.containsKey('res_sen_co_30C')
+            ? _res_sen_co_30C = appMap['res_sen_co_30C'].toString()
+            : null;
+        appMap.containsKey('res_sen_co_40C')
+            ? _res_sen_co_40C = appMap['res_sen_co_40C'].toString()
+            : null;
+        appMap.containsKey('res_sen_co_50C')
+            ? _res_sen_co_50C = appMap['res_sen_co_50C'].toString()
+            : null;
+        appMap.containsKey('res_sen_co_xC')
+            ? _res_sen_co_xC = appMap['res_sen_co_xC'].toString()
+            : null;
+        appMap.containsKey('res_sen_gas_aire_limpio')
+            ? _res_sen_gas_aire_limpio =
+                appMap['res_sen_gas_aire_limpio'].toString()
+            : null;
+        appMap.containsKey('res_sen_co_aire_limpio')
+            ? _res_sen_co_aire_limpio =
+                appMap['res_sen_co_aire_limpio'].toString()
+            : null;
+
+        if (_rsValue >= 35000) {
+          rsInvalid = true;
+          rsOver35k = true;
+          _rsValue = 35000;
+        } else {
+          rsInvalid = false;
+        }
+        if (_rsValue < 3500) {
+          rsInvalid = true;
+        } else {
+          rsInvalid = false;
+        }
+        if (_rrcoValue > 28000) {
+          rrcoInvalid = false;
+        } else {
+          _rrcoValue = 0;
+          rrcoInvalid = true;
+        }
+
+        if (rsInvalid == true) {
+          if (rsOver35k == true) {
+            _rs = '>35kΩ';
+            rsColor = Colors.red;
+          } else {
+            _rs = '<3.5kΩ';
+            rsColor = Colors.red;
+          }
+        } else {
+          var fun = _rsValue / 1000;
+          _rs = '${fun}KΩ';
+        }
+        if (rrcoInvalid == true) {
+          _rrco = '<28kΩ';
+          rrcoColor = Colors.red;
+        } else {
+          var fun = _rrcoValue / 1000;
+          _rrco = '${fun}KΩ';
+        }
+
+        if (_vcc > 5000) {
+          _vccColor = Colors.red;
+        } else {
+          _vccColor = color0;
+        }
+
+        if (_vrms > 900) {
+          _vrmsColor = Colors.red;
+        } else {
+          _vrmsColor = color0;
+        }
       });
     });
 
@@ -2299,14 +2478,12 @@ class DetectorPageState extends State<DetectorPage> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: color1,
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                deviceName,
-                style: const TextStyle(color: color4),
-              ),
-            ],
+          title: Text(
+            deviceName,
+            style: const TextStyle(
+              color: color4,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new),
@@ -2321,11 +2498,12 @@ class DetectorPageState extends State<DetectorPage> {
                     content: Row(
                       children: [
                         Image.asset(
-                            EasterEggs.legajosMeme.contains(legajoConectado)
-                                ? 'assets/eg/DSC.gif'
-                                : 'assets/Loading.gif',
-                            width: 100,
-                            height: 100),
+                          EasterEggs.legajosMeme.contains(legajoConectado)
+                              ? 'assets/eg/DSC.gif'
+                              : 'assets/Loading.gif',
+                          width: 100,
+                          height: 100,
+                        ),
                         Container(
                           margin: const EdgeInsets.only(left: 15),
                           child: const Text(

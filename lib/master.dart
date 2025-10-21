@@ -19,7 +19,7 @@ import 'package:msgpack_dart/msgpack_dart.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.40';
+String appVersionNumber = '1.0.42';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -361,6 +361,7 @@ void launchWebURL(String url) async {
     printLog('No se pudo abrir $url');
   }
 }
+
 //*-Funciones diversas-*\\
 
 //*-Gestión de errores en app-*\\
@@ -2395,7 +2396,8 @@ class BluetoothManager {
                 '041220_IOT' ||
                 '050217_IOT' ||
                 '028000_IOT' ||
-                '023430_IOT':
+                '023430_IOT' ||
+                '027345_IOT':
             BluetoothService espService = services.firstWhere(
                 (s) => s.uuid == Guid('6f2fa024-d122-4fa3-a288-8eca1af30502'));
 

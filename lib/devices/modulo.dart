@@ -27,6 +27,8 @@ class ModuloPageState extends State<ModuloPage> {
 
   int _selectedIndex = 0;
 
+  final bool canControl = (accessLevel >= 3 || owner == '');
+
   // Obtener el índice correcto para cada página
   int _getPageIndex(String pageType) {
     int index = 0;
@@ -412,21 +414,23 @@ class ModuloPageState extends State<ModuloPage> {
                         const SizedBox(
                           height: 10,
                         ),
-                        Transform.scale(
-                          scale: 2.0,
-                          child: Switch(
-                            activeThumbColor: color4,
-                            activeTrackColor: color1,
-                            inactiveThumbColor: color1,
-                            inactiveTrackColor: color4,
-                            value: estado[i] == '1',
-                            onChanged: (value) async {
-                              String fun = '$i#${value ? '1' : '0'}';
-                              await bluetoothManager.ioUuid
-                                  .write(fun.codeUnits);
-                            },
-                          ),
-                        ),
+                        canControl
+                            ? Transform.scale(
+                                scale: 2.0,
+                                child: Switch(
+                                  activeThumbColor: color4,
+                                  activeTrackColor: color1,
+                                  inactiveThumbColor: color1,
+                                  inactiveTrackColor: color4,
+                                  value: estado[i] == '1',
+                                  onChanged: (value) async {
+                                    String fun = '$i#${value ? '1' : '0'}';
+                                    await bluetoothManager.ioUuid
+                                        .write(fun.codeUnits);
+                                  },
+                                ),
+                              )
+                            : const SizedBox.shrink(),
                         Padding(
                           padding:
                               EdgeInsets.only(bottom: bottomBarHeight + 20),
@@ -481,75 +485,77 @@ class ModuloPageState extends State<ModuloPage> {
                         const SizedBox(
                           height: 10,
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            const SizedBox(
-                              width: 30,
-                            ),
-                            const Text(
-                              'Estado común:',
-                              style: TextStyle(
-                                color: color4,
-                                fontSize: 15,
-                              ),
-                            ),
-                            const Spacer(),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 10),
-                              child: ChoiceChip(
-                                label: const Text('0'),
-                                selected: common[j] == '0',
-                                shape: const OvalBorder(),
-                                pressElevation: 5,
-                                showCheckmark: false,
-                                selectedColor: color2,
-                                onSelected: (value) {
-                                  setState(() {
-                                    common[j] = '0';
-                                  });
-                                  String data =
-                                      '${DeviceManager.getProductCode(deviceName)}[14]($j#${common[j]})';
-                                  printLog(data);
-                                  bluetoothManager.toolsUuid
-                                      .write(data.codeUnits);
-                                },
-                              ),
-                            ),
-                            const SizedBox(
-                              width: 10,
-                            ),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 10),
-                              child: ChoiceChip(
-                                label: const Text('1'),
-                                labelStyle: const TextStyle(
-                                  color: color1,
-                                ),
-                                selected: common[j] == '1',
-                                shape: const OvalBorder(),
-                                pressElevation: 5,
-                                showCheckmark: false,
-                                selectedColor: color2,
-                                onSelected: (value) {
-                                  setState(() {
-                                    common[j] = '1';
-                                  });
-                                  String data =
-                                      '${DeviceManager.getProductCode(deviceName)}[14]($j#${common[j]})';
-                                  printLog(data);
-                                  bluetoothManager.toolsUuid
-                                      .write(data.codeUnits);
-                                },
-                              ),
-                            ),
-                            const SizedBox(
-                              width: 10,
-                            ),
-                          ],
-                        )
+                        canControl
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  const SizedBox(
+                                    width: 30,
+                                  ),
+                                  const Text(
+                                    'Estado común:',
+                                    style: TextStyle(
+                                      color: color4,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10),
+                                    child: ChoiceChip(
+                                      label: const Text('0'),
+                                      selected: common[j] == '0',
+                                      shape: const OvalBorder(),
+                                      pressElevation: 5,
+                                      showCheckmark: false,
+                                      selectedColor: color2,
+                                      onSelected: (value) {
+                                        setState(() {
+                                          common[j] = '0';
+                                        });
+                                        String data =
+                                            '${DeviceManager.getProductCode(deviceName)}[14]($j#${common[j]})';
+                                        printLog(data);
+                                        bluetoothManager.toolsUuid
+                                            .write(data.codeUnits);
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    width: 10,
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10),
+                                    child: ChoiceChip(
+                                      label: const Text('1'),
+                                      labelStyle: const TextStyle(
+                                        color: color1,
+                                      ),
+                                      selected: common[j] == '1',
+                                      shape: const OvalBorder(),
+                                      pressElevation: 5,
+                                      showCheckmark: false,
+                                      selectedColor: color2,
+                                      onSelected: (value) {
+                                        setState(() {
+                                          common[j] = '1';
+                                        });
+                                        String data =
+                                            '${DeviceManager.getProductCode(deviceName)}[14]($j#${common[j]})';
+                                        printLog(data);
+                                        bluetoothManager.toolsUuid
+                                            .write(data.codeUnits);
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    width: 10,
+                                  ),
+                                ],
+                              )
+                            : const SizedBox.shrink(),
                       ],
                     ),
                   ),
@@ -809,14 +815,12 @@ class ModuloPageState extends State<ModuloPage> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: color1,
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                deviceName,
-                style: const TextStyle(color: color4),
-              ),
-            ],
+          title: Text(
+            deviceName,
+            style: const TextStyle(
+              color: color4,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new),

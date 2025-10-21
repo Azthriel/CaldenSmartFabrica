@@ -37,6 +37,7 @@ class LoadState extends State<LoadingPage> {
     precharge().then((precharge) {
       if (precharge == true) {
         showToast('Dispositivo conectado exitosamente');
+        registerActivity(pc, sn, 'Se conectó al dispositivo');
         switch (pc) {
           case '022000_IOT' || '027000_IOT' || '041220_IOT':
             navigatorKey.currentState?.pushReplacementNamed('/calefactor');
@@ -71,6 +72,9 @@ class LoadState extends State<LoadingPage> {
             break;
           case '023430_IOT':
             navigatorKey.currentState?.pushReplacementNamed('/termometro');
+            break;
+          case '027345_IOT':
+            navigatorKey.currentState?.pushReplacementNamed('/termotanque');
             break;
         }
       } else {
@@ -166,12 +170,14 @@ class LoadState extends State<LoadingPage> {
                 '041220_IOT' ||
                 '050217_IOT' ||
                 '028000_IOT' ||
-                '027000_IOT':
+                '027000_IOT' ||
+                '027345_IOT':
             varsValues = await bluetoothManager.varsUuid.read();
-            var parts2 = utf8.decode(varsValues).split(':');
+            List<String> parts2 = utf8.decode(varsValues).split(':');
             printLog('Valores vars: $parts2');
 
             if (parts2[0] == '0' || parts2[0] == '1') {
+              printLog('Formato viejo detectado (has owner variable)');
               tempValue = double.parse(parts2[1]);
               turnOn = parts2[2] == '1';
               trueStatus = parts2[4] == '1';
@@ -187,6 +193,7 @@ class LoadState extends State<LoadingPage> {
               }
               printLog('Estado: $turnOn');
             } else {
+              printLog('Formato nuevo detectado (sin owner variable)');
               tempValue = double.parse(parts2[0]);
               turnOn = parts2[1] == '1';
               trueStatus = parts2[3] == '1';

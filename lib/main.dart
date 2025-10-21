@@ -7,6 +7,7 @@ import 'package:caldensmartfabrica/devices/millenium.dart';
 import 'package:caldensmartfabrica/devices/modulo.dart';
 import 'package:caldensmartfabrica/devices/rele1i1o.dart';
 import 'package:caldensmartfabrica/devices/termometro.dart';
+import 'package:caldensmartfabrica/devices/termotanque.dart';
 import 'package:caldensmartfabrica/firebase_options.dart';
 import 'package:caldensmartfabrica/global/loading.dart';
 import 'package:caldensmartfabrica/global/login.dart';
@@ -111,6 +112,7 @@ class MyAppState extends State<MyApp> {
         '/heladera': (context) => const HeladeraPage(),
         '/rele1i1o': (context) => const Rele1i1oPage(),
         '/termometro': (context) => const TermometroPage(),
+        '/termotanque': (context) => const TermotanquePage(),
       },
     );
   }

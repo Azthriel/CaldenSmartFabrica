@@ -245,6 +245,7 @@ class TermometroPageState extends State<TermometroPage> {
   @override
   void initState() {
     super.initState();
+    processValues();
     if (newGen) {
       subToWifiData();
       subToAppData();
@@ -331,10 +332,8 @@ class TermometroPageState extends State<TermometroPage> {
       var map = deserialize(Uint8List.fromList(data));
       Map<String, dynamic> appMap = Map<String, dynamic>.from(map);
       printLog('Datos App recibidos: $map');
-
       setState(() {
         bluetoothManager.data.addAll(appMap);
-        processValues();
       });
     });
 
@@ -351,8 +350,21 @@ class TermometroPageState extends State<TermometroPage> {
       printLog('Datos Temperatura recibidos: $map');
 
       setState(() {
-        bluetoothManager.data.addAll(appMap);
-        processValues();
+        appMap.containsKey('actual_temp')
+            ? _actualTemp = appMap['actual_temp']!
+            : null;
+        appMap.containsKey('temp_offset')
+            ? _tempOffset = appMap['temp_offset']!
+            : null;
+        appMap.containsKey('alertMaxFlag')
+            ? _alertMaxFlag = appMap['alertMaxFlag']! == '1'
+            : null;
+        appMap.containsKey('alertMinFlag')
+            ? _alertMinFlag = appMap['alertMinFlag']! == '1'
+            : null;
+        appMap.containsKey('tempMap')
+            ? _tempMap = appMap['tempMap']! == true
+            : null;
       });
     });
 
@@ -372,11 +384,10 @@ class TermometroPageState extends State<TermometroPage> {
       var parts = utf8.decode(status).split(':');
 
       if (parts.length == 4) {
-        actualTemp = parts[0];
-        offsetTemp = parts[1];
-        alertMaxFlag = parts[2] == '1';
-        alertMinFlag = parts[3] == '1';
-        processValues();
+        _actualTemp = parts[0];
+        _tempOffset = parts[1];
+        _alertMaxFlag = parts[2] == '1';
+        _alertMinFlag = parts[3] == '1';
       }
     });
 
@@ -753,16 +764,12 @@ class TermometroPageState extends State<TermometroPage> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: color1,
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                deviceName,
-                style: const TextStyle(
-                  color: color4,
-                ),
-              ),
-            ],
+          title: Text(
+            deviceName,
+            style: const TextStyle(
+              color: color4,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
           leading: IconButton(
             icon: const Icon(

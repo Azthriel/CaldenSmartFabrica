@@ -333,18 +333,6 @@ class PatitoPageState extends State<PatitoPage> {
         ]);
       }
     }
-
-    if (bluetoothManager.hasBatteryService) {
-      bluetoothManager.data.containsKey('charging')
-          ? _isCharging = bluetoothManager.data['charging'] ?? false
-          : null;
-      bluetoothManager.data.containsKey('mv')
-          ? _batterymv = (bluetoothManager.data['mv'] ?? 0).toString()
-          : null;
-      bluetoothManager.data.containsKey('%')
-          ? _batteryPercentage = (bluetoothManager.data['%'] ?? 0).toString()
-          : null;
-    }
   }
 
   @override
@@ -443,8 +431,23 @@ class PatitoPageState extends State<PatitoPage> {
     final patitoSub =
         bluetoothManager.patitoUuid.onValueReceived.listen((event) {
       if (context.mounted) {
-        _patitoData = event;
-        processValues();
+        addData(aceleracionX, transformToDouble(event.sublist(0, 4)),
+            windowSize: 5);
+        addData(aceleracionY, transformToDouble(event.sublist(4, 8)),
+            windowSize: 5);
+        addData(aceleracionZ, transformToDouble(event.sublist(8, 12)),
+            windowSize: 5);
+        addData(giroX, transformToDouble(event.sublist(12, 16)), windowSize: 5);
+        addData(giroY, transformToDouble(event.sublist(16, 20)), windowSize: 5);
+        addData(giroZ, transformToDouble(event.sublist(20)), windowSize: 5);
+        addDate(dates, DateTime.now());
+
+        addData(sumaAcc,
+            (aceleracionX.last + aceleracionY.last + aceleracionZ.last));
+        addData(promAcc,
+            (aceleracionX.last + aceleracionY.last + aceleracionZ.last) / 3);
+        addData(sumaGiro, (giroX.last + giroY.last + giroZ.last));
+        addData(promGiro, (giroX.last + giroY.last + giroZ.last) / 3);
       }
     });
     bluetoothManager.device.cancelWhenDisconnected(patitoSub);
@@ -517,8 +520,20 @@ class PatitoPageState extends State<PatitoPage> {
       printLog('Datos App recibidos: $map');
 
       setState(() {
-        bluetoothManager.data.addAll(appMap);
-        processValues();
+        addData(aceleracionX, appMap['acc_x'] ?? 0.0, windowSize: 5);
+        addData(aceleracionY, appMap['acc_y'] ?? 0.0, windowSize: 5);
+        addData(aceleracionZ, appMap['acc_z'] ?? 0.0, windowSize: 5);
+        addData(giroX, appMap['gyr_x'] ?? 0.0, windowSize: 5);
+        addData(giroY, appMap['gyr_y'] ?? 0.0, windowSize: 5);
+        addData(giroZ, appMap['gyr_z'] ?? 0.0, windowSize: 5);
+        addDate(dates, DateTime.now());
+
+        addData(sumaAcc,
+            (aceleracionX.last + aceleracionY.last + aceleracionZ.last));
+        addData(promAcc,
+            (aceleracionX.last + aceleracionY.last + aceleracionZ.last) / 3);
+        addData(sumaGiro, (giroX.last + giroY.last + giroZ.last));
+        addData(promGiro, (giroX.last + giroY.last + giroZ.last) / 3);
       });
     });
 
@@ -535,8 +550,15 @@ class PatitoPageState extends State<PatitoPage> {
       printLog('Datos Batería recibidos: $map');
 
       setState(() {
-        bluetoothManager.data.addAll(appMap);
-        processValues();
+        appMap.containsKey('charging')
+            ? _isCharging = appMap['charging'] ?? false
+            : null;
+        appMap.containsKey('mv')
+            ? _batterymv = (appMap['mv'] ?? 0).toString()
+            : null;
+        appMap.containsKey('%')
+            ? _batteryPercentage = (appMap['%'] ?? 0).toString()
+            : null;
       });
     });
 
@@ -553,8 +575,15 @@ class PatitoPageState extends State<PatitoPage> {
       printLog('Datos iniciales de batería leídos: $map');
 
       setState(() {
-        bluetoothManager.data.addAll(appMap);
-        processValues();
+        appMap.containsKey('charging')
+            ? _isCharging = appMap['charging'] ?? false
+            : null;
+        appMap.containsKey('mv')
+            ? _batterymv = (appMap['mv'] ?? 0).toString()
+            : null;
+        appMap.containsKey('%')
+            ? _batteryPercentage = (appMap['%'] ?? 0).toString()
+            : null;
       });
     } catch (e) {
       printLog('Error al leer datos iniciales de batería: $e');
@@ -1089,14 +1118,12 @@ class PatitoPageState extends State<PatitoPage> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: color1,
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                deviceName,
-                style: const TextStyle(color: color4),
-              ),
-            ],
+          title: Text(
+            deviceName,
+            style: const TextStyle(
+              color: color4,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new),

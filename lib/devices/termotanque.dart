@@ -16,14 +16,14 @@ import 'package:csv/csv.dart';
 import '../aws/dynamo/dynamo.dart';
 import '../master.dart';
 
-class HeladeraPage extends StatefulWidget {
-  const HeladeraPage({super.key});
+class TermotanquePage extends StatefulWidget {
+  const TermotanquePage({super.key});
 
   @override
-  HeladeraPageState createState() => HeladeraPageState();
+  TermotanquePageState createState() => TermotanquePageState();
 }
 
-class HeladeraPageState extends State<HeladeraPage> {
+class TermotanquePageState extends State<TermotanquePage> {
   TextEditingController textController = TextEditingController();
 
   final TextEditingController roomTempController = TextEditingController();
@@ -40,16 +40,16 @@ class HeladeraPageState extends State<HeladeraPage> {
 
   final bool canControl = (accessLevel >= 3 || owner == '');
 
-  final String pc = DeviceManager.getProductCode(deviceName);
-  final String sn = DeviceManager.extractSerialNumber(deviceName);
-  final bool newGen = bluetoothManager.newGeneration;
-
   //LOCAL DATA
   bool _wstatus = false;
   bool _fstatus = false;
   double _wtemp = 0.0;
   String _actualTemp = '0';
   bool _tempmap = false;
+
+  final String pc = DeviceManager.getProductCode(deviceName);
+  final String sn = DeviceManager.extractSerialNumber(deviceName);
+  final bool newGen = bluetoothManager.newGeneration;
 
   // Obtener el índice correcto para cada página
   int _getPageIndex(String pageType) {
@@ -218,6 +218,16 @@ class HeladeraPageState extends State<HeladeraPage> {
     });
   }
 
+  @override
+  void dispose() {
+    _pageController.dispose();
+    textController.dispose();
+    roomTempController.dispose();
+    distanceOnController.dispose();
+    distanceOffController.dispose();
+    super.dispose();
+  }
+
   void processValues() {
     if (newGen) {
       printLog('Procesando valores: ${bluetoothManager.data}');
@@ -253,16 +263,6 @@ class HeladeraPageState extends State<HeladeraPage> {
   }
 
   @override
-  void dispose() {
-    _pageController.dispose();
-    textController.dispose();
-    roomTempController.dispose();
-    distanceOnController.dispose();
-    distanceOffController.dispose();
-    super.dispose();
-  }
-
-  @override
   initState() {
     super.initState();
     processValues();
@@ -273,96 +273,13 @@ class HeladeraPageState extends State<HeladeraPage> {
     } else {
       updateWifiValues(toolsValues);
       subscribeToWifiStatus();
-      printLog('Valor temp: $tempValue');
-      printLog('¿Encendido? $turnOn');
+      printLog('Valor temp: $_wtemp');
+      printLog('¿Encendido? $_fstatus');
       subscribeTrueStatus();
     }
   }
 
-  //OLD GEN
-
-  void subscribeTrueStatus() async {
-    printLog('Me subscribo a vars');
-    await bluetoothManager.varsUuid.setNotifyValue(true);
-
-    final trueStatusSub =
-        bluetoothManager.varsUuid.onValueReceived.listen((List<int> status) {
-      var parts = utf8.decode(status).split(':');
-      // printLog(parts);
-      setState(() {
-        _fstatus = parts[0] == '1';
-        _actualTemp = parts[1];
-      });
-    });
-
-    bluetoothManager.device.cancelWhenDisconnected(trueStatusSub);
-  }
-
-  void updateWifiValues(List<int> data) {
-    var fun =
-        utf8.decode(data); //Wifi status | wifi ssid | ble status | nickname
-    fun = fun.replaceAll(RegExp(r'[^\x20-\x7E]'), '');
-    // printLog(fun);
-    var parts = fun.split(':');
-    if (parts[0] == 'WCS_CONNECTED') {
-      nameOfWifi = parts[1];
-      isWifiConnected = true;
-      // // printLog('sis $isWifiConnected');
-      setState(() {
-        textState = 'CONECTADO';
-        statusColor = Colors.green;
-        wifiIcon = Icons.wifi;
-      });
-    } else if (parts[0] == 'WCS_DISCONNECTED') {
-      isWifiConnected = false;
-      // // printLog('non $isWifiConnected');
-
-      setState(() {
-        textState = 'DESCONECTADO';
-        statusColor = Colors.red;
-        wifiIcon = Icons.wifi_off;
-      });
-
-      if (parts[0] == 'WCS_DISCONNECTED' && atemp == true) {
-        //If comes from subscription, parts[1] = reason of error.
-        setState(() {
-          wifiIcon = Icons.warning_amber_rounded;
-          werror = true;
-        });
-
-        if (parts[1] == '202' || parts[1] == '15') {
-          errorMessage = 'Contraseña incorrecta';
-        } else if (parts[1] == '201') {
-          errorMessage = 'La red especificada no existe';
-        } else if (parts[1] == '1') {
-          errorMessage = 'Error desconocido';
-        } else {
-          errorMessage = parts[1];
-        }
-
-        if (int.tryParse(parts[1]) != null) {
-          errorSintax = getWifiErrorSintax(int.parse(parts[1]));
-        }
-      }
-    }
-
-    setState(() {});
-  }
-
-  void subscribeToWifiStatus() async {
-    printLog('Se subscribio a wifi');
-    await bluetoothManager.toolsUuid.setNotifyValue(true);
-
-    final wifiSub =
-        bluetoothManager.toolsUuid.onValueReceived.listen((List<int> status) {
-      updateWifiValues(status);
-    });
-
-    bluetoothManager.device.cancelWhenDisconnected(wifiSub);
-  }
-
   //NEW GEN
-
   void subToWifiData() {
     final wifiSub =
         bluetoothManager.wifiDataUuid.onValueReceived.listen((List<int> data) {
@@ -468,7 +385,89 @@ class HeladeraPageState extends State<HeladeraPage> {
     bluetoothManager.device.cancelWhenDisconnected(tempDataSub);
   }
 
-  //BOTH GENS
+  //OLD GEN
+
+  void subscribeTrueStatus() async {
+    printLog('Me subscribo a vars', "rojo");
+    await bluetoothManager.varsUuid.setNotifyValue(true);
+
+    final trueStatusSub =
+        bluetoothManager.varsUuid.onValueReceived.listen((List<int> status) {
+      var parts = utf8.decode(status).split(':');
+      setState(() {
+        _fstatus = parts[0] == '1';
+        _actualTemp = parts[1];
+      });
+    });
+
+    bluetoothManager.device.cancelWhenDisconnected(trueStatusSub);
+  }
+
+  void updateWifiValues(List<int> data) {
+    var fun =
+        utf8.decode(data); //Wifi status | wifi ssid | ble status | nickname
+    fun = fun.replaceAll(RegExp(r'[^\x20-\x7E]'), '');
+    // printLog(fun);
+    var parts = fun.split(':');
+    if (parts[0] == 'WCS_CONNECTED') {
+      nameOfWifi = parts[1];
+      isWifiConnected = true;
+      // printLog('sis $isWifiConnected');
+      setState(() {
+        textState = 'CONECTADO';
+        statusColor = Colors.green;
+        wifiIcon = Icons.wifi;
+      });
+    } else if (parts[0] == 'WCS_DISCONNECTED') {
+      isWifiConnected = false;
+      // printLog('non $isWifiConnected');
+
+      setState(() {
+        textState = 'DESCONECTADO';
+        statusColor = Colors.red;
+        wifiIcon = Icons.wifi_off;
+      });
+
+      if (parts[0] == 'WCS_DISCONNECTED' && atemp == true) {
+        //If comes from subscription, parts[1] = reason of error.
+        setState(() {
+          wifiIcon = Icons.warning_amber_rounded;
+          werror = true;
+        });
+
+        if (parts[1] == '202' || parts[1] == '15') {
+          errorMessage = 'Contraseña incorrecta';
+        } else if (parts[1] == '201') {
+          errorMessage = 'La red especificada no existe';
+        } else if (parts[1] == '1') {
+          errorMessage = 'Error desconocido';
+        } else {
+          errorMessage = parts[1];
+        }
+
+        if (int.tryParse(parts[1]) != null) {
+          errorSintax = getWifiErrorSintax(int.parse(parts[1]));
+        }
+      }
+    }
+
+    setState(() {});
+  }
+
+  void subscribeToWifiStatus() async {
+    printLog('Se subscribio a wifi');
+    await bluetoothManager.toolsUuid.setNotifyValue(true);
+
+    final wifiSub =
+        bluetoothManager.toolsUuid.onValueReceived.listen((List<int> status) {
+      updateWifiValues(status);
+    });
+
+    bluetoothManager.device.cancelWhenDisconnected(wifiSub);
+  }
+
+  //BOTH GEN
+
   void sendTemperature(int temp) {
     if (newGen) {
       final map = {
@@ -552,7 +551,6 @@ class HeladeraPageState extends State<HeladeraPage> {
       ],
 
       //*- Página 3 CONTROL -*\\
-      //NEW GEN
       Scaffold(
         backgroundColor: color4,
         body: Center(
@@ -564,20 +562,23 @@ class HeladeraPageState extends State<HeladeraPage> {
                 TextSpan(
                   text: _wstatus
                       ? _fstatus
-                          ? 'Enfriando'
+                          ? 'Calentando'
                           : 'Encendido'
                       : 'Apagado',
                   style: TextStyle(
-                      color: _wstatus
-                          ? _fstatus
-                              ? Colors.lightBlueAccent[600]
-                              : Colors.green
-                          : Colors.red,
-                      fontSize: 30),
+                    color: _wstatus
+                        ? _fstatus
+                            ? Colors.amber[600]
+                            : Colors.green
+                        : Colors.red,
+                    fontSize: 30,
+                  ),
                 ),
               ),
               if (canControl) ...[
-                const SizedBox(height: 30),
+                const SizedBox(
+                  height: 30,
+                ),
                 Transform.scale(
                   scale: 3.0,
                   child: Switch(
@@ -590,14 +591,17 @@ class HeladeraPageState extends State<HeladeraPage> {
                       turnDeviceOn(value);
                       setState(() {
                         _wstatus = value;
-                        bluetoothManager.data['w_status'] = value;
                       });
                     },
                   ),
                 ),
               ],
-              const SizedBox(height: 50),
-              buildText(text: 'Temperatura de corte: ${_wtemp.round()} °C'),
+              const SizedBox(
+                height: 50,
+              ),
+              buildText(
+                text: 'Temperatura de corte: ${_wtemp.round().toString()} °C',
+              ),
               if (canControl) ...[
                 SizedBox(
                   width: MediaQuery.of(context).size.width * 0.8,
@@ -609,7 +613,7 @@ class HeladeraPageState extends State<HeladeraPage> {
                       activeTrackColor: color0,
                       inactiveTrackColor: color3,
                       thumbShape: IconThumbSlider(
-                        iconData: _fstatus ? Icons.ac_unit : Icons.check,
+                        iconData: _fstatus ? Icons.water_drop : Icons.check,
                         thumbRadius: 28,
                       ),
                     ),
@@ -617,21 +621,22 @@ class HeladeraPageState extends State<HeladeraPage> {
                       value: _wtemp,
                       onChanged: (value) {
                         setState(() {
-                          _wtemp = value.round().toDouble();
+                          _wtemp = value;
                         });
                       },
                       onChangeEnd: (value) {
                         printLog(value);
-                        bluetoothManager.data['w_temp'] = _wtemp;
                         sendTemperature(value.round());
                       },
-                      min: -30,
-                      max: 30,
+                      min: 15,
+                      max: 70,
                     ),
                   ),
                 ),
               ],
-              const SizedBox(height: 30),
+              const SizedBox(
+                height: 30,
+              ),
               SizedBox(
                 width: 300,
                 child: !roomTempSended
@@ -641,10 +646,16 @@ class HeladeraPageState extends State<HeladeraPage> {
                         hint: '',
                         keyboard: TextInputType.number,
                         onSubmitted: (value) {
-                          registerActivity(pc, sn,
-                              'Se cambió la temperatura ambiente de $_actualTemp°C a $value°C');
+                          registerActivity(
+                            pc,
+                            sn,
+                            'Se cambió la temperatura ambiente de $_actualTemp°C a $value°C',
+                          );
                           sendRoomTemperature(value);
-                          registerTemp(pc, sn);
+                          registerTemp(
+                            pc,
+                            sn,
+                          );
                           showToast('Temperatura ambiente seteada');
                           setState(() {
                             roomTempSended = true;
@@ -658,14 +669,18 @@ class HeladeraPageState extends State<HeladeraPage> {
                             text:
                                 'La temperatura ambiente ya fue seteada\npor este legajo el dia \n$tempDate',
                             style: const TextStyle(
-                                color: color4, fontWeight: FontWeight.bold),
+                              color: color4,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                         fontSize: 20.0,
                         textAlign: TextAlign.center,
                       ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(
+                height: 30,
+              ),
               buildText(
                 text: '',
                 textSpans: [
@@ -695,10 +710,7 @@ class HeladeraPageState extends State<HeladeraPage> {
                       const Duration(seconds: 1),
                       (Timer t) {
                         if (recording) {
-                          recordedData.add([
-                            DateTime.now(),
-                            _actualTemp,
-                          ]);
+                          recordedData.add([DateTime.now(), _actualTemp]);
                         }
                       },
                     );
@@ -715,21 +727,26 @@ class HeladeraPageState extends State<HeladeraPage> {
                   color: color4,
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(
+                height: 10,
+              ),
               if (factoryMode) ...[
                 buildText(
                   text: '',
                   textSpans: [
                     const TextSpan(
                       text: 'Mapeo de temperatura:\n',
-                      style:
-                          TextStyle(color: color4, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: color4,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     TextSpan(
                       text: _tempmap ? 'REALIZADO' : 'NO REALIZADO',
                       style: TextStyle(
-                          color: tempMap ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.bold),
+                        color: _tempmap ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                   fontSize: 20.0,
@@ -739,141 +756,13 @@ class HeladeraPageState extends State<HeladeraPage> {
                 buildButton(
                   text: 'Iniciar mapeo temperatura',
                   onPressed: () {
-                    registerActivity(pc, sn,
-                        'Se inicio el mapeo de temperatura en el equipo');
+                    registerActivity(
+                      pc,
+                      sn,
+                      'Se inicio el mapeo de temperatura en el equipo',
+                    );
                     startTempMap();
                     showToast('Iniciando mapeo de temperatura');
-                  },
-                ),
-                const SizedBox(
-                  height: 10,
-                ),
-                buildButton(
-                  text: 'Ciclado fijo',
-                  onPressed: () {
-                    registerActivity(pc, sn,
-                        'Se mando el ciclado de la válvula de este equipo');
-                    if (newGen) {
-                      final map = {
-                        'cycle': {'iter': 5, 'delay': 1000}
-                      };
-                      List<int> messagePackData = serialize(map);
-                      bluetoothManager.appDataUuid.write(messagePackData);
-                    } else {
-                      String data = '$pc[13](1000#5)';
-                      bluetoothManager.toolsUuid.write(data.codeUnits);
-                    }
-                  },
-                ),
-                const SizedBox(
-                  height: 10,
-                ),
-                buildButton(
-                  text: 'Configurar ciclado',
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        final TextEditingController cicleController =
-                            TextEditingController();
-                        final TextEditingController timeController =
-                            TextEditingController();
-                        return AlertDialog(
-                          backgroundColor: color1,
-                          title: const Center(
-                            child: Text(
-                              'Especificar parametros del ciclador:',
-                              style: TextStyle(
-                                  color: color4, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 300,
-                                child: TextField(
-                                  style: const TextStyle(color: color4),
-                                  controller: cicleController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Ingrese cantidad de ciclos',
-                                    hintText: 'Certificación: 1000',
-                                    labelStyle: TextStyle(color: color4),
-                                    hintStyle: TextStyle(color: color4),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(
-                                height: 20,
-                              ),
-                              SizedBox(
-                                width: 300,
-                                child: TextField(
-                                  style: const TextStyle(color: color4),
-                                  controller: timeController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Ingrese duración de los ciclos',
-                                    hintText: 'Recomendado: 1000',
-                                    suffixText: '(mS)',
-                                    suffixStyle: TextStyle(
-                                      color: color4,
-                                    ),
-                                    labelStyle: TextStyle(
-                                      color: color4,
-                                    ),
-                                    hintStyle: TextStyle(
-                                      color: color4,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                navigatorKey.currentState!.pop();
-                              },
-                              child: const Text(
-                                'Cancelar',
-                                style: TextStyle(color: color4),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                int cicle = int.parse(cicleController.text) * 2;
-                                registerActivity(pc, sn,
-                                    'Se mando el ciclado de la válvula de este equipo\nMilisegundos: ${timeController.text}\nIteraciones:$cicle');
-
-                                if (newGen) {
-                                  final map = {
-                                    'cycle': {
-                                      'iter': cicle,
-                                      'delay': int.parse(timeController.text)
-                                    }
-                                  };
-                                  List<int> messagePackData = serialize(map);
-                                  bluetoothManager.appDataUuid
-                                      .write(messagePackData);
-                                } else {
-                                  String data =
-                                      '$pc[13](${timeController.text}#$cicle)';
-                                  bluetoothManager.toolsUuid
-                                      .write(data.codeUnits);
-                                }
-
-                                navigatorKey.currentState!.pop();
-                              },
-                              child: const Text('Iniciar proceso',
-                                  style: TextStyle(color: color4)),
-                            ),
-                          ],
-                        );
-                      },
-                    );
                   },
                 ),
                 const SizedBox(
@@ -884,8 +773,10 @@ class HeladeraPageState extends State<HeladeraPage> {
                   textSpans: [
                     const TextSpan(
                       text: 'Distancias de control: ',
-                      style:
-                          TextStyle(color: color4, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: color4,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                   fontSize: 20.0,
@@ -899,8 +790,15 @@ class HeladeraPageState extends State<HeladeraPage> {
                   onSubmitted: (value) {
                     if (int.parse(value) <= 5000 && int.parse(value) >= 3000) {
                       registerActivity(
-                          pc, sn, 'Se modifico la distancia de encendido');
-                      putDistanceOn(pc, sn, value);
+                        pc,
+                        sn,
+                        'Se modifico la distancia de encendido',
+                      );
+                      putDistanceOn(
+                        pc,
+                        sn,
+                        value,
+                      );
                     } else {
                       showToast('Parametros no permitidos');
                     }
@@ -917,18 +815,26 @@ class HeladeraPageState extends State<HeladeraPage> {
                   onSubmitted: (value) {
                     if (int.parse(value) <= 300 && int.parse(value) >= 100) {
                       registerActivity(
-                          pc, sn, 'Se modifico la distancia de apagado');
-                      putDistanceOff(pc, sn, value);
+                        pc,
+                        sn,
+                        'Se modifico la distancia de apagado',
+                      );
+                      putDistanceOff(
+                        pc,
+                        sn,
+                        value,
+                      );
                     } else {
                       showToast('Parametros no permitidos');
                     }
                   },
                 ),
                 const SizedBox(height: 20),
-                // Eliminamos el padding extra que causaba el overflow
-                // Padding(
-                //   padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
-                // ),
+                Padding(
+                  padding: EdgeInsets.only(
+                    bottom: bottomBarHeight + 20,
+                  ),
+                ),
               ],
             ],
           ),
@@ -966,16 +872,19 @@ class HeladeraPageState extends State<HeladeraPage> {
               content: Row(
                 children: [
                   Image.asset(
-                      EasterEggs.legajosMeme.contains(legajoConectado)
-                          ? 'assets/eg/DSC.gif'
-                          : 'assets/Loading.gif',
-                      width: 100,
-                      height: 100),
+                    EasterEggs.legajosMeme.contains(legajoConectado)
+                        ? 'assets/eg/DSC.gif'
+                        : 'assets/Loading.gif',
+                    width: 100,
+                    height: 100,
+                  ),
                   Container(
                     margin: const EdgeInsets.only(left: 15),
                     child: const Text(
                       "Desconectando...",
-                      style: TextStyle(color: color4),
+                      style: TextStyle(
+                        color: color4,
+                      ),
                     ),
                   ),
                 ],
@@ -1017,11 +926,12 @@ class HeladeraPageState extends State<HeladeraPage> {
                     content: Row(
                       children: [
                         Image.asset(
-                            EasterEggs.legajosMeme.contains(legajoConectado)
-                                ? 'assets/eg/DSC.gif'
-                                : 'assets/Loading.gif',
-                            width: 100,
-                            height: 100),
+                          EasterEggs.legajosMeme.contains(legajoConectado)
+                              ? 'assets/eg/DSC.gif'
+                              : 'assets/Loading.gif',
+                          width: 100,
+                          height: 100,
+                        ),
                         Container(
                           margin: const EdgeInsets.only(left: 15),
                           child: const Text(

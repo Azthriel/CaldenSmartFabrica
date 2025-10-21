@@ -309,6 +309,7 @@ class RollerPageState extends State<RollerPage> {
   @override
   initState() {
     super.initState();
+    processValues();
     if (newGen) {
       subToWifiData();
       subToAppData();
@@ -534,8 +535,54 @@ class RollerPageState extends State<RollerPage> {
       printLog('Datos App recibidos: $map');
 
       setState(() {
-        bluetoothManager.data.addAll(appMap);
-        processValues();
+        appMap.containsKey('roller_position_degreees')
+            ? _positionInDegrees = appMap['roller_position_degrees']
+            : null;
+        appMap.containsKey('roller_position')
+            ? _actualPosition = appMap['roller_position']
+            : null;
+        appMap.containsKey('roller_target_position')
+            ? _workingPosition = appMap['roller_target_position']
+            : null;
+        appMap.containsKey('roller_moving')
+            ? _rollermoving = appMap['roller_moving']
+            : null;
+        appMap.containsKey('roller_length')
+            ? _rollerLength = appMap['roller_length'].toString()
+            : null;
+        appMap.containsKey('roller_polarity')
+            ? _rollerPolarity = appMap['roller_polarity']
+            : null;
+        appMap.containsKey('contrapulse_time')
+            ? _contrapulseTime = appMap['contrapulse_time'].toString()
+            : null;
+        appMap.containsKey('motor_rpm')
+            ? _rollerRPM = appMap['motor_rpm'].toString()
+            : null;
+        appMap.containsKey('microstep')
+            ? _rollerMicroStep = appMap['microstep'].toString()
+            : null;
+        appMap.containsKey('motor_current_max')
+            ? _rollerIMAX = appMap['motor_current_max'].toString()
+            : null;
+        appMap.containsKey('motor_current_run')
+            ? _rollerIRMSRUN = appMap['motor_current_run'].toString()
+            : null;
+        appMap.containsKey('motor_current_hold')
+            ? _rollerIRMSHOLD = appMap['motor_current_hold'].toString()
+            : null;
+        appMap.containsKey('free_wheeling')
+            ? _rollerFreewheeling = appMap['free_wheeling']
+            : null;
+        appMap.containsKey('tpwm_thrs')
+            ? _rollerTPWMTHRS = appMap['tpwm_thrs'].toString()
+            : null;
+        appMap.containsKey('tcool_thrs')
+            ? _rollerTCOOLTHRS = appMap['tcool_thrs'].toString()
+            : null;
+        appMap.containsKey('sg_thrs')
+            ? _rollerSGTHRS = appMap['sg_thrs'].toString()
+            : null;
       });
     });
 
@@ -621,8 +668,8 @@ class RollerPageState extends State<RollerPage> {
       // printLog(parts);
       if (context.mounted) {
         setState(() {
-          actualPosition = int.parse(parts[0]);
-          rollerMoving = parts[1] == '1';
+          _actualPosition = int.parse(parts[0]);
+          _rollermoving = parts[1] == '1';
         });
       }
     });
@@ -1752,14 +1799,12 @@ class RollerPageState extends State<RollerPage> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: color1,
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                deviceName,
-                style: const TextStyle(color: color4),
-              ),
-            ],
+          title: Text(
+            deviceName,
+            style: const TextStyle(
+              color: color4,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new),
