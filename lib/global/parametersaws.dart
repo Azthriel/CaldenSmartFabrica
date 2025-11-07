@@ -1117,6 +1117,50 @@ class ParametersAWSState extends State<ParametersAWS> {
                     ),
                     const SizedBox(height: 20),
                   ],
+                  if (productCode == '023430_IOT') ...[
+                    const SizedBox(height: 20),
+                    buildText(
+                      text: '',
+                      textSpans: [
+                        const TextSpan(
+                          text: 'Histórico de temperaturas premium:\n',
+                          style: TextStyle(
+                              color: color4, fontWeight: FontWeight.bold),
+                        ),
+                        TextSpan(
+                          text:
+                              historicTempPremium ? 'Activado' : 'Desactivado',
+                          style: TextStyle(
+                              color: historicTempPremium
+                                  ? Colors.green
+                                  : Colors.red,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                      fontSize: 20.0,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 10),
+                    buildButton(
+                      text: historicTempPremium ? 'Desactivar' : 'Activar',
+                      onPressed: () {
+                        putHistoricTempPremium(
+                            productCode,
+                            serialNumberController.text.trim(),
+                            !historicTempPremium);
+                        registerActivity(
+                          productCode,
+                          serialNumberController.text.trim(),
+                          historicTempPremium
+                              ? 'Se desactivo el beneficio histórico de temperaturas premium'
+                              : 'Se activo el beneficio histórico de temperaturas premium',
+                        );
+                        setState(() {
+                          historicTempPremium = !historicTempPremium;
+                        });
+                      },
+                    )
+                  ],
                 ] else ...[
                   const Center(
                     child: Column(

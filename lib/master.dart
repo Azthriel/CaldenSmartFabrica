@@ -19,7 +19,7 @@ import 'package:msgpack_dart/msgpack_dart.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.42';
+String appVersionNumber = '1.0.45';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -114,6 +114,7 @@ String distanceOff = '';
 String secAdmDate = '';
 String atDate = '';
 List<String> secondaryAdmins = [];
+
 //*-Sistema de owners-*\\
 
 //*-CurvedNavigationBar-*\\
@@ -190,6 +191,8 @@ bool alertMaxFlag = false;
 bool alertMinFlag = false;
 String alertMaxTemp = '';
 String alertMinTemp = '';
+Map<String, String> historicTemp = {};
+bool historicTempPremium = false;
 //*-Termómetro-*\\
 
 //*-Fluttertoast-*\\
@@ -2663,6 +2666,7 @@ class Versioner {
     printLog('GitHub API status: ${response.statusCode}');
     if (response.statusCode != 200) {
       printLog('Error listing OTA_FW/${factory ? 'F' : 'W'}: ${response.body}');
+      showToast('Error al listar firmware: ${response.statusCode}');
       throw Exception(
           'Error al listar OTA_FW/${factory ? 'F' : 'W'}: ${response.statusCode}');
     }

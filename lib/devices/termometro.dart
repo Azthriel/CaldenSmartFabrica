@@ -11,7 +11,9 @@ import 'package:caldensmartfabrica/devices/globales/resmon.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
 import 'package:caldensmartfabrica/master.dart';
 import 'package:csv/csv.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:msgpack_dart/msgpack_dart.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -23,7 +25,8 @@ class TermometroPage extends StatefulWidget {
   TermometroPageState createState() => TermometroPageState();
 }
 
-class TermometroPageState extends State<TermometroPage> {
+class TermometroPageState extends State<TermometroPage>
+    with SingleTickerProviderStateMixin {
   final PageController _pageController = PageController(initialPage: 0);
   TextEditingController tempMaxController =
       TextEditingController(text: alertMaxTemp);
@@ -34,6 +37,10 @@ class TermometroPageState extends State<TermometroPage> {
   bool recording = false;
   List<List<dynamic>> recordedData = [];
   Timer? recordTimer;
+
+  // Variables para el historial de temperatura
+  late TabController _historyTabController;
+  Map<String, String> _historicTempData = {};
 
   final String pc = DeviceManager.getProductCode(deviceName);
   final String sn = DeviceManager.extractSerialNumber(deviceName);
@@ -61,6 +68,10 @@ class TermometroPageState extends State<TermometroPage> {
 
     // Control page (siempre presente)
     if (pageType == 'control') return index;
+    index++;
+
+    // History page (siempre presente)
+    if (pageType == 'history') return index;
     index++;
 
     // Creds page (solo si accessLevel > 1)
@@ -143,6 +154,16 @@ class TermometroPageState extends State<TermometroPage> {
                   onTap: () {
                     Navigator.pop(context);
                     _navigateToTab(_getPageIndex('control'));
+                  },
+                ),
+                // History page (siempre disponible)
+                ListTile(
+                  leading: const Icon(Icons.show_chart, color: color4),
+                  title:
+                      const Text('Historial', style: TextStyle(color: color4)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _navigateToTab(_getPageIndex('history'));
                   },
                 ),
                 // Creds page (solo si accessLevel > 1)
@@ -245,6 +266,8 @@ class TermometroPageState extends State<TermometroPage> {
   @override
   void initState() {
     super.initState();
+    _historyTabController = TabController(length: 3, vsync: this);
+    _historicTempData = Map.from(historicTemp); // Copia estática de los datos
     processValues();
     if (newGen) {
       subToWifiData();
@@ -260,6 +283,7 @@ class TermometroPageState extends State<TermometroPage> {
   @override
   void dispose() {
     _pageController.dispose();
+    _historyTabController.dispose();
     tempMaxController.dispose();
     tempMinController.dispose();
     offsetController.dispose();
@@ -477,6 +501,450 @@ class TermometroPageState extends State<TermometroPage> {
 
     await Share.shareXFiles([XFile(file.path)],
         text: 'CSV TEMPERATURA (Termómetro)');
+  }
+
+  // Funciones para procesar datos históricos
+  List<FlSpot> _getHistoricDataPoints(String period) {
+    List<FlSpot> spots = [];
+    DateTime now = DateTime.now();
+
+    // Convertir el mapa a una lista de pares fecha-temperatura
+    List<MapEntry<DateTime, double>> dataPoints = [];
+
+    _historicTempData.forEach((timestamp, temp) {
+      try {
+        // Parse como UTC y convertir a hora de Buenos Aires (UTC-3)
+        DateTime dtUtc =
+            DateFormat('yyyy-MM-dd HH:mm:ss').parse(timestamp, true);
+        DateTime dtLocal = dtUtc.subtract(const Duration(hours: 3));
+        double temperature = double.parse(temp);
+        dataPoints.add(MapEntry(dtLocal, temperature));
+      } catch (e) {
+        printLog('Error parsing data: $e');
+      }
+    });
+
+    // Ordenar por fecha
+    dataPoints.sort((a, b) => a.key.compareTo(b.key));
+
+    // Filtrar según el período
+    DateTime cutoffDate;
+    switch (period) {
+      case 'daily':
+        cutoffDate = now.subtract(const Duration(hours: 24));
+        break;
+      case 'weekly':
+        cutoffDate = now.subtract(const Duration(days: 7));
+        break;
+      case 'monthly':
+        cutoffDate = now.subtract(const Duration(days: 30));
+        break;
+      default:
+        cutoffDate = now.subtract(const Duration(hours: 24));
+    }
+
+    List<MapEntry<DateTime, double>> filteredData =
+        dataPoints.where((entry) => entry.key.isAfter(cutoffDate)).toList();
+
+    // Para vista diaria: mostrar todos los datos
+    if (period == 'daily') {
+      for (int i = 0; i < filteredData.length; i++) {
+        spots.add(FlSpot(i.toDouble(), filteredData[i].value));
+      }
+    } else {
+      // Para semanal y mensual: calcular promedios por día
+      Map<String, List<double>> dailyTemps = {};
+
+      for (var entry in filteredData) {
+        String dayKey = DateFormat('yyyy-MM-dd').format(entry.key);
+        if (!dailyTemps.containsKey(dayKey)) {
+          dailyTemps[dayKey] = [];
+        }
+        dailyTemps[dayKey]!.add(entry.value);
+      }
+
+      // Ordenar las fechas y calcular promedios
+      List<String> sortedDays = dailyTemps.keys.toList()..sort();
+
+      for (int i = 0; i < sortedDays.length; i++) {
+        List<double> temps = dailyTemps[sortedDays[i]]!;
+        double avgTemp = temps.reduce((a, b) => a + b) / temps.length;
+        spots.add(FlSpot(i.toDouble(), avgTemp));
+      }
+    }
+
+    return spots;
+  }
+
+  String _getBottomTitle(int index, String period) {
+    List<MapEntry<DateTime, double>> dataPoints = [];
+    DateTime now = DateTime.now();
+
+    _historicTempData.forEach((timestamp, temp) {
+      try {
+        // Parse como UTC y convertir a hora de Buenos Aires (UTC-3)
+        DateTime dtUtc =
+            DateFormat('yyyy-MM-dd HH:mm:ss').parse(timestamp, true);
+        DateTime dtLocal = dtUtc.subtract(const Duration(hours: 3));
+        double temperature = double.parse(temp);
+        dataPoints.add(MapEntry(dtLocal, temperature));
+      } catch (e) {
+        printLog('Error parsing data: $e');
+      }
+    });
+
+    dataPoints.sort((a, b) => a.key.compareTo(b.key));
+
+    DateTime cutoffDate;
+    switch (period) {
+      case 'daily':
+        cutoffDate = now.subtract(const Duration(hours: 24));
+        break;
+      case 'weekly':
+        cutoffDate = now.subtract(const Duration(days: 7));
+        break;
+      case 'monthly':
+        cutoffDate = now.subtract(const Duration(days: 30));
+        break;
+      default:
+        cutoffDate = now.subtract(const Duration(hours: 24));
+    }
+
+    List<MapEntry<DateTime, double>> filteredData =
+        dataPoints.where((entry) => entry.key.isAfter(cutoffDate)).toList();
+
+    // Para vista diaria: usar los datos directamente
+    if (period == 'daily') {
+      if (index >= filteredData.length) return '';
+      DateTime date = filteredData[index].key;
+      return DateFormat('HH:mm').format(date);
+    } else {
+      // Para semanal y mensual: obtener las fechas agrupadas por día
+      Map<String, List<double>> dailyTemps = {};
+
+      for (var entry in filteredData) {
+        String dayKey = DateFormat('yyyy-MM-dd').format(entry.key);
+        if (!dailyTemps.containsKey(dayKey)) {
+          dailyTemps[dayKey] = [];
+        }
+        dailyTemps[dayKey]!.add(entry.value);
+      }
+
+      List<String> sortedDays = dailyTemps.keys.toList()..sort();
+
+      if (index >= sortedDays.length) return '';
+
+      DateTime date = DateFormat('yyyy-MM-dd').parse(sortedDays[index]);
+      return DateFormat('dd/MM').format(date);
+    }
+  }
+
+  Widget _buildHistoricChart(String period) {
+    List<FlSpot> spots = _getHistoricDataPoints(period);
+
+    if (spots.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.insert_chart_outlined,
+              size: 80,
+              color: color0.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'No hay datos históricos disponibles',
+              style: TextStyle(
+                color: color0,
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(left: 8.0, bottom: 16.0),
+            child: Text(
+              'Historial de Temperatura',
+              style: TextStyle(
+                color: color0,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: color1.withValues(alpha: 0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(16.0),
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: true,
+                    horizontalInterval: 20,
+                    verticalInterval: spots.length > 10
+                        ? (spots.length / 6).ceilToDouble()
+                        : 1,
+                    getDrawingHorizontalLine: (value) {
+                      return FlLine(
+                        color: color1.withValues(alpha: 0.15),
+                        strokeWidth: 1,
+                      );
+                    },
+                    getDrawingVerticalLine: (value) {
+                      return FlLine(
+                        color: color1.withValues(alpha: 0.15),
+                        strokeWidth: 1,
+                      );
+                    },
+                  ),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 32,
+                        interval: spots.length > 10
+                            ? (spots.length / 6).ceilToDouble()
+                            : 1,
+                        getTitlesWidget: (double value, TitleMeta meta) {
+                          if (value.toInt() >= spots.length) {
+                            return const Text('');
+                          }
+                          String label = _getBottomTitle(value.toInt(), period);
+                          return SideTitleWidget(
+                            axisSide: meta.axisSide,
+                            space: 8,
+                            child: Transform.rotate(
+                              angle: period == 'daily' ? 0 : -0.5,
+                              child: Text(
+                                label,
+                                style: const TextStyle(
+                                  color: color1,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: 20,
+                        getTitlesWidget: (double value, TitleMeta meta) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: Text(
+                              '${value.toInt()}°',
+                              style: const TextStyle(
+                                color: color1,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              ),
+                            ),
+                          );
+                        },
+                        reservedSize: 44,
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(
+                    show: true,
+                    border: Border.all(
+                      color: color1.withValues(alpha: 0.3),
+                      width: 2,
+                    ),
+                  ),
+                  minX: 0,
+                  maxX: (spots.length - 1).toDouble(),
+                  minY: -55,
+                  maxY: 125,
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: spots,
+                      isCurved: true,
+                      curveSmoothness: 0.35,
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF6A11CB),
+                          Color(0xFF2575FC),
+                        ],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      barWidth: 4,
+                      isStrokeCapRound: true,
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, barData, index) {
+                          return FlDotCirclePainter(
+                            radius: 4,
+                            color: Colors.white,
+                            strokeWidth: 3,
+                            strokeColor: const Color(0xFF2575FC),
+                          );
+                        },
+                      ),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        gradient: LinearGradient(
+                          colors: [
+                            const Color(0xFF6A11CB).withValues(alpha: 0.3),
+                            const Color(0xFF2575FC).withValues(alpha: 0.05),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
+                    ),
+                  ],
+                  lineTouchData: LineTouchData(
+                    enabled: true,
+                    touchTooltipData: LineTouchTooltipData(
+                      getTooltipColor: (touchedSpot) => color1,
+                      tooltipRoundedRadius: 12,
+                      tooltipPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+                        return touchedBarSpots.map((barSpot) {
+                          return LineTooltipItem(
+                            '${barSpot.y.toStringAsFixed(1)}°C',
+                            const TextStyle(
+                              color: color4,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          );
+                        }).toList();
+                      },
+                    ),
+                    touchCallback:
+                        (FlTouchEvent event, LineTouchResponse? response) {},
+                    handleBuiltInTouches: true,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: color1.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.info_outline, color: color1, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    period == 'daily'
+                        ? 'Lecturas cada 30 minutos'
+                        : 'Promedio diario de temperaturas',
+                    style: const TextStyle(
+                      color: color1,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryTab() {
+    return Column(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: color1,
+            boxShadow: [
+              BoxShadow(
+                color: color1.withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TabBar(
+            controller: _historyTabController,
+            labelColor: color4,
+            unselectedLabelColor: color4.withValues(alpha: 0.5),
+            indicatorColor: color4,
+            indicatorWeight: 3,
+            labelStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.normal,
+            ),
+            tabs: const [
+              Tab(
+                icon: Icon(Icons.today, size: 20),
+                text: 'Diaria',
+              ),
+              Tab(
+                icon: Icon(Icons.calendar_view_week, size: 20),
+                text: 'Semanal',
+              ),
+              Tab(
+                icon: Icon(Icons.calendar_month, size: 20),
+                text: 'Mensual',
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _historyTabController,
+            children: [
+              _buildHistoricChart('daily'),
+              _buildHistoricChart('weekly'),
+              _buildHistoricChart('monthly'),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -702,6 +1170,12 @@ class TermometroPageState extends State<TermometroPage> {
             ),
           ),
         ),
+      ),
+
+      //*- Página HISTORIAL -*\\
+      Scaffold(
+        backgroundColor: color4,
+        body: _buildHistoryTab(),
       ),
 
       if (accessLevel > 1) ...[

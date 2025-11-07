@@ -36,6 +36,17 @@ Future<void> queryItems(String pc, String sn) async {
             item['distanceControlActive']?.boolValue ?? false;
         riegoActive = item['riegoActive']?.boolValue ?? false;
         riegoMaster = item['riegoMaster']?.s ?? '';
+
+        // Leer historicTemp
+        if (item['historicTemp']?.m != null) {
+          historicTemp.clear();
+          item['historicTemp']!.m!.forEach((key, value) {
+            if (value.n != null) {
+              historicTemp[key] = value.n!;
+            }
+          });
+        }
+        historicTempPremium = item['historicTempPremium']?.boolValue ?? false;
       }
     } else {
       printLog('Dispositivo no encontrado');
@@ -255,5 +266,21 @@ Future<void> removeRiegoMaster(String pc, String sn) async {
     printLog('RiegoMaster eliminado perfectamente $response');
   } catch (e) {
     printLog('Error eliminando riegoMaster: $e');
+  }
+}
+
+Future<void> putHistoricTempPremium(String pc, String sn, bool premium) async {
+  try {
+    final response = await service.updateItem(tableName: 'sime-domotica', key: {
+      'product_code': AttributeValue(s: pc),
+      'device_id': AttributeValue(s: sn),
+    }, attributeUpdates: {
+      'historicTempPremium':
+          AttributeValueUpdate(value: AttributeValue(boolValue: premium)),
+    });
+
+    printLog('Item escrito perfectamente $response');
+  } catch (e) {
+    printLog('Error inserting item: $e');
   }
 }

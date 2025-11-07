@@ -53,12 +53,14 @@ class ScanPageState extends State<ScanPage> {
             deviceRssi[result.device.remoteId.toString()] = result.rssi;
             if (!devices
                 .any((device) => device.remoteId == result.device.remoteId)) {
-              setState(() {
-                devices.add(result.device);
-                // devices
-                //     .sort((a, b) => a.platformName.compareTo(b.platformName));
-                filteredDevices = devices;
-              });
+              if (mounted) {
+                setState(() {
+                  devices.add(result.device);
+                  // devices
+                  //     .sort((a, b) => a.platformName.compareTo(b.platformName));
+                  filteredDevices = devices;
+                });
+              }
             }
           }
         });

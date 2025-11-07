@@ -459,6 +459,45 @@ class ParamsTabState extends State<ParamsTab> {
                 ],
                 const SizedBox(height: 20),
               ],
+              if (pc == '023430_IOT') ...[
+                const SizedBox(height: 20),
+                buildText(
+                  text: '',
+                  textSpans: [
+                    const TextSpan(
+                      text: 'Histórico de temperaturas premium:\n',
+                      style:
+                          TextStyle(color: color4, fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text: historicTempPremium ? 'Activado' : 'Desactivado',
+                      style: TextStyle(
+                          color:
+                              historicTempPremium ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                  fontSize: 20.0,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                buildButton(
+                  text: historicTempPremium ? 'Desactivar' : 'Activar',
+                  onPressed: () {
+                    putHistoricTempPremium(pc, sn, !historicTempPremium);
+                    registerActivity(
+                      pc,
+                      sn,
+                      historicTempPremium
+                          ? 'Se desactivo el beneficio histórico de temperaturas premium'
+                          : 'Se activo el beneficio histórico de temperaturas premium',
+                    );
+                    setState(() {
+                      historicTempPremium = !historicTempPremium;
+                    });
+                  },
+                )
+              ],
               Padding(
                 padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
               ),
