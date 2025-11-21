@@ -498,6 +498,83 @@ class ParamsTabState extends State<ParamsTab> {
                   },
                 )
               ],
+              if (discTimes.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                buildText(
+                  text: 'Tiempos de desconexión:',
+                  fontSize: 20.0,
+                  fontWeight: FontWeight.bold,
+                ),
+                const SizedBox(height: 10),
+                FractionallySizedBox(
+                  alignment: Alignment.center,
+                  widthFactor: 0.9,
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 20.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 12.0),
+                    decoration: BoxDecoration(
+                      color: color0,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: color4,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          for (int i = discTimes.length - 1; i >= 0; i--) ...[
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 15, vertical: 10),
+                              child: () {
+                                final dateTime =
+                                    DateTime.fromMillisecondsSinceEpoch(
+                                        int.parse(discTimes[i]));
+                                final date =
+                                    '${dateTime.year}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.day.toString().padLeft(2, '0')}';
+                                final time =
+                                    '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')}';
+                                return Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: [
+                                    Text(
+                                      date,
+                                      style: const TextStyle(
+                                        fontSize: 16.0,
+                                        color: color4,
+                                        fontWeight: FontWeight.normal,
+                                      ),
+                                    ),
+                                    Text(
+                                      time,
+                                      style: const TextStyle(
+                                        fontSize: 16.0,
+                                        color: color4,
+                                        fontWeight: FontWeight.normal,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }(),
+                            ),
+                            if (i > 0)
+                              const Divider(
+                                  color: color1, height: 1, thickness: 1),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
               Padding(
                 padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
               ),

@@ -19,7 +19,7 @@ import 'package:msgpack_dart/msgpack_dart.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.45';
+String appVersionNumber = '1.0.47';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -208,6 +208,10 @@ WiFiStoredNotifier wifiStoredNotifier = WiFiStoredNotifier();
 bool riegoActive = false;
 String riegoMaster = '';
 //*-Riego-*\\
+
+//*-Historial de desconexión-*\\
+List<String> discTimes = [];
+//*-Historial de desconexión-*\\
 
 // // -------------------------------------------------------------------------------------------------------------\\ \\
 

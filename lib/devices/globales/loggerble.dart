@@ -99,7 +99,7 @@ class LoggerBlePageState extends State<LoggerBlePage> {
     try {
       String content = 'Datos inválidos';
       String level = 'INFO';
-      String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      int timestampMs = DateTime.now().millisecondsSinceEpoch;
 
       // Si es un mapa (JSON decodificado), extraemos la información
       if (logData is Map) {
@@ -116,6 +116,16 @@ class LoggerBlePageState extends State<LoggerBlePage> {
             logData['lvl']?.toString() ??
             logData['severity']?.toString() ??
             'INFO';
+
+        // Extraer el timestamp (siempre viene en milisegundos)
+        if (logData['timestamp'] != null) {
+          try {
+            timestampMs = int.parse(logData['timestamp'].toString());
+          } catch (e) {
+            // Si falla el parsing, usar tiempo actual
+            timestampMs = DateTime.now().millisecondsSinceEpoch;
+          }
+        }
       }
       // Si es un string directo
       else if (logData is String) {
@@ -129,15 +139,15 @@ class LoggerBlePageState extends State<LoggerBlePage> {
       return {
         'content': content,
         'level': level.toUpperCase(),
-        'timestamp': timestamp,
-        'raw_timestamp': DateTime.now(),
+        'timestampMs': timestampMs,
+        'formattedTime': _formatTimestampFromMs(timestampMs),
       };
     } catch (e) {
       return {
         'content': 'Error formateando: $e',
         'level': 'ERROR',
-        'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
-        'raw_timestamp': DateTime.now(),
+        'timestampMs': DateTime.now().millisecondsSinceEpoch,
+        'formattedTime': _formatTimestampFromMs(DateTime.now().millisecondsSinceEpoch),
       };
     }
   }
@@ -159,16 +169,15 @@ class LoggerBlePageState extends State<LoggerBlePage> {
     }
   }
 
-  // Función para formatear timestamp con timezone de Argentina
-  String _formatTimestamp() {
-    // Obtener hora actual argentina con máxima precisión
-    DateTime nowArgentina = DateTime.now();
+  // Función para formatear timestamp desde milisegundos
+  String _formatTimestampFromMs(int timestampMs) {
+    DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(timestampMs);
 
-    // Formatear con milisegundos y microsegundos
-    String hour = nowArgentina.hour.toString().padLeft(2, '0');
-    String minute = nowArgentina.minute.toString().padLeft(2, '0');
-    String second = nowArgentina.second.toString().padLeft(2, '0');
-    String millisecond = nowArgentina.millisecond.toString().padLeft(3, '0');
+    // Formatear con milisegundos
+    String hour = dateTime.hour.toString().padLeft(2, '0');
+    String minute = dateTime.minute.toString().padLeft(2, '0');
+    String second = dateTime.second.toString().padLeft(2, '0');
+    String millisecond = dateTime.millisecond.toString().padLeft(3, '0');
 
     return '$hour:$minute:$second.$millisecond';
   }
@@ -264,7 +273,7 @@ class LoggerBlePageState extends State<LoggerBlePage> {
                 final formattedMessage = _formatLogData(logEntry);
                 setState(() {
                   registeredLogMessages.insert(0,
-                      '${formattedMessage['content']} | ${_formatTimestamp()}');
+                      '${formattedMessage['content']} | ${formattedMessage['formattedTime']}');
                 });
               }
             } else {
@@ -272,7 +281,7 @@ class LoggerBlePageState extends State<LoggerBlePage> {
               final formattedMessage = _formatLogData(decoded);
               setState(() {
                 registeredLogMessages.insert(0,
-                    '${formattedMessage['content']} | ${_formatTimestamp()}');
+                    '${formattedMessage['content']} | ${formattedMessage['formattedTime']}');
               });
             }
 
@@ -355,7 +364,7 @@ class LoggerBlePageState extends State<LoggerBlePage> {
             final formattedMessage = _formatLogData(decoded);
             setState(() {
               registeredLogMessages.insert(0,
-                  'Respuesta: ${formattedMessage['content']} | ${_formatTimestamp()}');
+                  'Respuesta: ${formattedMessage['content']} | ${formattedMessage['formattedTime']}');
             });
           }
         } catch (e) {
@@ -578,7 +587,7 @@ class LoggerBlePageState extends State<LoggerBlePage> {
                                   ),
                                   // Timestamp
                                   Text(
-                                    _formatTimestamp(),
+                                    message['formattedTime'] ?? '',
                                     style: TextStyle(
                                       color: color3,
                                       fontSize: screenHeight < 700 ? 10 : 12,

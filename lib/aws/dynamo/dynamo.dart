@@ -36,6 +36,12 @@ Future<void> queryItems(String pc, String sn) async {
             item['distanceControlActive']?.boolValue ?? false;
         riegoActive = item['riegoActive']?.boolValue ?? false;
         riegoMaster = item['riegoMaster']?.s ?? '';
+        List<AttributeValue> discTimeList = item['discTime']?.l ?? [];
+        for (AttributeValue timeValue in discTimeList) {
+          if (timeValue.n != null) {
+            discTimes.add(timeValue.n!);
+          }
+        }
 
         // Leer historicTemp
         if (item['historicTemp']?.m != null) {
