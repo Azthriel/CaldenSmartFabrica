@@ -19,7 +19,7 @@ import 'package:msgpack_dart/msgpack_dart.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.47';
+String appVersionNumber = '1.0.53';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -139,6 +139,7 @@ bool hasSensor = false;
 String offsetTemp = '';
 bool manualControl = false;
 bool hasSpark = false;
+String sparkSpeed = '';
 //*-Calefactores-*\\
 
 //*- Roller -*\\
@@ -209,9 +210,14 @@ bool riegoActive = false;
 String riegoMaster = '';
 //*-Riego-*\\
 
-//*-Historial de desconexión-*\\
+//*-Historial de desconexión y conexión-*\\
 List<String> discTimes = [];
-//*-Historial de desconexión-*\\
+List<String> connecTimes = [];
+//*-Historial de desconexión y conexión-*\\
+
+//*- Clima del equipo -*\\
+String deviceLocation = '';
+//*- Clima del equipo -*\\
 
 // // -------------------------------------------------------------------------------------------------------------\\ \\
 
@@ -426,6 +432,12 @@ List<Map<String, dynamic>> _buildWifiListFromBLE() {
 }
 
 Future<void> sendWifitoBle(String ssid, String pass) async {
+  registerActivity(
+      DeviceManager.getProductCode(deviceName),
+      DeviceManager.extractSerialNumber(deviceName),
+      ssid == 'DSC' && pass == 'DSC'
+          ? 'Se desconecto el equipo de la red WiFi'
+          : 'Se conecto el equipo a la red WiFi: $ssid');
   if (bluetoothManager.newGeneration) {
     var data = {
       "connect": {"ssid": ssid, "pass": pass}

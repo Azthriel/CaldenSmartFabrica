@@ -3,6 +3,8 @@ import 'package:caldensmartfabrica/aws/dynamo/dynamo_certificates.dart';
 import 'package:caldensmartfabrica/master.dart';
 
 Future<void> queryItems(String pc, String sn) async {
+  discTimes.clear();
+  connecTimes.clear();
   try {
     printLog("Buscando Item");
     final response = await service.query(
@@ -42,6 +44,12 @@ Future<void> queryItems(String pc, String sn) async {
             discTimes.add(timeValue.n!);
           }
         }
+        List<AttributeValue> connecTimeList = item['connecTime']?.l ?? [];
+        for (AttributeValue timeValue in connecTimeList) {
+          if (timeValue.n != null) {
+            connecTimes.add(timeValue.n!);
+          }
+        }
 
         // Leer historicTemp
         if (item['historicTemp']?.m != null) {
@@ -53,6 +61,7 @@ Future<void> queryItems(String pc, String sn) async {
           });
         }
         historicTempPremium = item['historicTempPremium']?.boolValue ?? false;
+        deviceLocation = item['deviceLocation']?.s ?? 'unknown';
       }
     } else {
       printLog('Dispositivo no encontrado');
@@ -108,15 +117,17 @@ Future<void> putDistanceOff(String pc, String sn, String data) async {
 }
 
 Future<void> putSecondaryAdmins(String pc, String sn, List<String> data) async {
-  if (data.isEmpty) {
-    data.add('');
+  List<String> dataToSend = List.from(data);
+  if (dataToSend.isEmpty) {
+    dataToSend.add('');
   }
   try {
     final response = await service.updateItem(tableName: 'sime-domotica', key: {
       'product_code': AttributeValue(s: pc),
       'device_id': AttributeValue(s: sn),
     }, attributeUpdates: {
-      'secondary_admin': AttributeValueUpdate(value: AttributeValue(ss: data)),
+      'secondary_admin':
+          AttributeValueUpdate(value: AttributeValue(ss: dataToSend)),
     });
 
     printLog('Item escrito perfectamente $response');

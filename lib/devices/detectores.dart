@@ -88,7 +88,6 @@ class DetectorPageState extends State<DetectorPage> {
   //*-Light-*\\
   double _sliderValue = 100.0;
   //*-Light-*\\
-  bool deviceEBBR = false;
 
   final String pc = DeviceManager.getProductCode(deviceName);
   final String sn = DeviceManager.extractSerialNumber(deviceName);
@@ -142,11 +141,8 @@ class DetectorPageState extends State<DetectorPage> {
       index++;
     }
 
-    // Vars page (si disponible)
-    if (bluetoothManager.hasVars) {
-      if (pageType == 'vars') return index;
-      index++;
-    }
+    if (pageType == 'vars') return index;
+    index++;
 
     // OTA page (siempre presente)
     if (pageType == 'ota') return index;
@@ -267,16 +263,16 @@ class DetectorPageState extends State<DetectorPage> {
                       _navigateToTab(_getPageIndex('monitor'));
                     },
                   ),
-                if (bluetoothManager.hasVars)
-                  ListTile(
-                    leading: const Icon(Icons.vibration_sharp, color: color4),
-                    title: const Text('Variables',
-                        style: TextStyle(color: color4)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _navigateToTab(_getPageIndex('vars'));
-                    },
-                  ),
+
+                ListTile(
+                  leading: const Icon(Icons.vibration_sharp, color: color4),
+                  title:
+                      const Text('Variables', style: TextStyle(color: color4)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _navigateToTab(_getPageIndex('vars'));
+                  },
+                ),
                 // OTA page (siempre disponible)
                 ListTile(
                   leading: const Icon(Icons.send, color: color4),
@@ -369,9 +365,6 @@ class DetectorPageState extends State<DetectorPage> {
                 0
             : null;
 
-        bluetoothManager.data.containsKey('device_ebbr')
-            ? deviceEBBR = bluetoothManager.data['device_ebbr'] == true
-            : null;
         bluetoothManager.data.containsKey('regulation_done')
             ? regulationDone = bluetoothManager.data['regulation_done'] == true
             : null;
@@ -673,9 +666,6 @@ class DetectorPageState extends State<DetectorPage> {
                 int.tryParse(appMap['vrms02_offset'].toString()) ?? 0
             : null;
 
-        appMap.containsKey('device_ebbr')
-            ? deviceEBBR = appMap['device_ebbr'] == true
-            : null;
         appMap.containsKey('regulation_done')
             ? regulationDone = appMap['regulation_done'] == true
             : null;
@@ -1185,14 +1175,6 @@ class DetectorPageState extends State<DetectorPage> {
     }
   }
 
-  void readVars() async {
-    varsValues = await bluetoothManager.varsUuid.read();
-    var parts2 = utf8.decode(varsValues).split(':');
-    printLog('Valores vars: $parts2');
-
-    deviceEBBR = parts2[0] == '1';
-  }
-
   //BOTH GEN
 
   void _setVcc(String newValue) {
@@ -1321,10 +1303,10 @@ class DetectorPageState extends State<DetectorPage> {
     }
   }
 
-  void _cambiarTipoDeDispositivo() {
+  void _cambiarTipoDeDispositivo(bool deviceEBBR) {
     if (newGen) {
       Map<String, dynamic> map = {
-        'set_EBBR': deviceEBBR ? false : true,
+        'set_EBBR': deviceEBBR,
       };
       List<int> encoded = serialize(map);
       try {
@@ -1334,11 +1316,12 @@ class DetectorPageState extends State<DetectorPage> {
         showToast('Error al cambiar el tipo de dispositivo');
       }
     } else {
-      String data =
-          '${DeviceManager.getProductCode(deviceName)}[11](${deviceEBBR ? 0 : 1})';
+      String data = '$pc[11](${deviceEBBR ? 1 : 0})';
 
       bluetoothManager.toolsUuid.write(data.codeUnits);
     }
+    showToast(
+        'Tipo de dispositivo cambiado. ${deviceEBBR ? 'EBBR' : 'Normal'}');
   }
 
   //! VISUAL
@@ -2400,38 +2383,30 @@ class DetectorPageState extends State<DetectorPage> {
         const ResourceMonitorPage(),
       ],
 
-      if (bluetoothManager.hasVars) ...[
-        Scaffold(
-          backgroundColor: color4,
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                buildText(
-                  text: '',
-                  textSpans: [
-                    const TextSpan(
-                      text: 'Tipo de dispositivo:\n',
-                      style:
-                          TextStyle(color: color4, fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: deviceEBBR ? '1' : '0',
-                      style: TextStyle(
-                          color: deviceEBBR ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                buildButton(
-                    text: 'Cambiar tipo', onPressed: _cambiarTipoDeDispositivo),
-                const SizedBox(height: 20),
-              ],
-            ),
+      Scaffold(
+        backgroundColor: color4,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              buildText(
+                text: 'Cambiar tipo de dispositivo:',
+              ),
+              const SizedBox(height: 20),
+              buildButton(
+                text: 'Si es EBBR',
+                onPressed: () => _cambiarTipoDeDispositivo(true),
+              ),
+              const SizedBox(height: 10),
+              buildButton(
+                text: 'No es EBBR',
+                onPressed: () => _cambiarTipoDeDispositivo(false),
+              ),
+              const SizedBox(height: 20),
+            ],
           ),
         ),
-      ],
+      ),
 
       //*- Página 7 OTA -*\\
       const OtaTab(),

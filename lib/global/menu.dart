@@ -1,4 +1,5 @@
 import 'package:caldensmartfabrica/aws/mqtt/mqtt.dart';
+import 'package:caldensmartfabrica/global/clima.dart';
 import 'package:caldensmartfabrica/global/registro.dart';
 import 'package:caldensmartfabrica/global/scan.dart';
 import 'package:caldensmartfabrica/global/toolsaws.dart';
@@ -257,7 +258,10 @@ class MenuPageState extends State<MenuPage> {
               const ScanPage(),
               if (accessLevel >= 2) const ToolsAWS(),
               if (accessLevel >= 2) const ParametersAWS(),
-              if (accessLevel >= 3) const RegistroScreen(),
+              if (accessLevel >= 3) ...[
+                const RegistroScreen(),
+                const ClimaPage(),
+              ],
               if (accessLevel >= 2) const WifiTestScreen(),
             ],
           ),
@@ -278,6 +282,7 @@ class MenuPageState extends State<MenuPage> {
                 ],
                 if (accessLevel >= 3) ...[
                   const Icon(Icons.assignment, color: color4),
+                  const Icon(Icons.wb_sunny, color: color4),
                 ],
                 if (accessLevel >= 2) ...[
                   const Icon(Icons.wifi, color: color4),

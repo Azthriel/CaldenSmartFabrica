@@ -106,6 +106,8 @@ class ScanPageState extends State<ScanPage> {
                 // Limpiar datos WiFi al desconectarse
                 wifiDataNotifier.clearWifiData();
                 wifiStoredNotifier.clearStoredNetworks();
+                discTimes.clear();
+                connecTimes.clear();
                 printLog(
                     'Razon: ${bluetoothManager.device.disconnectReason?.description}');
                 registerActivity(

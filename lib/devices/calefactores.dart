@@ -52,6 +52,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
   bool _tempmap = false;
   int _offsetTemp = 0;
   bool _manualmode = false;
+  int _sparkSpeed = 64;
 
   // Obtener el índice correcto para cada página
   int _getPageIndex(String pageType) {
@@ -250,6 +251,11 @@ class CalefactoresPageState extends State<CalefactoresPage> {
         bluetoothManager.data.containsKey('manual_mode')
             ? _manualmode = bluetoothManager.data['manual_mode'] ?? false
             : null;
+        bluetoothManager.data.containsKey('spark_speed')
+            ? _sparkSpeed = int.tryParse(
+                    (bluetoothManager.data['spark_speed'] ?? 64).toString()) ??
+                64
+            : null;
       });
     } else {
       setState(() {
@@ -260,6 +266,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
         _tempmap = tempMap;
         _offsetTemp = int.tryParse(offsetTemp) ?? 0;
         _manualmode = manualControl;
+        _sparkSpeed = int.tryParse(sparkSpeed) ?? 64;
       });
     }
   }
@@ -562,6 +569,19 @@ class CalefactoresPageState extends State<CalefactoresPage> {
     await Share.shareXFiles([XFile(file.path)], text: 'CSV TEMPERATURA');
   }
 
+  void sendSparkSpeed(int speed) {
+    if (newGen) {
+      final map = {
+        "spark_speed": speed,
+      };
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.temperatureUuid.write(messagePackData);
+    } else {
+      String data = '$pc[17]($speed)';
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
+  }
+
   //! VISUAL
   @override
   Widget build(BuildContext context) {
@@ -667,8 +687,6 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                           ignite = true;
                         });
                         while (ignite) {
-                          await Future.delayed(
-                              const Duration(milliseconds: 500));
                           if (!ignite) break;
                           if (newGen) {
                             Map<String, dynamic> command = {"cdi": true};
@@ -680,6 +698,8 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                             bluetoothManager.toolsUuid.write(data.codeUnits);
                             printLog(data);
                           }
+                          await Future.delayed(
+                              const Duration(milliseconds: 500));
                         }
                       },
                       onLongPressEnd: (LongPressEndDetails a) {
@@ -745,6 +765,33 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                   ),
                   const SizedBox(
                     height: 10,
+                  ),
+                  buildText(text: 'Velocidad del chispero: $_sparkSpeed'),
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.8,
+                    child: SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 30.0,
+                        valueIndicatorColor: color4,
+                        thumbColor: color1,
+                        activeTrackColor: color0,
+                        inactiveTrackColor: color3,
+                      ),
+                      child: Slider(
+                        value: _sparkSpeed.toDouble(),
+                        onChanged: (value) {
+                          setState(() {
+                            _sparkSpeed = value.round();
+                          });
+                        },
+                        onChangeEnd: (value) {
+                          printLog(value);
+                          sendSparkSpeed(value.round());
+                        },
+                        min: 5,
+                        max: 255,
+                      ),
+                    ),
                   ),
                 ],
                 if (!hasSensor) ...[
