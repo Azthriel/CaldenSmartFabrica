@@ -184,6 +184,7 @@ class ClimaPageState extends State<ClimaPage> {
               TextField(
                 controller: serialNumberController,
                 style: const TextStyle(color: color4),
+                keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   hintText: 'Número de serie',
                   hintStyle: const TextStyle(color: color3),

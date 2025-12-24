@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:caldensmartfabrica/aws/mqtt/mqtt.dart';
 import 'package:caldensmartfabrica/master.dart';
 import 'package:flutter/material.dart';
 import 'package:msgpack_dart/msgpack_dart.dart';
@@ -97,6 +98,9 @@ class LoadState extends State<LoadingPage> {
 
       Platform.isAndroid ? await bluetoothManager.device.requestMtu(255) : null;
 
+      subToTopicMQTT('devices_tx/$pc/$sn');
+      listenToTopics();
+
       await queryItems(
         pc,
         sn,
@@ -189,7 +193,7 @@ class LoadState extends State<LoadingPage> {
                   ? manualControl = parts2[9] == '1'
                   : manualControl = false;
               sparkSpeed = parts2.length > 10 ? parts2[10] : '64';
-              printLog('Estado: $turnOn');
+              valvePulseTime = parts2.length > 11 ? parts2[11] : '5';
             } else {
               printLog('Formato nuevo detectado (sin owner variable)');
               tempValue = double.parse(parts2[0]);
@@ -201,7 +205,7 @@ class LoadState extends State<LoadingPage> {
               offsetTemp = parts2[7];
               manualControl = parts2.length > 8 ? parts2[8] == '1' : false;
               sparkSpeed = parts2.length > 9 ? parts2[9] : '64';
-              printLog('Estado: $turnOn');
+              valvePulseTime = parts2.length > 10 ? parts2[10] : '5';
             }
 
             hasSensor = hasDallasSensor(pc, hardwareVersion);

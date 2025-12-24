@@ -1,6 +1,7 @@
 import 'package:aws_dynamodb_api/dynamodb-2012-08-10.dart';
 import 'package:caldensmartfabrica/aws/dynamo/dynamo_certificates.dart';
 import 'package:caldensmartfabrica/master.dart';
+import 'package:provider/provider.dart';
 
 Future<void> queryItems(String pc, String sn) async {
   discTimes.clear();
@@ -31,6 +32,16 @@ Future<void> queryItems(String pc, String sn) async {
           secondaryAdmins = [];
         }
         isConnectedToAWS = item['cstate']?.boolValue ?? false;
+        
+        // Actualizar el Provider con el estado de conexión AWS
+        try {
+          GlobalDataNotifier notifier = Provider.of<GlobalDataNotifier>(
+              navigatorKey.currentContext!,
+              listen: false);
+          notifier.updateAWSConnectionState(isConnectedToAWS);
+        } catch (e) {
+          printLog('Error actualizando Provider desde DynamoDB: $e');
+        }
         hasEntry = item['hasEntry']?.boolValue ?? false;
         hasSpark = item['hasSpark']?.boolValue ?? false;
         labProcessFinished = item['LabProcessFinished']?.boolValue ?? false;

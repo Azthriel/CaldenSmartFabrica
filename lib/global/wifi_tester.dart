@@ -5,6 +5,7 @@ import 'package:caldensmartfabrica/aws/mqtt/mqtt.dart';
 import 'package:caldensmartfabrica/master.dart';
 import 'package:flutter/material.dart';
 import 'package:mqtt_client/mqtt_client.dart';
+import 'package:provider/provider.dart';
 
 class WifiTestScreen extends StatefulWidget {
   const WifiTestScreen({super.key});
@@ -62,9 +63,18 @@ class WifiTestScreenState extends State<WifiTestScreen> {
           final Map<String, dynamic> messageMap =
               json.decode(messageString) ?? {};
           setState(() {
-            messageMap.keys.contains('cstate')
-                ? isConnectedToAWS = messageMap['cstate']
-                : null;
+            if (messageMap.keys.contains('cstate')) {
+              isConnectedToAWS = messageMap['cstate'];
+              // Actualizar el Provider
+              try {
+                GlobalDataNotifier notifier = Provider.of<GlobalDataNotifier>(
+                    navigatorKey.currentContext!,
+                    listen: false);
+                notifier.updateAWSConnectionState(isConnectedToAWS);
+              } catch (e) {
+                printLog('Error actualizando Provider desde wifi_tester: $e');
+              }
+            }
             messageMap.keys.contains('alert')
                 ? _alert = messageMap['alert'] == 1
                 : null;

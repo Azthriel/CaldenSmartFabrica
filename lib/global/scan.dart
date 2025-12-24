@@ -1,3 +1,4 @@
+import 'package:caldensmartfabrica/aws/mqtt/mqtt.dart';
 import 'package:caldensmartfabrica/master.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
@@ -89,6 +90,8 @@ class ScanPageState extends State<ScanPage> {
             case BluetoothConnectionState.disconnected:
               {
                 showToast('Dispositivo desconectado');
+                unSubToTopicMQTT(
+                    'devices_tx/${DeviceManager.getProductCode(device.platformName)}/${DeviceManager.extractSerialNumber(device.platformName)}');
                 calibrationValues = [];
                 regulationValues = [];
                 toolsValues = [];

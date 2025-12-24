@@ -3,6 +3,7 @@ import 'package:caldensmartfabrica/secret.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:msgpack_dart/msgpack_dart.dart';
+import 'package:provider/provider.dart';
 import '../../master.dart';
 
 class CredsTab extends StatefulWidget {
@@ -127,72 +128,78 @@ class CredsTabState extends State<CredsTab> {
   @override
   Widget build(BuildContext context) {
     double bottomBarHeight = kBottomNavigationBarHeight;
-    return Scaffold(
-      backgroundColor: color4,
-      body: Center(
-        child: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              buildText(
-                // text: '¿Thing cargada? ${awsInit ? 'SI' : 'NO'}',
-                text: '',
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                // color: awsInit ? color4 : const Color(0xffFF0000),
-                textSpans: [
-                  const TextSpan(
-                    text: '¿Thing cargada?  ',
-                    style: TextStyle(
-                      color: color4,
-                    ),
+    return Consumer<GlobalDataNotifier>(
+      builder: (context, notifier, child) {
+        // Obtener el estado actualizado desde el provider
+        bool awsConnected = notifier.getAWSConnectionState();
+        printLog('CredsTab: Consumer reconstruyendo con awsConnected=$awsConnected');
+        
+        return Scaffold(
+          backgroundColor: color4,
+          body: Center(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.vertical,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  buildText(
+                    // text: '¿Thing cargada? ${awsInit ? 'SI' : 'NO'}',
+                    text: '',
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    // color: awsInit ? color4 : const Color(0xffFF0000),
+                    textSpans: [
+                      const TextSpan(
+                        text: '¿Thing cargada?  ',
+                        style: TextStyle(
+                          color: color4,
+                        ),
+                      ),
+                      TextSpan(
+                        text: bluetoothManager.newGeneration
+                            ? bluetoothManager.data['aws_init']
+                                ? 'SI'
+                                : 'NO'
+                            : (awsInit || awsConnected)
+                                ? 'SI'
+                                : 'NO',
+                        style: TextStyle(
+                          color: bluetoothManager.newGeneration
+                              ? (bluetoothManager.data['aws_init']
+                                  ? color4
+                                  : const Color(0xffFF0000))
+                              : (awsInit || awsConnected)
+                                  ? color4
+                                  : const Color(0xffFF0000),
+                        ),
+                      ),
+                    ],
                   ),
-                  TextSpan(
-                    text: bluetoothManager.newGeneration
-                        ? bluetoothManager.data['aws_init']
-                            ? 'SI'
-                            : 'NO'
-                        : (awsInit || isConnectedToAWS)
-                            ? 'SI'
-                            : 'NO',
-                    style: TextStyle(
-                      color: bluetoothManager.newGeneration
-                          ? (bluetoothManager.data['aws_init']
-                              ? color4
-                              : const Color(0xffFF0000))
-                          : (awsInit || isConnectedToAWS)
-                              ? color4
-                              : const Color(0xffFF0000),
-                    ),
+                  const SizedBox(height: 10),
+                  buildText(
+                    text: '',
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    textSpans: [
+                      const TextSpan(
+                        text: '¿Está conectado al servidor?  ',
+                        style: TextStyle(
+                          color: color4,
+                        ),
+                      ),
+                      TextSpan(
+                        text: awsConnected ? 'SI' : 'NO',
+                        style: TextStyle(
+                          color:
+                              awsConnected ? color4 : const Color(0xffFF0000),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              buildText(
-                text: '',
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                textSpans: [
-                  const TextSpan(
-                    text: '¿Está conectado al servidor?  ',
-                    style: TextStyle(
-                      color: color4,
-                    ),
+                  const SizedBox(
+                    height: 10,
                   ),
-                  TextSpan(
-                    text: isConnectedToAWS ? 'SI' : 'NO',
-                    style: TextStyle(
-                      color:
-                          isConnectedToAWS ? color4 : const Color(0xffFF0000),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              if (!isConnectedToAWS) ...[
+                  if (!awsConnected) ...[
                 sending
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -301,6 +308,8 @@ class CredsTabState extends State<CredsTab> {
           ),
         ),
       ),
+        );
+      },
     );
   }
 }

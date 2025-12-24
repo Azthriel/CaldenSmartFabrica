@@ -19,7 +19,7 @@ import 'package:msgpack_dart/msgpack_dart.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.53';
+String appVersionNumber = '1.0.55';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -140,6 +140,7 @@ String offsetTemp = '';
 bool manualControl = false;
 bool hasSpark = false;
 String sparkSpeed = '';
+String valvePulseTime = '';
 //*-Calefactores-*\\
 
 //*- Roller -*\\
@@ -2745,10 +2746,16 @@ class _VersionData {
 //*-Provider, actualización de data en un widget-*\\
 class GlobalDataNotifier extends ChangeNotifier {
   String? _data;
+  bool _isConnectedToAWS = isConnectedToAWS;
 
   // Obtener datos por topic específico
   String getData() {
     return _data ?? 'Esperando respuesta del esp...';
+  }
+
+  // Obtener estado de conexión AWS
+  bool getAWSConnectionState() {
+    return _isConnectedToAWS;
   }
 
   // Actualizar datos para un topic específico y notificar a los oyentes
@@ -2756,6 +2763,18 @@ class GlobalDataNotifier extends ChangeNotifier {
     if (_data != newData) {
       _data = newData;
       notifyListeners(); // Esto notifica a todos los oyentes que algo cambió
+    }
+  }
+
+  // Actualizar estado de conexión AWS y notificar a los oyentes
+  void updateAWSConnectionState(bool newState) {
+    printLog('Provider: updateAWSConnectionState llamado con newState=$newState, _isConnectedToAWS=$_isConnectedToAWS');
+    if (_isConnectedToAWS != newState) {
+      _isConnectedToAWS = newState;
+      printLog('Provider: Estado AWS cambiado a $_isConnectedToAWS, notificando listeners...');
+      notifyListeners(); // Esto notifica a todos los oyentes que algo cambió
+    } else {
+      printLog('Provider: Estado AWS sin cambios, no se notifica');
     }
   }
 }

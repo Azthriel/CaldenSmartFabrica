@@ -133,10 +133,28 @@ void listenToTopics() {
         deviceResponseMqtt = 'No hubo respuesta';
       }
 
-      GlobalDataNotifier notifier = Provider.of<GlobalDataNotifier>(
-          navigatorKey.currentContext!,
-          listen: false);
-      notifier.updateData(deviceResponseMqtt);
+      if (messageMap['cstate'] != null) {
+        isConnectedToAWS = messageMap['cstate'];
+        printLog('Estado de conexión AWS actualizado a: $isConnectedToAWS');
+      }
+
+      try {
+        if (navigatorKey.currentContext != null) {
+          GlobalDataNotifier notifier = Provider.of<GlobalDataNotifier>(
+              navigatorKey.currentContext!,
+              listen: false);
+          notifier.updateData(deviceResponseMqtt);
+          if (messageMap['cstate'] != null) {
+            notifier.updateAWSConnectionState(isConnectedToAWS);
+            printLog('Provider notificado con estado AWS: $isConnectedToAWS');
+          }
+        } else {
+          printLog('WARNING: navigatorKey.currentContext es null, no se puede notificar al Provider');
+        }
+      } catch (e, stackTrace) {
+        printLog('Error notificando al Provider: $e');
+        printLog('StackTrace: $stackTrace');
+      }
 
       printLog('Received message: $messageMap from topic: $topic');
     } catch (e) {

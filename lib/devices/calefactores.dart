@@ -24,13 +24,16 @@ class CalefactoresPage extends StatefulWidget {
 }
 
 class CalefactoresPageState extends State<CalefactoresPage> {
-  TextEditingController textController = TextEditingController();
-
+  final TextEditingController valvePulseTimeController =
+      TextEditingController();
   final TextEditingController roomTempController = TextEditingController();
   final TextEditingController distanceOnController =
       TextEditingController(text: distanceOn);
   final TextEditingController distanceOffController =
       TextEditingController(text: distanceOff);
+  final TextEditingController cicleController = TextEditingController();
+  final TextEditingController timeController = TextEditingController();
+  final TextEditingController timedOpenningController = TextEditingController();
   final PageController _pageController = PageController(initialPage: 0);
   int _selectedIndex = 0;
   bool ignite = false;
@@ -53,6 +56,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
   int _offsetTemp = 0;
   bool _manualmode = false;
   int _sparkSpeed = 64;
+  int _valvePulseTime = 5;
 
   // Obtener el índice correcto para cada página
   int _getPageIndex(String pageType) {
@@ -256,6 +260,12 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     (bluetoothManager.data['spark_speed'] ?? 64).toString()) ??
                 64
             : null;
+        bluetoothManager.data.containsKey('valve_pulse_time')
+            ? _valvePulseTime = int.tryParse(
+                    (bluetoothManager.data['valve_pulse_time'] ?? 5)
+                        .toString()) ??
+                5
+            : null;
       });
     } else {
       setState(() {
@@ -267,6 +277,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
         _offsetTemp = int.tryParse(offsetTemp) ?? 0;
         _manualmode = manualControl;
         _sparkSpeed = int.tryParse(sparkSpeed) ?? 64;
+        _valvePulseTime = int.tryParse(valvePulseTime) ?? 5;
       });
     }
   }
@@ -274,10 +285,12 @@ class CalefactoresPageState extends State<CalefactoresPage> {
   @override
   void dispose() {
     _pageController.dispose();
-    textController.dispose();
     roomTempController.dispose();
     distanceOnController.dispose();
     distanceOffController.dispose();
+    valvePulseTimeController.dispose();
+    cicleController.dispose();
+    timeController.dispose();
     super.dispose();
   }
 
@@ -575,9 +588,22 @@ class CalefactoresPageState extends State<CalefactoresPage> {
         "spark_speed": speed,
       };
       List<int> messagePackData = serialize(map);
-      bluetoothManager.temperatureUuid.write(messagePackData);
+      bluetoothManager.appDataUuid.write(messagePackData);
     } else {
       String data = '$pc[17]($speed)';
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
+  }
+
+  void sendValvePulseTime(String time) {
+    if (newGen) {
+      final map = {
+        "valve_pulse_time": time,
+      };
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.appDataUuid.write(messagePackData);
+    } else {
+      String data = '027000_IOT[18]($time)';
       bluetoothManager.toolsUuid.write(data.codeUnits);
     }
   }
@@ -699,7 +725,8 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                             printLog(data);
                           }
                           await Future.delayed(
-                              const Duration(milliseconds: 500));
+                            const Duration(milliseconds: 500),
+                          );
                         }
                       },
                       onLongPressEnd: (LongPressEndDetails a) {
@@ -721,12 +748,13 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     ),
                   ],
                   const SizedBox(
-                    height: 30,
+                    height: 20,
+                  ),
+                  const Divider(
+                    color: color3,
+                    thickness: 2,
                   ),
                   buildText(text: '¿Este equipo tendrá chispero?'),
-                  const SizedBox(
-                    height: 10,
-                  ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -766,6 +794,10 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                   const SizedBox(
                     height: 10,
                   ),
+                  const Divider(
+                    color: color3,
+                    thickness: 2,
+                  ),
                   buildText(text: 'Velocidad del chispero: $_sparkSpeed'),
                   SizedBox(
                     width: MediaQuery.of(context).size.width * 0.8,
@@ -795,6 +827,10 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                   ),
                 ],
                 if (!hasSensor) ...[
+                  const Divider(
+                    color: color3,
+                    thickness: 2,
+                  ),
                   const SizedBox(height: 30),
                   SizedBox(
                     width: 300,
@@ -833,6 +869,10 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                           ),
                   ),
                 ],
+                const Divider(
+                  color: color3,
+                  thickness: 2,
+                ),
                 const SizedBox(height: 30),
                 buildText(
                   text: '',
@@ -881,6 +921,17 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                   ),
                 },
                 // const SizedBox(height: 20),
+                const Divider(
+                  color: color3,
+                  thickness: 2,
+                ),
+                buildText(
+                  text: 'Grabado de datos de temperatura:',
+                  fontSize: 20.0,
+                  textAlign: TextAlign.center,
+                  fontWeight: FontWeight.bold,
+                ),
+                const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: () {
                     setState(() {
@@ -916,6 +967,10 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                 const SizedBox(height: 20),
                 if (factoryMode) ...[
                   if (!hasSensor) ...{
+                    const Divider(
+                      color: color3,
+                      thickness: 2,
+                    ),
                     buildText(
                       text: '',
                       textSpans: [
@@ -948,8 +1003,9 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                       },
                     ),
                   },
-                  const SizedBox(
-                    height: 20,
+                  const Divider(
+                    color: color3,
+                    thickness: 2,
                   ),
                   buildText(
                     text: '',
@@ -1000,6 +1056,10 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     },
                   ),
                   const SizedBox(height: 20),
+                  const Divider(
+                    color: color3,
+                    thickness: 2,
+                  ),
                   buildText(
                     text: '',
                     textSpans: [
@@ -1013,9 +1073,6 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     ],
                     fontSize: 20.0,
                     textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(
-                    height: 10,
                   ),
                   buildButton(
                     text: _manualmode ? 'Desactivar' : 'Activar',
@@ -1043,9 +1100,15 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     },
                   ),
                 ],
-
-                const SizedBox(
-                  height: 10,
+                const Divider(
+                  color: color3,
+                  thickness: 2,
+                ),
+                buildText(
+                  text: 'Ciclador de válvula:',
+                  fontSize: 20.0,
+                  textAlign: TextAlign.center,
+                  fontWeight: FontWeight.bold,
                 ),
                 buildButton(
                   text: 'Ciclado fijo',
@@ -1054,12 +1117,12 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                         'Se mando el ciclado de la válvula de este equipo');
                     if (newGen) {
                       final map = {
-                        'cycle': {'iter': 5, 'delay': 1000}
+                        'cycle': {'iter': 1000, 'delay': 1000}
                       };
                       List<int> messagePackData = serialize(map);
                       bluetoothManager.appDataUuid.write(messagePackData);
                     } else {
-                      String data = '$pc[13](1000#5)';
+                      String data = '$pc[13](1000#1000)';
                       bluetoothManager.toolsUuid.write(data.codeUnits);
                     }
                   },
@@ -1073,10 +1136,6 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
-                        final TextEditingController cicleController =
-                            TextEditingController();
-                        final TextEditingController timeController =
-                            TextEditingController();
                         return AlertDialog(
                           backgroundColor: color1,
                           title: const Center(
@@ -1136,7 +1195,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                           actions: [
                             TextButton(
                               onPressed: () {
-                                navigatorKey.currentState!.pop();
+                                Navigator.of(context).pop();
                               },
                               child: const Text(
                                 'Cancelar',
@@ -1147,26 +1206,32 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                             ),
                             TextButton(
                               onPressed: () {
-                                int cicle = int.parse(cicleController.text) * 2;
-                                registerActivity(pc, sn,
-                                    'Se mando el ciclado de la válvula de este equipo\nMilisegundos: ${timeController.text}\nIteraciones:$cicle');
-                                if (newGen) {
-                                  final map = {
-                                    'cycle': {
-                                      'iter': cicle,
-                                      'delay': int.parse(timeController.text)
-                                    }
-                                  };
-                                  List<int> messagePackData = serialize(map);
-                                  bluetoothManager.appDataUuid
-                                      .write(messagePackData);
-                                } else {
-                                  String data =
-                                      '$pc[13](${timeController.text}#$cicle)';
-                                  bluetoothManager.toolsUuid
-                                      .write(data.codeUnits);
+                                try {
+                                  int cicle =
+                                      int.parse(cicleController.text) * 2;
+                                  registerActivity(pc, sn,
+                                      'Se mando el ciclado de la válvula de este equipo\nMilisegundos: ${timeController.text}\nIteraciones:$cicle');
+                                  if (newGen) {
+                                    final map = {
+                                      'cycle': {
+                                        'iter': cicle,
+                                        'delay': int.parse(timeController.text)
+                                      }
+                                    };
+                                    List<int> messagePackData = serialize(map);
+                                    bluetoothManager.appDataUuid
+                                        .write(messagePackData);
+                                  } else {
+                                    String data =
+                                        '$pc[13](${timeController.text.trim()}#$cicle)';
+                                    bluetoothManager.toolsUuid
+                                        .write(data.codeUnits);
+                                  }
+                                  navigatorKey.currentState!.pop();
+                                } catch (e) {
+                                  showToast(
+                                      'Ingrese valores numéricos válidos');
                                 }
-                                navigatorKey.currentState!.pop();
                               },
                               child: const Text(
                                 'Iniciar proceso',
@@ -1189,8 +1254,6 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                       showDialog(
                         context: context,
                         builder: (BuildContext context) {
-                          final TextEditingController timeController =
-                              TextEditingController();
                           return AlertDialog(
                             title: const Center(
                               child: Text(
@@ -1208,7 +1271,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                                   width: 300,
                                   child: TextField(
                                     style: const TextStyle(color: Colors.black),
-                                    controller: timeController,
+                                    controller: timedOpenningController,
                                     keyboardType: TextInputType.number,
                                     decoration: const InputDecoration(
                                       labelText:
@@ -1255,6 +1318,39 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                       );
                     },
                   ),
+                  if (accessLevel >= 3) ...[
+                    const Divider(
+                      color: color3,
+                      thickness: 2,
+                    ),
+                    buildText(
+                      text: 'Tiempo de pulso de válvula:\n$_valvePulseTime ms',
+                      fontSize: 20.0,
+                      textAlign: TextAlign.center,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    buildTextField(
+                      controller: valvePulseTimeController,
+                      label: 'Modificar tiempo de pulso de válvula (ms):',
+                      hint: '',
+                      keyboard: TextInputType.number,
+                      onSubmitted: (value) {
+                        try {
+                          int val = int.parse(value);
+                          if (val <= 0 || val > 65535) {
+                            showToast('El valor debe estar entre 1 y 65535 ms');
+                            return;
+                          }
+                        } catch (e) {
+                          showToast('Ingrese un valor numérico válido');
+                          return;
+                        }
+                        registerActivity(pc, sn,
+                            'Se modifico el tiempo de pulso de válvula a $value ms');
+                        sendValvePulseTime(value);
+                      },
+                    ),
+                  ],
                 ],
                 Padding(
                   padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
