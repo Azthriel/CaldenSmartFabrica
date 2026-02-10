@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../aws/dynamo/dynamo.dart';
 import '../../master.dart';
+import '../../global/device_logs_viewer.dart';
 
 class ParamsTab extends StatefulWidget {
   const ParamsTab({super.key});
@@ -920,6 +921,50 @@ class ParamsTabState extends State<ParamsTab> {
                 ),
                 const SizedBox(height: 20),
               ],
+              const SizedBox(height: 5),
+              buildButton(
+                text: 'Ver Logs del Equipo',
+                onPressed: () async {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) {
+                      return const Center(
+                        child: CircularProgressIndicator(color: color1),
+                      );
+                    },
+                  );
+
+                  try {
+                    Map<String, List<Map<String, dynamic>>> logs =
+                        await getDeviceRegisterLogs(pc, sn);
+
+                    if (context.mounted) {
+                      Navigator.of(context).pop(); // Cerrar loading
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DeviceLogsViewer(
+                            logs: logs,
+                            deviceName: deviceName,
+                          ),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      Navigator.of(context).pop(); // Cerrar loading
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error al cargar logs: $e'),
+                          backgroundColor: color2,
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+              const SizedBox(height: 20),
               Padding(
                 padding: EdgeInsets.only(bottom: bottomBarHeight + 20),
               ),

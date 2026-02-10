@@ -29,8 +29,8 @@ class ModuloPageState extends State<ModuloPage> {
 
   final bool canControl = (accessLevel >= 3 || owner == '');
 
-  List<String> _pulse_mode = [];
-  List<String> _pulse_mode_timers = [];
+  final List<String> _pulse_mode = [];
+  final List<String> _pulse_mode_timers = [];
 
   bool varsLoaded = false;
 

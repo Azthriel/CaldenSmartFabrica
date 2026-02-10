@@ -30,8 +30,8 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
 
   final bool canControl = (accessLevel >= 3 || owner == '');
 
-  List<String> _pulse_mode = [];
-  List<String> _pulse_mode_timers = [];
+  final List<String> _pulse_mode = [];
+  final List<String> _pulse_mode_timers = [];
   bool varsLoaded = false;
 
   // Obtener el índice correcto para cada página

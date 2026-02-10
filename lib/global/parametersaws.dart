@@ -2,6 +2,7 @@ import 'package:caldensmartfabrica/master.dart';
 import 'package:flutter/material.dart';
 
 import '../aws/dynamo/dynamo.dart';
+import 'device_logs_viewer.dart';
 
 class ParametersAWS extends StatefulWidget {
   const ParametersAWS({super.key});
@@ -1319,6 +1320,55 @@ class ParametersAWSState extends State<ParametersAWS> {
                     ),
                     const SizedBox(height: 20),
                   ],
+                  const SizedBox(height: 5),
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.8,
+                    child: buildButton(
+                      text: 'Ver Logs del Equipo',
+                      onPressed: () async {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) {
+                            return const Center(
+                              child: CircularProgressIndicator(color: color1),
+                            );
+                          },
+                        );
+
+                        try {
+                          Map<String, List<Map<String, dynamic>>> logs =
+                              await getDeviceRegisterLogs(productCode,
+                                  serialNumberController.text.trim());
+
+                          if (context.mounted) {
+                            Navigator.of(context).pop(); // Cerrar loading
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DeviceLogsViewer(
+                                  logs: logs,
+                                  deviceName:
+                                      '$productCode/${serialNumberController.text.trim()}',
+                                ),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            Navigator.of(context).pop(); // Cerrar loading
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error al cargar logs: $e'),
+                                backgroundColor: color2,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                 ] else ...[
                   const Center(
                     child: Column(

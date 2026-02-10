@@ -32,7 +32,7 @@ Future<void> queryItems(String pc, String sn) async {
           secondaryAdmins = [];
         }
         isConnectedToAWS = item['cstate']?.boolValue ?? false;
-        
+
         // Actualizar el Provider con el estado de conexión AWS
         try {
           GlobalDataNotifier notifier = Provider.of<GlobalDataNotifier>(
@@ -310,5 +310,55 @@ Future<void> putHistoricTempPremium(String pc, String sn, bool premium) async {
     printLog('Item escrito perfectamente $response');
   } catch (e) {
     printLog('Error inserting item: $e');
+  }
+}
+
+/// Obtiene los registros de logs del dispositivo desde la tabla sime-domotica
+/// Retorna un mapa donde la clave es el timestamp de sesión y el valor es la lista de logs
+/// Las sesiones están ordenadas por timestamp (más recientes primero)
+Future<Map<String, List<Map<String, dynamic>>>> getDeviceRegisterLogs(
+    String pc, String sn) async {
+  try {
+    final response = await service.getItem(
+      tableName: 'sime-domotica',
+      key: {
+        'product_code': AttributeValue(s: pc),
+        'device_id': AttributeValue(s: sn),
+      },
+    );
+
+    if (response.item != null &&
+        response.item!['device_register_ble'] != null) {
+      Map<String, AttributeValue> sessionsMap =
+          response.item!['device_register_ble']!.m ?? {};
+
+      Map<String, List<Map<String, dynamic>>> result = {};
+
+      sessionsMap.forEach((sessionTimestamp, logsListValue) {
+        if (logsListValue.l != null) {
+          List<Map<String, dynamic>> sessionLogs = [];
+
+          for (var logValue in logsListValue.l!) {
+            if (logValue.m != null) {
+              sessionLogs.add({
+                'timestamp':
+                    int.tryParse(logValue.m!['timestamp']?.n ?? '0') ?? 0,
+                'content': logValue.m!['content']?.s ?? 'Sin contenido',
+                'level': logValue.m!['level']?.s ?? 'INFO',
+              });
+            }
+          }
+
+          result[sessionTimestamp] = sessionLogs;
+        }
+      });
+
+      return result;
+    }
+
+    return {};
+  } catch (e) {
+    printLog('Error obteniendo registros BLE: $e');
+    return {};
   }
 }

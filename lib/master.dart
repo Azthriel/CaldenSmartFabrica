@@ -19,7 +19,7 @@ import 'package:msgpack_dart/msgpack_dart.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.55';
+String appVersionNumber = '1.0.56';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\

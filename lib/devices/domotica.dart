@@ -31,8 +31,8 @@ class DomoticaPageState extends State<DomoticaPage> {
   int _selectedIndex = 0;
 
   final bool canControl = (accessLevel >= 3 || owner == '');
-  List<String> _pulse_mode = [];
-  List<String> _pulse_mode_timers = [];
+  final List<String> _pulse_mode = [];
+  final List<String> _pulse_mode_timers = [];
   // Obtener el índice correcto para cada página
   int _getPageIndex(String pageType) {
     int index = 0;
