@@ -43,7 +43,7 @@ Future<void> queryItems(String pc, String sn) async {
           printLog('Error actualizando Provider desde DynamoDB: $e');
         }
         hasEntry = item['hasEntry']?.boolValue ?? false;
-        hasSpark = item['hasSpark']?.boolValue ?? false;
+        hasSpark = item['hasSpark']?.boolValue ?? true;
         labProcessFinished = item['LabProcessFinished']?.boolValue ?? false;
         distanceControlActive =
             item['distanceControlActive']?.boolValue ?? false;

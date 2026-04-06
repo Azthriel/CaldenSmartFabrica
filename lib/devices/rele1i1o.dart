@@ -887,7 +887,10 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
                     fontSize: 20.0,
                   ),
                   const SizedBox(height: 20),
-                  Row(
+                  if (!varsLoaded)
+                    const CircularProgressIndicator()
+                  else
+                    Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ChoiceChip(

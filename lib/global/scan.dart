@@ -106,6 +106,7 @@ class ScanPageState extends State<ScanPage> {
                 werror = false;
                 bluetoothManager.restoreData();
                 alreadySubWifi = false;
+                labProcessFinished = false;
                 // Limpiar datos WiFi al desconectarse
                 wifiDataNotifier.clearWifiData();
                 wifiStoredNotifier.clearStoredNetworks();

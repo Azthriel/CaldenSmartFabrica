@@ -42,7 +42,7 @@ class PatitoPageState extends State<PatitoPage> {
       List<DateTime>.filled(1000, DateTime.now(), growable: true);
   bool recording = false;
   List<List<dynamic>> recordedData = [];
-  List<int> _patitoData = [];
+  final List<int> _patitoData = [];
   String _batteryPercentage = 'N/A';
   String _batterymv = '0';
   bool _isCharging = false;
