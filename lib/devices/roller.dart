@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
 import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
+import 'package:caldensmartfabrica/devices/globales/otaschedule.dart';
 import 'package:caldensmartfabrica/devices/globales/params.dart';
 import 'package:caldensmartfabrica/devices/globales/resmon.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
@@ -87,6 +88,9 @@ class RollerPageState extends State<RollerPage> {
       if (pageType == 'monitor') return index;
       index++;
     }
+
+    if (pageType == 'otaschedule') return index;
+    index++;
 
     // OTA page (siempre presente)
     if (pageType == 'ota') return index;
@@ -186,6 +190,15 @@ class RollerPageState extends State<RollerPage> {
                     },
                   ),
                 // OTA page (siempre disponible)
+                ListTile(
+                  leading: const Icon(Icons.schedule_send, color: color4),
+                  title: const Text('OTA Schedule',
+                      style: TextStyle(color: color4)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _navigateToTab(_getPageIndex('otaschedule'));
+                  },
+                ),
                 ListTile(
                   leading: const Icon(Icons.send, color: color4),
                   title: const Text('OTA', style: TextStyle(color: color4)),
@@ -1753,6 +1766,9 @@ class RollerPageState extends State<RollerPage> {
         //*- Página RESOURCE MONITOR -*\\
         const ResourceMonitorPage(),
       ],
+
+      //*- Página OTA SCHEDULE -*\\
+      const OtaScheduleTab(),
 
       //*- Página 5 OTA -*\\
       const OtaTab(),

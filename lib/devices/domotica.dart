@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
 import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
+import 'package:caldensmartfabrica/devices/globales/otaschedule.dart';
 import 'package:caldensmartfabrica/devices/globales/params.dart';
 import 'package:caldensmartfabrica/devices/globales/resmon.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
@@ -74,6 +75,9 @@ class DomoticaPageState extends State<DomoticaPage> {
       if (pageType == 'monitor') return index;
       index++;
     }
+
+    if (pageType == 'otaschedule') return index;
+    index++;
 
     // OTA page (siempre presente)
     if (pageType == 'ota') return index;
@@ -194,6 +198,15 @@ class DomoticaPageState extends State<DomoticaPage> {
                     },
                   ),
                 // OTA page (siempre disponible)
+                ListTile(
+                  leading: const Icon(Icons.schedule_send, color: color4),
+                  title: const Text('OTA Schedule',
+                      style: TextStyle(color: color4)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _navigateToTab(_getPageIndex('otaschedule'));
+                  },
+                ),
                 ListTile(
                   leading: const Icon(Icons.send, color: color4),
                   title: const Text('OTA', style: TextStyle(color: color4)),
@@ -1154,6 +1167,9 @@ class DomoticaPageState extends State<DomoticaPage> {
         //*- Página RESOURCE MONITOR -*\\
         const ResourceMonitorPage(),
       ],
+
+      //*- Página OTA SCHEDULE -*\\
+      const OtaScheduleTab(),
 
       //*- Página 6 OTA -*\\
       const OtaTab(),

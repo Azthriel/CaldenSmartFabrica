@@ -4,6 +4,7 @@ import 'package:caldensmartfabrica/aws/dynamo/dynamo.dart';
 import 'package:caldensmartfabrica/devices/globales/credentials.dart';
 import 'package:caldensmartfabrica/devices/globales/loggerble.dart';
 import 'package:caldensmartfabrica/devices/globales/ota.dart';
+import 'package:caldensmartfabrica/devices/globales/otaschedule.dart';
 import 'package:caldensmartfabrica/devices/globales/params.dart';
 import 'package:caldensmartfabrica/devices/globales/resmon.dart';
 import 'package:caldensmartfabrica/devices/globales/tools.dart';
@@ -73,6 +74,9 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
       if (pageType == 'monitor') return index;
       index++;
     }
+
+    if (pageType == 'otaschedule') return index;
+    index++;
 
     // OTA page (siempre presente)
     if (pageType == 'ota') return index;
@@ -193,6 +197,15 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
                     },
                   ),
                 // OTA page (siempre disponible)
+                ListTile(
+                  leading: const Icon(Icons.schedule_send, color: color4),
+                  title: const Text('OTA Schedule',
+                      style: TextStyle(color: color4)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _navigateToTab(_getPageIndex('otaschedule'));
+                  },
+                ),
                 ListTile(
                   leading: const Icon(Icons.send, color: color4),
                   title: const Text('OTA', style: TextStyle(color: color4)),
@@ -891,41 +904,41 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
                     const CircularProgressIndicator()
                   else
                     Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ChoiceChip(
-                        label: const Text('SWITCH'),
-                        selected: _pulse_mode[0] == '1',
-                        onSelected: (sel) {
-                          setState(() {
-                            _pulse_mode[0] = '1';
-                          });
-                          sendDeviceBehaviour('0', true);
-                        },
-                        selectedColor: color1,
-                        backgroundColor: color0,
-                        labelStyle: TextStyle(
-                            color: _pulse_mode[0] == '1' ? color4 : color1),
-                        checkmarkColor: color4,
-                      ),
-                      const SizedBox(width: 12),
-                      ChoiceChip(
-                        label: const Text('PULSE'),
-                        selected: _pulse_mode[0] == '0',
-                        onSelected: (sel) {
-                          setState(() {
-                            _pulse_mode[0] = '0';
-                          });
-                          sendDeviceBehaviour('0', false);
-                        },
-                        selectedColor: color1,
-                        backgroundColor: color0,
-                        labelStyle: TextStyle(
-                            color: _pulse_mode[0] == '0' ? color4 : color1),
-                        checkmarkColor: color4,
-                      ),
-                    ],
-                  ),
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('SWITCH'),
+                          selected: _pulse_mode[0] == '1',
+                          onSelected: (sel) {
+                            setState(() {
+                              _pulse_mode[0] = '1';
+                            });
+                            sendDeviceBehaviour('0', true);
+                          },
+                          selectedColor: color1,
+                          backgroundColor: color0,
+                          labelStyle: TextStyle(
+                              color: _pulse_mode[0] == '1' ? color4 : color1),
+                          checkmarkColor: color4,
+                        ),
+                        const SizedBox(width: 12),
+                        ChoiceChip(
+                          label: const Text('PULSE'),
+                          selected: _pulse_mode[0] == '0',
+                          onSelected: (sel) {
+                            setState(() {
+                              _pulse_mode[0] = '0';
+                            });
+                            sendDeviceBehaviour('0', false);
+                          },
+                          selectedColor: color1,
+                          backgroundColor: color0,
+                          labelStyle: TextStyle(
+                              color: _pulse_mode[0] == '0' ? color4 : color1),
+                          checkmarkColor: color4,
+                        ),
+                      ],
+                    ),
                   const SizedBox(
                     height: 200,
                   ),
@@ -947,6 +960,8 @@ class Rele1i1oPageState extends State<Rele1i1oPage> {
         //*- Página RESOURCE MONITOR -*\\
         const ResourceMonitorPage(),
       ],
+
+      const OtaScheduleTab(),
 
       //*- Página 6 OTA -*\\
       const OtaTab(),
