@@ -19,7 +19,7 @@ import 'package:msgpack_dart/msgpack_dart.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.59';
+String appVersionNumber = '1.0.60';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -219,6 +219,13 @@ List<String> connecTimes = [];
 //*- Clima del equipo -*\\
 String deviceLocation = '';
 //*- Clima del equipo -*\\
+
+//*-Ota Schedule-*\\
+int otaScheduleHourStart = 2;
+int otaScheduleMinuteStart = 0;
+int otaScheduleHourEnd = 3;
+int otaScheduleMinuteEnd = 0;
+//*-Ota Schedule-*\\
 
 // // -------------------------------------------------------------------------------------------------------------\\ \\
 

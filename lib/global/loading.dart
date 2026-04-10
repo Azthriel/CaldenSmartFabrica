@@ -165,6 +165,22 @@ class LoadState extends State<LoadingPage> {
         printLog('Valores tools: $toolsValues || ${utf8.decode(toolsValues)}');
         printLog('Valores info: $infoValues || ${utf8.decode(infoValues)}');
 
+        try {
+          List<int> otaValues = await bluetoothManager.otaUuid.read();
+          printLog('Valores OTA: $otaValues || ${utf8.decode(otaValues)}');
+          List<String> times = utf8.decode(otaValues).split(':');
+          otaScheduleHourStart = int.parse(times[0]);
+          otaScheduleMinuteStart = int.parse(times[1]);
+          otaScheduleHourEnd = int.parse(times[2]);
+          otaScheduleMinuteEnd = int.parse(times[3]);
+        } catch (e) {
+          printLog('Error leyendo OTA: $e');
+          otaScheduleHourStart = 2;
+          otaScheduleMinuteStart = 0;
+          otaScheduleHourEnd = 3;
+          otaScheduleMinuteEnd = 0;
+        }
+
         switch (pc) {
           case '022000_IOT' ||
                 '041220_IOT' ||

@@ -11,8 +11,10 @@ class OtaScheduleTab extends StatefulWidget {
 }
 
 class OtaScheduleTabState extends State<OtaScheduleTab> {
-  TimeOfDay _startTime = const TimeOfDay(hour: 2, minute: 0);
-  TimeOfDay _endTime = const TimeOfDay(hour: 6, minute: 0);
+  TimeOfDay _startTime =
+      TimeOfDay(hour: otaScheduleHourStart, minute: otaScheduleMinuteStart);
+  TimeOfDay _endTime =
+      TimeOfDay(hour: otaScheduleHourEnd, minute: otaScheduleMinuteEnd);
   bool _isSending = false;
 
   final String _pc = DeviceManager.getProductCode(deviceName);
