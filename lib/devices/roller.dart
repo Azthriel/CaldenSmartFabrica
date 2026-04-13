@@ -349,15 +349,15 @@ class RollerPageState extends State<RollerPage> {
     }
   }
 
-  void setDistance(int pc) {
+  void setDistance(int position) {
     if (newGen) {
       final map = {
-        "roller_position": pc,
+        "roller_position": position,
       };
       List<int> messagePackData = serialize(map);
       bluetoothManager.appDataUuid.write(messagePackData);
     } else {
-      String data = '$pc[7]($pc%)';
+      String data = '$pc[7]($position%)';
       printLog(data);
       bluetoothManager.toolsUuid.write(data.codeUnits);
     }
