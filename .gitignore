@@ -54,3 +54,12 @@ app.*.map.json
 /android/app/release
 
 lib/secret.dart
+
+.metadata
+.vscode/
+desktop.ini
+windows/
+web/
+test/
+macos/
+linux/
