@@ -769,76 +769,73 @@ class ParamsTabState extends State<ParamsTab> {
               ],
               if (discTimes.isNotEmpty) ...[
                 const SizedBox(height: 20),
-                buildText(
-                  text: 'Tiempos de desconexión:',
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.bold,
-                ),
-                const SizedBox(height: 10),
                 FractionallySizedBox(
                   alignment: Alignment.center,
                   widthFactor: 0.9,
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 20.0),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0, vertical: 12.0),
-                    decoration: BoxDecoration(
-                      color: color0,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: color4,
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: ExpansionTile(
+                      collapsedBackgroundColor: color0,
+                      backgroundColor: color0,
+                      iconColor: color1,
+                      collapsedIconColor: color2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      collapsedShape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      title: Row(
                         children: [
-                          for (int i = discTimes.length - 1; i >= 0; i--) ...[
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 15, vertical: 10),
-                              child: () {
-                                final dateTime =
-                                    DateTime.fromMillisecondsSinceEpoch(
-                                        int.parse(discTimes[i]));
-                                final date =
-                                    '${dateTime.year}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.day.toString().padLeft(2, '0')}';
-                                final time =
-                                    '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')}';
-                                return Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    Text(
-                                      date,
-                                      style: const TextStyle(
-                                        fontSize: 16.0,
-                                        color: color4,
-                                        fontWeight: FontWeight.normal,
-                                      ),
-                                    ),
-                                    Text(
-                                      time,
-                                      style: const TextStyle(
-                                        fontSize: 16.0,
-                                        color: color4,
-                                        fontWeight: FontWeight.normal,
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }(),
+                          const Icon(Icons.wifi_off, color: color2, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Desconexiones (${discTimes.length})',
+                            style: const TextStyle(
+                              color: color4,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
-                            if (i > 0)
-                              const Divider(
-                                  color: color1, height: 1, thickness: 1),
-                          ],
+                          ),
                         ],
                       ),
+                      children: [
+                        const Divider(color: color1, height: 1, thickness: 1),
+                        for (int i = discTimes.length - 1; i >= 0; i--) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 15, vertical: 10),
+                            child: () {
+                              final dateTime =
+                                  DateTime.fromMillisecondsSinceEpoch(
+                                      int.parse(discTimes[i]));
+                              final date =
+                                  '${dateTime.year}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.day.toString().padLeft(2, '0')}';
+                              final time =
+                                  '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')}';
+                              return Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: [
+                                  Text(date,
+                                      style: const TextStyle(
+                                          fontSize: 16.0,
+                                          color: color4,
+                                          fontWeight: FontWeight.normal)),
+                                  Text(time,
+                                      style: const TextStyle(
+                                          fontSize: 16.0,
+                                          color: color4,
+                                          fontWeight: FontWeight.normal)),
+                                ],
+                              );
+                            }(),
+                          ),
+                          if (i > 0)
+                            const Divider(
+                                color: color1, height: 1, thickness: 1),
+                        ],
+                      ],
                     ),
                   ),
                 ),
@@ -846,76 +843,73 @@ class ParamsTabState extends State<ParamsTab> {
               ],
               if (connecTimes.isNotEmpty) ...[
                 const SizedBox(height: 20),
-                buildText(
-                  text: 'Tiempos de conexión:',
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.bold,
-                ),
-                const SizedBox(height: 10),
                 FractionallySizedBox(
                   alignment: Alignment.center,
                   widthFactor: 0.9,
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 20.0),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0, vertical: 12.0),
-                    decoration: BoxDecoration(
-                      color: color0,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: color4,
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: ExpansionTile(
+                      collapsedBackgroundColor: color0,
+                      backgroundColor: color0,
+                      iconColor: color1,
+                      collapsedIconColor: color1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      collapsedShape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      title: Row(
                         children: [
-                          for (int i = connecTimes.length - 1; i >= 0; i--) ...[
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 15, vertical: 10),
-                              child: () {
-                                final dateTime =
-                                    DateTime.fromMillisecondsSinceEpoch(
-                                        int.parse(connecTimes[i]));
-                                final date =
-                                    '${dateTime.year}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.day.toString().padLeft(2, '0')}';
-                                final time =
-                                    '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')}';
-                                return Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    Text(
-                                      date,
-                                      style: const TextStyle(
-                                        fontSize: 16.0,
-                                        color: color4,
-                                        fontWeight: FontWeight.normal,
-                                      ),
-                                    ),
-                                    Text(
-                                      time,
-                                      style: const TextStyle(
-                                        fontSize: 16.0,
-                                        color: color4,
-                                        fontWeight: FontWeight.normal,
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }(),
+                          const Icon(Icons.wifi, color: color1, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Conexiones (${connecTimes.length})',
+                            style: const TextStyle(
+                              color: color4,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
-                            if (i > 0)
-                              const Divider(
-                                  color: color1, height: 1, thickness: 1),
-                          ],
+                          ),
                         ],
                       ),
+                      children: [
+                        const Divider(color: color1, height: 1, thickness: 1),
+                        for (int i = connecTimes.length - 1; i >= 0; i--) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 15, vertical: 10),
+                            child: () {
+                              final dateTime =
+                                  DateTime.fromMillisecondsSinceEpoch(
+                                      int.parse(connecTimes[i]));
+                              final date =
+                                  '${dateTime.year}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.day.toString().padLeft(2, '0')}';
+                              final time =
+                                  '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')}';
+                              return Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: [
+                                  Text(date,
+                                      style: const TextStyle(
+                                          fontSize: 16.0,
+                                          color: color4,
+                                          fontWeight: FontWeight.normal)),
+                                  Text(time,
+                                      style: const TextStyle(
+                                          fontSize: 16.0,
+                                          color: color4,
+                                          fontWeight: FontWeight.normal)),
+                                ],
+                              );
+                            }(),
+                          ),
+                          if (i > 0)
+                            const Divider(
+                                color: color1, height: 1, thickness: 1),
+                        ],
+                      ],
                     ),
                   ),
                 ),
