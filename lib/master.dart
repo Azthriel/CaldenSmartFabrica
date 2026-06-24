@@ -19,7 +19,7 @@ import 'package:msgpack_dart/msgpack_dart.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.64';
+String appVersionNumber = '1.0.65';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -141,6 +141,7 @@ bool manualControl = false;
 bool hasSpark = false;
 String sparkSpeed = '';
 String valvePulseTime = '';
+bool offsetEnabled = true;
 //*-Calefactores-*\\
 
 //*- Roller -*\\

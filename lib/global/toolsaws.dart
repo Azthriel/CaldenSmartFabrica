@@ -30,56 +30,6 @@ class ToolsAWSState extends State<ToolsAWS> {
     productos = lista.map((item) => item.toString()).toList();
   }
 
-  String hintAWS(String cmd) {
-    switch (cmd) {
-      case '0':
-        return '1 borrar NVS, 0 Conservar';
-      case '2':
-        return 'HardVer#SoftVer';
-      case '4':
-        return 'Nuevo SN';
-      case '5':
-        return '0 desactivar CPD';
-      case '6':
-        if (key == 0) {
-          return 'Amazon CA';
-        } else if (key == 1) {
-          return 'Device Cert.';
-        } else {
-          return 'Private Key';
-        }
-      case '16':
-        return '0 desactivar | 1 activar';
-      case '17':
-        return 'No requiere parametros';
-      case '':
-        return 'Aún no se agrega comando';
-      default:
-        return 'Este comando no existe...';
-    }
-  }
-
-  TextInputType contentType(String cmd) {
-    switch (cmd) {
-      case '0':
-        return TextInputType.number;
-      case '2':
-        return TextInputType.text;
-      case '4':
-        return TextInputType.number;
-      case '5':
-        return TextInputType.text;
-      case '6':
-        return TextInputType.multiline;
-      case '16':
-        return TextInputType.number;
-      case '':
-        return TextInputType.none;
-      default:
-        return TextInputType.none;
-    }
-  }
-
   @override
   void dispose() {
     serialNumberController.dispose();
@@ -253,208 +203,186 @@ class ToolsAWSState extends State<ToolsAWS> {
                       child: const Text('Verificar conexión equipo'),
                     ),
                     const SizedBox(height: 20),
-                    
-                    // Sección de comandos
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12.0, vertical: 8.0),
-                            decoration: BoxDecoration(
-                              color: color0,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: color4, width: 1),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: color4.withValues(alpha: 0.2),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: DropdownButtonFormField<String>(
-                              decoration: const InputDecoration(
-                                labelText: 'Comando:',
-                                labelStyle: TextStyle(color: color4),
-                                hintStyle: TextStyle(color: color4),
-                                border: InputBorder.none,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12.0, vertical: 8.0),
+                      decoration: BoxDecoration(
+                        color: color0,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: color4, width: 1),
+                        boxShadow: [
+                          BoxShadow(
+                            color: color4.withValues(alpha: 0.2),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Comando:',
+                          labelStyle: TextStyle(color: color4),
+                          hintStyle: TextStyle(color: color4),
+                          border: InputBorder.none,
+                        ),
+                        dropdownColor: color0,
+                        items: <String>[
+                          '0 - Reiniciar equipo',
+                          '2 - OTA WiFi Trigger',
+                          '4 - Cambiar número de serie',
+                          '5 - Activar/desactivar CPD',
+                          '6 - Cargar certificados',
+                          if (productCode == '027000_IOT' ||
+                              productCode == '022000_IOT' ||
+                              productCode == '041220_IOT' ||
+                              productCode == '050217_IOT') ...{
+                            '16 - Modo manual',
+                            '17 - Consultar temperatura y Offset',
+                            '19 - Activar/Desactivar Offset de temperatura',
+                          },
+                        ].map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(
+                              value,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: color4,
+                                fontWeight: FontWeight.w500,
                               ),
-                              dropdownColor: color0,
-                              items: <String>[
-                                '0',
-                                '2',
-                                '4',
-                                '5',
-                                '6',
-                                if (productCode == '027000_IOT' ||
-                                    productCode == '022000_IOT' ||
-                                    productCode == '041220_IOT' ||
-                                    productCode == '050217_IOT') ...{
-                                  '16',
-                                  '17'
-                                },
-                              ].map<DropdownMenuItem<String>>((String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(
-                                    value,
-                                    style: const TextStyle(
-                                      color: color4,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            commandText = value!;
+                            contentController.clear();
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12.0, vertical: 8.0),
+                      decoration: BoxDecoration(
+                        color: color0,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: color4, width: 1),
+                        boxShadow: [
+                          BoxShadow(
+                            color: color4.withValues(alpha: 0.2),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        style: const TextStyle(color: color4),
+                        controller: contentController,
+                        maxLines: null,
+                        keyboardType: TextInputType.multiline,
+                        decoration: InputDecoration(
+                          labelText: 'Contenido:',
+                          labelStyle: const TextStyle(color: color4),
+                          hintStyle: const TextStyle(color: color4),
+                          border: InputBorder.none,
+                          suffixIcon: commandText == '6'
+                              ? IconButton(
+                                  onPressed: () {
+                                    showDialog<void>(
+                                      context: context,
+                                      barrierDismissible: true,
+                                      builder: (BuildContext context) {
+                                        return SimpleDialog(
+                                          backgroundColor: color0,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          title: const Center(
+                                            child: Text(
+                                              '¿Qué vas a enviar?',
+                                              style: TextStyle(
+                                                color: color4,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 20,
+                                              ),
+                                            ),
+                                          ),
+                                          children: <Widget>[
+                                            const Divider(color: color4),
+                                            SimpleDialogOption(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                                contentController.clear();
+                                                key = 0;
+                                                printLog(
+                                                    'Amazon CA seleccionada');
+                                                setState(() {});
+                                              },
+                                              child: const Text(
+                                                'Amazon CA',
+                                                style: TextStyle(
+                                                  color: color4,
+                                                  fontSize: 18,
+                                                ),
+                                              ),
+                                            ),
+                                            SimpleDialogOption(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                                contentController.clear();
+                                                key = 1;
+                                                printLog(
+                                                    'Device Cert. seleccionada');
+                                                setState(() {});
+                                              },
+                                              child: const Text(
+                                                'Device Cert.',
+                                                style: TextStyle(
+                                                  color: color4,
+                                                  fontSize: 18,
+                                                ),
+                                              ),
+                                            ),
+                                            SimpleDialogOption(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                                contentController.clear();
+                                                key = 2;
+                                                printLog(
+                                                    'Private key seleccionada');
+                                                setState(() {});
+                                              },
+                                              child: const Text(
+                                                'Private key',
+                                                style: TextStyle(
+                                                  color: color4,
+                                                  fontSize: 18,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                  icon: const Icon(
+                                    Icons.paste,
+                                    color: color4,
                                   ),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  commandText = value!;
-                                  contentController.clear();
-                                });
-                                printLog(contentType(commandText));
-                              },
-                            ),
-                          ),
+                                )
+                              : null,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 7,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12.0, vertical: 8.0),
-                            decoration: BoxDecoration(
-                              color: color0,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: color4, width: 1),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: color4.withValues(alpha: 0.2),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: TextField(
-                              style: const TextStyle(color: color4),
-                              controller: contentController,
-                              maxLines: null,
-                              keyboardType: contentType(commandText),
-                              decoration: InputDecoration(
-                                labelText: 'Contenido:',
-                                hintText: hintAWS(commandText),
-                                labelStyle: const TextStyle(color: color4),
-                                hintStyle: const TextStyle(color: color4),
-                                border: InputBorder.none,
-                                suffixIcon: commandText == '6'
-                                    ? IconButton(
-                                        onPressed: () {
-                                          showDialog<void>(
-                                            context: context,
-                                            barrierDismissible: true,
-                                            builder: (BuildContext context) {
-                                              return SimpleDialog(
-                                                backgroundColor: color0,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          12),
-                                                ),
-                                                title: const Center(
-                                                  child: Text(
-                                                    '¿Qué vas a enviar?',
-                                                    style: TextStyle(
-                                                      color: color4,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 20,
-                                                    ),
-                                                  ),
-                                                ),
-                                                children: <Widget>[
-                                                  const Divider(
-                                                      color: color4),
-                                                  SimpleDialogOption(
-                                                    onPressed: () {
-                                                      Navigator.of(context)
-                                                          .pop();
-                                                      contentController
-                                                          .clear();
-                                                      key = 0;
-                                                      printLog(
-                                                          'Amazon CA seleccionada');
-                                                      setState(() {});
-                                                    },
-                                                    child: const Text(
-                                                      'Amazon CA',
-                                                      style: TextStyle(
-                                                        color: color4,
-                                                        fontSize: 18,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  SimpleDialogOption(
-                                                    onPressed: () {
-                                                      Navigator.of(context)
-                                                          .pop();
-                                                      contentController
-                                                          .clear();
-                                                      key = 1;
-                                                      printLog(
-                                                          'Device Cert. seleccionada');
-                                                      setState(() {});
-                                                    },
-                                                    child: const Text(
-                                                      'Device Cert.',
-                                                      style: TextStyle(
-                                                        color: color4,
-                                                        fontSize: 18,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  SimpleDialogOption(
-                                                    onPressed: () {
-                                                      Navigator.of(context)
-                                                          .pop();
-                                                      contentController
-                                                          .clear();
-                                                      key = 2;
-                                                      printLog(
-                                                          'Private key seleccionada');
-                                                      setState(() {});
-                                                    },
-                                                    child: const Text(
-                                                      'Private key',
-                                                      style: TextStyle(
-                                                        color: color4,
-                                                        fontSize: 18,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              );
-                                            },
-                                          );
-                                        },
-                                        icon: const Icon(
-                                          Icons.paste,
-                                          color: color4,
-                                        ),
-                                      )
-                                    : null,
-                              ),
-                              onChanged: (value) {
-                                if (commandText == '6') {
-                                  content =
-                                      contentController.text.split('\n');
-                                  contentController.text = 'Cargado';
-                                }
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
+                        onChanged: (value) {
+                          if (commandText == '6') {
+                            content = contentController.text.split('\n');
+                            contentController.text = 'Cargado';
+                          }
+                        },
+                      ),
                     ),
                     const SizedBox(height: 20),
                     buildButton(
@@ -571,6 +499,9 @@ class ToolsAWSState extends State<ToolsAWS> {
                           ),
                         ],
                       ),
+                    ),
+                    const SizedBox(
+                      height: 50,
                     ),
                   ]),
             );

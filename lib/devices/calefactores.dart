@@ -621,6 +621,19 @@ class CalefactoresPageState extends State<CalefactoresPage> {
     }
   }
 
+  void sendOffsetEnabled(bool enabled) {
+    if (newGen) {
+      final map = {
+        "offset_enabled": enabled,
+      };
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.temperatureUuid.write(messagePackData);
+    } else {
+      String data = '$pc[19](${enabled ? 1 : 0})';
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
+  }
+
   //! VISUAL
   @override
   Widget build(BuildContext context) {
@@ -1118,7 +1131,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                   thickness: 2,
                 ),
                 buildText(
-                  text: 'Ciclador de válvula:',
+                  text: 'Ciclador:',
                   fontSize: 20.0,
                   textAlign: TextAlign.center,
                   fontWeight: FontWeight.bold,
@@ -1256,6 +1269,65 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                       },
                     );
                   },
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                const Divider(
+                  color: color3,
+                  thickness: 2,
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                buildText(
+                  text: 'Offset de temperatura:',
+                  fontSize: 20.0,
+                  textAlign: TextAlign.center,
+                  fontWeight: FontWeight.bold,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Activado'),
+                      selected: offsetEnabled,
+                      onSelected: (sel) async {
+                        setState(() => offsetEnabled = true);
+                        sendOffsetEnabled(true);
+                        registerActivity(
+                            DeviceManager.getProductCode(deviceName),
+                            DeviceManager.extractSerialNumber(deviceName),
+                            "Se selecciono que el equipo SI posee un offset de temperatura");
+                      },
+                      selectedColor: color1,
+                      backgroundColor: color0,
+                      labelStyle:
+                          TextStyle(color: offsetEnabled ? color4 : color1),
+                      checkmarkColor: color4,
+                    ),
+                    const SizedBox(width: 12),
+                    ChoiceChip(
+                      label: const Text('Desactivado'),
+                      selected: !offsetEnabled,
+                      onSelected: (sel) async {
+                        setState(() => offsetEnabled = false);
+                        sendOffsetEnabled(false);
+                        registerActivity(
+                            DeviceManager.getProductCode(deviceName),
+                            DeviceManager.extractSerialNumber(deviceName),
+                            "Se selecciono que el equipo NO posee un offset de temperatura");
+                      },
+                      selectedColor: color1,
+                      backgroundColor: color0,
+                      labelStyle:
+                          TextStyle(color: !offsetEnabled ? color4 : color1),
+                      checkmarkColor: color4,
+                    ),
+                  ],
+                ),
+                const SizedBox(
+                  height: 10,
                 ),
                 if (pc == '027000_IOT') ...[
                   const SizedBox(

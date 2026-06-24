@@ -169,10 +169,10 @@ class LoadState extends State<LoadingPage> {
           List<int> otaValues = await bluetoothManager.otaUuid.read();
           printLog('Valores OTA: $otaValues || ${utf8.decode(otaValues)}');
           List<String> times = utf8.decode(otaValues).split(':');
-          otaScheduleHourStart = int.parse(times[0]);
-          otaScheduleMinuteStart = int.parse(times[1]);
-          otaScheduleHourEnd = int.parse(times[2]);
-          otaScheduleMinuteEnd = int.parse(times[3]);
+          otaScheduleHourStart = int.tryParse(times[0]) ?? 2;
+          otaScheduleMinuteStart = int.tryParse(times[1]) ?? 0;
+          otaScheduleHourEnd = int.tryParse(times[2]) ?? 3;
+          otaScheduleMinuteEnd = int.tryParse(times[3]) ?? 0;
         } catch (e) {
           printLog('Error leyendo OTA: $e');
           otaScheduleHourStart = 2;
@@ -201,11 +201,14 @@ class LoadState extends State<LoadingPage> {
               actualTemp = parts2[6];
               awsInit = parts2[7] == '1';
               offsetTemp = parts2[8];
-              parts2.length > 9
-                  ? manualControl = parts2[9] == '1'
-                  : manualControl = false;
-              sparkSpeed = parts2.length > 10 ? parts2[10] : '64';
-              valvePulseTime = parts2.length > 11 ? parts2[11] : '5';
+              manualControl = parts2.length > 9 ? parts2[9] == '1' : false;
+              if (pc == '027000_IOT') {
+                sparkSpeed = parts2.length > 10 ? parts2[10] : '64';
+                valvePulseTime = parts2.length > 11 ? parts2[11] : '5';
+                offsetEnabled = parts2.length > 12 ? parts2[12] == '1' : true;
+              } else {
+                offsetEnabled = parts2.length > 10 ? parts2[10] == '1' : true;
+              }
             } else {
               printLog('Formato nuevo detectado (sin owner variable)');
               tempValue = double.parse(parts2[0]);
@@ -216,8 +219,13 @@ class LoadState extends State<LoadingPage> {
               awsInit = parts2[6] == '1';
               offsetTemp = parts2[7];
               manualControl = parts2.length > 8 ? parts2[8] == '1' : false;
-              sparkSpeed = parts2.length > 9 ? parts2[9] : '64';
-              valvePulseTime = parts2.length > 10 ? parts2[10] : '5';
+              if (pc == '027000_IOT') {
+                sparkSpeed = parts2.length > 9 ? parts2[9] : '64';
+                valvePulseTime = parts2.length > 10 ? parts2[10] : '5';
+                offsetEnabled = parts2.length > 11 ? parts2[11] == '1' : true;
+              } else {
+                offsetEnabled = parts2.length > 9 ? parts2[9] == '1' : true;
+              }
             }
 
             hasSensor = hasDallasSensor(pc, hardwareVersion);
