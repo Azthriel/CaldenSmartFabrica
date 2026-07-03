@@ -634,6 +634,19 @@ class CalefactoresPageState extends State<CalefactoresPage> {
     }
   }
 
+  void sendVoltageLevel() {
+    if (newGen) {
+      final map = {
+        "voltage_level": voltageLevel ? 24 : 12,
+      };
+      List<int> messagePackData = serialize(map);
+      bluetoothManager.appDataUuid.write(messagePackData);
+    } else {
+      String data = '$pc[20](${voltageLevel ? 1 : 0})';
+      bluetoothManager.toolsUuid.write(data.codeUnits);
+    }
+  }
+
   //! VISUAL
   @override
   Widget build(BuildContext context) {
@@ -1435,6 +1448,35 @@ class CalefactoresPageState extends State<CalefactoresPage> {
                         sendValvePulseTime(value);
                       },
                     ),
+                    if (Versioner.isPosterior(hardwareVersion, '260521B')) ...[
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      const Divider(
+                        color: color3,
+                        thickness: 2,
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      buildText(
+                        text:
+                            'Nivel de tensión: ${voltageLevel ? "24V" : "12V"}',
+                        fontSize: 20.0,
+                        textAlign: TextAlign.center,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      buildButton(
+                          onPressed: () {
+                            registerActivity(
+                                pc, sn, 'Se cambio el nivel de tensión');
+                            setState(() {
+                              voltageLevel = !voltageLevel;
+                            });
+                            sendVoltageLevel();
+                          },
+                          text: 'Cambiar nivel de \ntensión de la válvula'),
+                    ],
                   ],
                 ],
                 Padding(

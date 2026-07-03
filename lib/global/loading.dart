@@ -206,6 +206,7 @@ class LoadState extends State<LoadingPage> {
                 sparkSpeed = parts2.length > 10 ? parts2[10] : '64';
                 valvePulseTime = parts2.length > 11 ? parts2[11] : '5';
                 offsetEnabled = parts2.length > 12 ? parts2[12] == '1' : true;
+                voltageLevel = parts2.length > 13 ? parts2[13] == '1' : false;
               } else {
                 offsetEnabled = parts2.length > 10 ? parts2[10] == '1' : true;
               }
@@ -223,6 +224,7 @@ class LoadState extends State<LoadingPage> {
                 sparkSpeed = parts2.length > 9 ? parts2[9] : '64';
                 valvePulseTime = parts2.length > 10 ? parts2[10] : '5';
                 offsetEnabled = parts2.length > 11 ? parts2[11] == '1' : true;
+                voltageLevel = parts2.length > 12 ? parts2[12] == '1' : false;
               } else {
                 offsetEnabled = parts2.length > 9 ? parts2[9] == '1' : true;
               }

@@ -19,7 +19,7 @@ import 'package:msgpack_dart/msgpack_dart.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.65';
+String appVersionNumber = '1.0.67';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -142,6 +142,7 @@ bool hasSpark = false;
 String sparkSpeed = '';
 String valvePulseTime = '';
 bool offsetEnabled = true;
+bool voltageLevel = false; // false -> 12V | true -> 24V
 //*-Calefactores-*\\
 
 //*- Roller -*\\
