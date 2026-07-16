@@ -452,6 +452,7 @@ class CalefactoresPageState extends State<CalefactoresPage> {
       setState(() {
         _fstatus = parts[0] == '1';
         _actualTemp = parts[1];
+        _offsetTemp = int.tryParse(parts[2]) ?? -666;
       });
     });
 
