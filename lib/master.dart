@@ -19,7 +19,7 @@ import 'package:msgpack_dart/msgpack_dart.dart';
 //! VARIABLES !\\
 
 //!-------------------------VERSION NUMBER-------------------------!\\
-String appVersionNumber = '1.0.68';
+String appVersionNumber = '';
 //!-------------------------VERSION NUMBER-------------------------!\\
 
 //*-Colores-*\\
@@ -281,6 +281,24 @@ void printLog(var text, [String? color]) {
   }
 }
 //*-Permite hacer prints seguros, solo en modo debug-*\\
+
+//*-Cargar número de versión-* \\
+Future<String> getAppVersion() async {
+  try {
+    final pubspecText = await rootBundle.loadString('pubspec.yaml');
+    for (var line in pubspecText.split('\n')) {
+      if (line.trim().startsWith('version:')) {
+        final fullVersion = line.split(':')[1].trim();
+        final cleanVersion = fullVersion.split('+')[0];
+        return cleanVersion;
+      }
+    }
+    return '4.0.4';
+  } catch (e) {
+    return '4.0.4';
+  }
+}
+//*-Cargar número de versión-* \\
 
 //*-Funciones diversas-*\\
 void showToast(String message) {
@@ -3832,27 +3850,18 @@ class IconThumbSlider extends SliderComponentShape {
 class EasterEggs {
   static List<String> legajosMeme = [
     '1865',
-    '1860',
     '1799',
-    '1750',
-    '1928',
-    '1982',
     '1988',
+    '2020',
   ];
 
   static Widget things(String legajo) {
     switch (legajo) {
-      case '1860':
-        return Image.asset('assets/eg/Mecha.gif');
-      case '1928':
-        return Image.asset('assets/eg/kiwi.webp');
       case '1865':
         return Image.asset('assets/eg/Vaca.webp');
-      case '1750':
-        return Image.asset('assets/eg/cucaracha.gif');
       case '1799':
-        return Image.asset('assets/eg/puto.jpeg');
-      case '1982':
+        return Image.asset('assets/eg/kiwi.webp');
+      case '2020':
         return Image.asset('assets/eg/cateat.gif');
       case '1988':
         return Image.asset('assets/eg/cat.gif');
@@ -3862,35 +3871,16 @@ class EasterEggs {
   }
 
   static Widget profile(String legajo) {
-    switch (legajo) {
-      case '1860':
-        return Image.asset('assets/eg/Lautaro.webp');
-      case '1928':
-        return Image.asset('assets/eg/javi.webp');
-      case '1865':
-        return Image.asset('assets/eg/Gonzalo.webp');
-      case '1750':
-        return Image.asset('assets/eg/joaco.webp');
-      case '1799':
-        return Image.asset('assets/eg/Cristian.webp');
-      default:
-        return const SizedBox.shrink();
-    }
+    return const SizedBox.shrink();
   }
 
   static String loading(String legajo) {
     switch (legajo) {
-      case '1860':
-        return 'assets/eg/Mecha.gif';
-      case '1928':
-        return 'assets/eg/kiwi.webp';
       case '1865':
         return 'assets/eg/Vaca.webp';
-      case '1750':
-        return 'assets/eg/goose.gif';
       case '1799':
-        return 'assets/eg/puto.jpeg';
-      case '1982':
+        return 'assets/eg/kiwi.webp';
+      case '2020':
         return 'assets/eg/cateat.gif';
       case '1988':
         return 'assets/eg/cat.gif';

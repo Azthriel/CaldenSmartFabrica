@@ -43,6 +43,8 @@ Future<void> main() async {
     }
   };
 
+  appVersionNumber = await getAppVersion();
+
   printLog('Todo configurado, iniciando app');
   runApp(
     ChangeNotifierProvider(
