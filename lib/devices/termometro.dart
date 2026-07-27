@@ -279,6 +279,9 @@ class TermometroPageState extends State<TermometroPage>
         _tempOffset = offsetTemp;
         _alertMaxFlag = alertMaxFlag;
         _alertMinFlag = alertMinFlag;
+        _coldStart = coldStart;
+        _startupEval = startupEval;
+        _dallasTemp = dallasTemp;
       });
     }
   }
@@ -433,15 +436,13 @@ class TermometroPageState extends State<TermometroPage>
         bluetoothManager.varsUuid.onValueReceived.listen((List<int> status) {
       var parts = utf8.decode(status).split(':');
 
-      if (parts.length == 4) {
-        _actualTemp = parts[0];
-        _tempOffset = parts[1];
-        _alertMaxFlag = parts[2] == '1';
-        _alertMinFlag = parts[3] == '1';
-        _coldStart = parts[4] == '1';
-        _startupEval = parts[5] == '1';
-        _dallasTemp = parts[6];
-      }
+      _actualTemp = parts[0];
+      _tempOffset = parts[1];
+      _alertMaxFlag = parts[2] == '1';
+      _alertMinFlag = parts[3] == '1';
+      _coldStart = parts[4] == '1';
+      _startupEval = parts[5] == '1';
+      _dallasTemp = parts[6];
     });
 
     bluetoothManager.device.cancelWhenDisconnected(trueStatusSub);
@@ -999,7 +1000,7 @@ class TermometroPageState extends State<TermometroPage>
                 const SizedBox(height: 20),
                 buildText(text: 'Temperatura Actual:\n$_actualTemp °C'),
                 const SizedBox(height: 20),
-                buildText(text: 'Temperatura ambiente:\n$_tempOffset °C'),
+                buildText(text: 'Temperatura Offset:\n$_tempOffset °C'),
                 const SizedBox(height: 20),
                 buildText(text: 'Temperatura Dallas:\n$_dallasTemp °C'),
                 const SizedBox(height: 10),
