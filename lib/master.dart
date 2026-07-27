@@ -197,6 +197,9 @@ String alertMaxTemp = '';
 String alertMinTemp = '';
 Map<String, String> historicTemp = {};
 bool historicTempPremium = false;
+bool coldStart = false;
+bool startupEval = false;
+String dallasTemp = '';
 //*-Termómetro-*\\
 
 //*-Fluttertoast-*\\

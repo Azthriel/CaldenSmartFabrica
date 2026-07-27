@@ -51,7 +51,9 @@ class TermometroPageState extends State<TermometroPage>
   String _tempOffset = '';
   bool _alertMaxFlag = false;
   bool _alertMinFlag = false;
-  bool _tempMap = false;
+  bool _coldStart = false;
+  bool _startupEval = false;
+  String _dallasTemp = '0';
 
   // Obtener el índice correcto para cada página
   int _getPageIndex(String pageType) {
@@ -261,8 +263,14 @@ class TermometroPageState extends State<TermometroPage>
         bluetoothManager.data.containsKey('alertMinFlag')
             ? _alertMinFlag = bluetoothManager.data['alertMinFlag']! == '1'
             : null;
-        bluetoothManager.data.containsKey('tempMap')
-            ? _tempMap = bluetoothManager.data['tempMap']! == true
+        bluetoothManager.data.containsKey('coldStart')
+            ? _coldStart = bluetoothManager.data['coldStart']! == '1'
+            : null;
+        bluetoothManager.data.containsKey('startup_evaluated')
+            ? _startupEval = bluetoothManager.data['startup_evaluated']! == '1'
+            : null;
+        bluetoothManager.data.containsKey('dallas_temp')
+            ? _dallasTemp = bluetoothManager.data['dallas_temp']!
             : null;
       });
     } else {
@@ -271,7 +279,6 @@ class TermometroPageState extends State<TermometroPage>
         _tempOffset = offsetTemp;
         _alertMaxFlag = alertMaxFlag;
         _alertMinFlag = alertMinFlag;
-        _tempMap = tempMap;
       });
     }
   }
@@ -399,8 +406,14 @@ class TermometroPageState extends State<TermometroPage>
         appMap.containsKey('alertMinFlag')
             ? _alertMinFlag = appMap['alertMinFlag']! == '1'
             : null;
-        appMap.containsKey('tempMap')
-            ? _tempMap = appMap['tempMap']! == true
+        appMap.containsKey('coldStart')
+            ? _coldStart = appMap['coldStart']! == '1'
+            : null;
+        appMap.containsKey('startup_evaluated')
+            ? _startupEval = appMap['startup_evaluated']! == '1'
+            : null;
+        appMap.containsKey('dallas_temp')
+            ? _dallasTemp = appMap['dallas_temp']!
             : null;
       });
     });
@@ -425,6 +438,9 @@ class TermometroPageState extends State<TermometroPage>
         _tempOffset = parts[1];
         _alertMaxFlag = parts[2] == '1';
         _alertMinFlag = parts[3] == '1';
+        _coldStart = parts[4] == '1';
+        _startupEval = parts[5] == '1';
+        _dallasTemp = parts[6];
       }
     });
 
@@ -984,6 +1000,8 @@ class TermometroPageState extends State<TermometroPage>
                 buildText(text: 'Temperatura Actual:\n$_actualTemp °C'),
                 const SizedBox(height: 20),
                 buildText(text: 'Temperatura ambiente:\n$_tempOffset °C'),
+                const SizedBox(height: 20),
+                buildText(text: 'Temperatura Dallas:\n$_dallasTemp °C'),
                 const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: () {
@@ -1117,64 +1135,12 @@ class TermometroPageState extends State<TermometroPage>
                 ),
                 const SizedBox(height: 20),
                 buildText(
-                  text: '',
-                  textSpans: [
-                    const TextSpan(
-                      text: 'Mapeo de temperatura:\n',
-                      style:
-                          TextStyle(color: color4, fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: _tempMap ? 'REALIZADO' : 'NO REALIZADO',
-                      style: TextStyle(
-                          color: _tempMap ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                  fontSize: 20.0,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 5),
-                buildButton(
-                  text: 'Iniciar mapeo temperatura',
-                  onPressed: () {
-                    registerActivity(pc, sn,
-                        'Se inicio el mapeo de temperatura en el equipo');
-                    if (newGen) {
-                      final map = {
-                        "init_temp_map": true,
-                      };
-                      List<int> messagePackData = serialize(map);
-                      bluetoothManager.temperatureUuid.write(messagePackData);
-                    } else {
-                      String data = '$pc[10](0)';
-                      bluetoothManager.toolsUuid.write(data.codeUnits);
-                    }
-                    showToast('Iniciando mapeo de temperatura');
-                  },
-                ),
-                const SizedBox(height: 5),
-                buildButton(
-                  text: 'Borrar mapeo temperatura',
-                  onPressed: () {
-                    registerActivity(
-                      pc,
-                      sn,
-                      'Se borro el mapeo de temperatura en el equipo',
-                    );
-                    if (newGen) {
-                      final map = {
-                        "clear_temp_map": true,
-                      };
-                      List<int> messagePackData = serialize(map);
-                      bluetoothManager.temperatureUuid.write(messagePackData);
-                    } else {
-                      String data = '$pc[10](1)';
-                      bluetoothManager.toolsUuid.write(data.codeUnits);
-                    }
-                    showToast('Borrando mapeo de temperatura');
-                  },
-                ),
+                    text:
+                        'Tipo de arranque: ${_coldStart ? 'En frío' : 'En caliente'}'),
+                const SizedBox(height: 10),
+                buildText(
+                    text:
+                        'Evaluación de arranque: ${_startupEval ? 'Finalizada' : 'No finalizada'}'),
                 const SizedBox(height: 20),
                 Padding(
                   padding: EdgeInsets.only(bottom: bottomBarHeight + 20),

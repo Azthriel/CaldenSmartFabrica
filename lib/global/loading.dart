@@ -309,7 +309,9 @@ class LoadState extends State<LoadingPage> {
             alertMinFlag = partes[4] == '1';
             alertMaxTemp = partes[5];
             alertMinTemp = partes[6];
-            tempMap = partes[7] == '1';
+            coldStart = partes[7] == '1';
+            startupEval = partes[8] == '1';
+            dallasTemp = partes[9];
             break;
         }
       }
